@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Input } from '@/components/ui/input.jsx'
@@ -9,10 +9,12 @@ import { Badge } from '@/components/ui/badge.jsx'
 import { Heart, Clock, Shield, Star, Users, CreditCard, CheckCircle, ArrowRight, Calendar, Settings } from 'lucide-react'
 import SchedulingSystem from './components/SchedulingSystem.jsx'
 import TherapistAvailability from './components/TherapistAvailability.jsx'
+import TherapistsList from './components/TherapistsList.jsx'
 import heroImage from './assets/hero-therapy.jpg'
 import supportImage from './assets/mental-health-support.jpg'
 import consultationImage from './assets/modern-consultation.webp'
 import './App.css'
+import therapistService from './services/therapistService'
 
 function App() {
   const [formData, setFormData] = useState({
@@ -30,6 +32,63 @@ function App() {
   const [selectedCredits, setSelectedCredits] = useState(60)
   const [selectedTherapist, setSelectedTherapist] = useState('')
   const [scheduledAppointment, setScheduledAppointment] = useState(null)
+  const [therapists, setTherapists] = useState([])
+  const [loadingTherapists, setLoadingTherapists] = useState(false)
+  const [therapistError, setTherapistError] = useState(null)
+
+  useEffect(() => {
+    if (currentStep === 'matching') {
+      fetchTherapists();
+    }
+  }, [currentStep]);
+
+  const fetchTherapists = async () => {
+    setLoadingTherapists(true);
+    setTherapistError(null);
+    try {
+      const data = await therapistService.getAllTherapists();
+      const formattedTherapists = therapistService.formatTherapistsForUI(data);
+      setTherapists(formattedTherapists);
+    } catch (error) {
+      console.error('Failed to load therapists:', error);
+      setTherapistError('Não foi possível carregar os terapeutas. Por favor, tente novamente.');
+      // Fallback to default therapists if API fails
+      setTherapists([
+        {
+          id: "ana-silva",
+          name: "Dra. Ana Silva",
+          specialty: "Ansiedade e Depressão",
+          experience: "8 anos",
+          rating: 4.9,
+          creditsPerMinute: 2.0,
+          available: "Hoje às 14h",
+          image: "👩‍⚕️"
+        },
+        {
+          id: "carlos-santos",
+          name: "Dr. Carlos Santos",
+          specialty: "Terapia Cognitiva",
+          experience: "12 anos", 
+          rating: 4.8,
+          creditsPerMinute: 2.5,
+          available: "Amanhã às 10h",
+          image: "👨‍⚕️"
+        },
+        {
+          id: "maria-costa",
+          name: "Dra. Maria Costa",
+          specialty: "Relacionamentos",
+          experience: "6 anos",
+          rating: 4.9,
+          creditsPerMinute: 1.8,
+          available: "Hoje às 16h",
+          image: "👩‍⚕️"
+        }
+      ]);
+    } finally {
+      setLoadingTherapists(false);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -61,38 +120,6 @@ function App() {
     { credits: 120, price: 180, popular: false, description: "Para cuidado contínuo" }
   ]
 
-  const therapists = [
-    {
-      id: "ana-silva",
-      name: "Dra. Ana Silva",
-      specialty: "Ansiedade e Depressão",
-      experience: "8 anos",
-      rating: 4.9,
-      creditsPerMinute: 2.0,
-      available: "Hoje às 14h",
-      image: "👩‍⚕️"
-    },
-    {
-      id: "carlos-santos",
-      name: "Dr. Carlos Santos",
-      specialty: "Terapia Cognitiva",
-      experience: "12 anos", 
-      rating: 4.8,
-      creditsPerMinute: 2.5,
-      available: "Amanhã às 10h",
-      image: "👨‍⚕️"
-    },
-    {
-      id: "maria-costa",
-      name: "Dra. Maria Costa",
-      specialty: "Relacionamentos",
-      experience: "6 anos",
-      rating: 4.9,
-      creditsPerMinute: 1.8,
-      available: "Hoje às 16h",
-      image: "👩‍⚕️"
-    }
-  ]
 
   if (currentStep === 'landing') {
     return (
@@ -103,10 +130,11 @@ function App() {
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <Heart className="h-8 w-8 text-blue-600" />
-                <span className="text-2xl font-bold text-gray-900">MenteCréditos</span>
+                <span className="text-2xl font-bold text-gray-900">Trogon</span>
               </div>
               <div className="hidden md:flex space-x-6">
                 <a href="#como-funciona" className="text-gray-600 hover:text-blue-600">Como Funciona</a>
+                <a href="#terapeutas" className="text-gray-600 hover:text-blue-600">Terapeutas</a>
                 <a href="#psicologos" className="text-gray-600 hover:text-blue-600">Para Psicólogos</a>
                 <a href="#precos" className="text-gray-600 hover:text-blue-600">Preços</a>
                 <Button 
@@ -311,6 +339,11 @@ function App() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Therapists List Section */}
+        <section id="terapeutas" className="py-20 bg-white">
+          <TherapistsList />
         </section>
 
         {/* CTA Section */}
@@ -620,8 +653,22 @@ function App() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-3 gap-6">
-                {therapists.map((therapist) => (
+              {therapistError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <p className="text-red-800">{therapistError}</p>
+                </div>
+              )}
+              
+              {loadingTherapists ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p className="mt-4 text-gray-600">Carregando terapeutas disponíveis...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-3 gap-6">
+                  {therapists.map((therapist) => (
                   <Card key={therapist.id} className="relative">
                     <CardHeader className="text-center">
                       <div className="text-6xl mb-4">{therapist.image}</div>
@@ -658,7 +705,8 @@ function App() {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
+                </div>
+              )}
 
               <div className="mt-12 bg-green-50 p-6 rounded-lg">
                 <h3 className="text-lg font-semibold text-green-900 mb-4">🎉 Parabéns! Você está quase lá:</h3>
