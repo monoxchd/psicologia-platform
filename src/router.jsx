@@ -6,6 +6,8 @@ import MatchingPage from './pages/MatchingPage.jsx'
 import SchedulingPage from './pages/SchedulingPage.jsx'
 import ConfirmationPage from './pages/ConfirmationPage.jsx'
 import TherapistAdminPage from './pages/TherapistAdminPage.jsx'
+import LoginPage from './pages/LoginPage.jsx'
+import RegisterPage from './pages/RegisterPage.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -35,5 +37,13 @@ export const router = createBrowserRouter([
   {
     path: "/therapist-admin",
     element: <TherapistAdminPage />
+  },
+  {
+    path: "/login",
+    element: <LoginPage />
+  },
+  {
+    path: "/register",
+    element: <RegisterPage />
   }
 ])
