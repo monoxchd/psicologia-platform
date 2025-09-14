@@ -16,12 +16,8 @@ export default function LoginPage() {
       const response = await authService.login(values.email, values.password)
 
       if (response.success) {
-        // Redirect based on user type
-        if (response.user.user_type === 'therapist') {
-          navigate('/therapist-admin')
-        } else {
-          navigate('/matching')
-        }
+        // Redirect to dashboard for both user types
+        navigate('/dashboard')
       } else {
         setError(response.error || "Login failed. Please try again.")
       }

@@ -8,11 +8,16 @@ import ConfirmationPage from './pages/ConfirmationPage.jsx'
 import TherapistAdminPage from './pages/TherapistAdminPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
+import DashboardPage from './pages/DashboardPage.jsx'
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <LandingPage />
+  },
+  {
+    path: "/dashboard",
+    element: <DashboardPage />
   },
   {
     path: "/form",

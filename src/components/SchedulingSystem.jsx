@@ -1,51 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Calendar, Clock, User, CreditCard, CheckCircle, ArrowLeft } from 'lucide-react'
+import apiService from '../services/api.js'
 
-// Mock therapist availability data
-const therapistAvailability = {
-  "ana-silva": {
-    name: "Dra. Ana Silva",
-    specialty: "Ansiedade e Depressão",
-    creditsPerMinute: 2.0,
-    image: "👩‍⚕️",
-    availability: {
-      "2025-06-29": ["09:00", "10:00", "14:00", "15:00", "16:00"],
-      "2025-06-30": ["09:00", "11:00", "14:00", "15:00"],
-      "2025-07-01": ["10:00", "11:00", "14:00", "16:00", "17:00"],
-      "2025-07-02": ["09:00", "10:00", "15:00", "16:00"],
-      "2025-07-03": ["14:00", "15:00", "16:00", "17:00"]
-    }
-  },
-  "carlos-santos": {
-    name: "Dr. Carlos Santos",
-    specialty: "Terapia Cognitiva",
-    creditsPerMinute: 2.5,
-    image: "👨‍⚕️",
-    availability: {
-      "2025-06-29": ["10:00", "11:00", "15:00", "16:00"],
-      "2025-06-30": ["09:00", "10:00", "14:00", "17:00"],
-      "2025-07-01": ["09:00", "11:00", "15:00", "16:00"],
-      "2025-07-02": ["10:00", "14:00", "15:00", "17:00"],
-      "2025-07-03": ["09:00", "10:00", "11:00", "16:00"]
-    }
-  },
-  "maria-costa": {
-    name: "Dra. Maria Costa",
-    specialty: "Relacionamentos",
-    creditsPerMinute: 1.8,
-    image: "👩‍⚕️",
-    availability: {
-      "2025-06-29": ["11:00", "14:00", "15:00", "17:00"],
-      "2025-06-30": ["10:00", "11:00", "16:00", "17:00"],
-      "2025-07-01": ["09:00", "14:00", "15:00", "17:00"],
-      "2025-07-02": ["11:00", "14:00", "16:00", "17:00"],
-      "2025-07-03": ["10:00", "11:00", "15:00", "16:00"]
-    }
-  }
-}
 
 const sessionDurations = [
   { minutes: 30, label: "Check-in Rápido", description: "Ideal para acompanhamento" },
@@ -53,41 +12,91 @@ const sessionDurations = [
   { minutes: 90, label: "Sessão Estendida", description: "Para trabalho profundo" }
 ]
 
-export default function SchedulingSystem({ 
-  selectedTherapist, 
-  userCredits, 
-  onBack, 
-  onScheduleComplete 
+export default function SchedulingSystem({
+  selectedTherapist,
+  userCredits,
+  onBack,
+  onScheduleComplete
 }) {
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [selectedDuration, setSelectedDuration] = useState(50)
   const [step, setStep] = useState('duration') // 'duration', 'datetime', 'confirm'
+  const [therapists, setTherapists] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const therapist = therapistAvailability[selectedTherapist]
-  const sessionCost = selectedDuration * therapist.creditsPerMinute
+  // Fetch therapists from API
+  useEffect(() => {
+    const fetchTherapists = async () => {
+      try {
+        const response = await apiService.get('/therapists')
+        setTherapists(response)
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching therapists:', error)
+        setLoading(false)
+      }
+    }
+
+    fetchTherapists()
+  }, [])
+
+  // Get therapist data - either from selectedTherapist prop or use first available
+  const therapist = selectedTherapist
+    ? therapists.find(t => t.id === selectedTherapist.id || t.name === selectedTherapist.name)
+    : therapists[0]
+
+  // Handle loading and missing therapist states
+  if (loading) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Carregando terapeutas...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!therapist) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <p>Erro: Nenhum terapeuta disponível</p>
+          <Button onClick={onBack} className="mt-4">
+            Voltar
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const sessionCost = selectedDuration * (therapist.credits_per_minute || 1.0)
   const canAfford = userCredits >= sessionCost
 
-  // Generate next 7 days
+  // Generate next 7 days with availability
   const getAvailableDates = () => {
     const dates = []
     const today = new Date()
+
     for (let i = 1; i <= 7; i++) {
       const date = new Date(today)
       date.setDate(today.getDate() + i)
       const dateStr = date.toISOString().split('T')[0]
-      if (therapist.availability[dateStr]) {
+      // Show weekdays as available (skip weekends for now)
+      const dayOfWeek = date.getDay()
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Monday to Friday
         dates.push({
           date: dateStr,
-          display: date.toLocaleDateString('pt-BR', { 
-            weekday: 'short', 
-            day: 'numeric', 
-            month: 'short' 
+          display: date.toLocaleDateString('pt-BR', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short'
           }),
-          fullDisplay: date.toLocaleDateString('pt-BR', { 
-            weekday: 'long', 
-            day: 'numeric', 
-            month: 'long' 
+          fullDisplay: date.toLocaleDateString('pt-BR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long'
           })
         })
       }
@@ -97,7 +106,8 @@ export default function SchedulingSystem({
 
   const getAvailableTimes = () => {
     if (!selectedDate) return []
-    return therapist.availability[selectedDate] || []
+    // Available time slots during business hours
+    return ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"]
   }
 
   const handleSchedule = () => {
@@ -123,7 +133,7 @@ export default function SchedulingSystem({
             </Button>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-4xl">{therapist.image}</div>
+            <div className="text-4xl">{therapist.profile_image_url || '👩‍⚕️'}</div>
             <div>
               <CardTitle className="text-2xl">{therapist.name}</CardTitle>
               <CardDescription className="text-lg">{therapist.specialty}</CardDescription>
@@ -135,7 +145,7 @@ export default function SchedulingSystem({
             <h3 className="text-lg font-semibold mb-4">Escolha a duração da sessão:</h3>
             <div className="grid gap-4">
               {sessionDurations.map((duration) => {
-                const cost = duration.minutes * therapist.creditsPerMinute
+                const cost = duration.minutes * (therapist.credits_per_minute || 1.0)
                 const affordable = userCredits >= cost
                 return (
                   <Card 
@@ -300,7 +310,7 @@ export default function SchedulingSystem({
           <div className="space-y-6">
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="flex items-center gap-4 mb-4">
-                <div className="text-4xl">{therapist.image}</div>
+                <div className="text-4xl">{therapist.profile_image_url || '👩‍⚕️'}</div>
                 <div>
                   <h3 className="text-xl font-semibold">{therapist.name}</h3>
                   <p className="text-gray-600">{therapist.specialty}</p>
