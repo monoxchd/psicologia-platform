@@ -9,6 +9,10 @@ import TherapistAdminPage from './pages/TherapistAdminPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
+import BlogPage from './pages/BlogPage.jsx'
+import ArticlePage from './pages/ArticlePage.jsx'
+import BlogAdminPage from './pages/BlogAdminPage.jsx'
+import ArticleEditorPage from './pages/ArticleEditorPage.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -50,5 +54,25 @@ export const router = createBrowserRouter([
   {
     path: "/register",
     element: <RegisterPage />
+  },
+  {
+    path: "/blog",
+    element: <BlogPage />
+  },
+  {
+    path: "/blog/:slug",
+    element: <ArticlePage />
+  },
+  {
+    path: "/blog-admin",
+    element: <BlogAdminPage />
+  },
+  {
+    path: "/blog-admin/new",
+    element: <ArticleEditorPage />
+  },
+  {
+    path: "/blog-admin/:slug/edit",
+    element: <ArticleEditorPage />
   }
 ])
