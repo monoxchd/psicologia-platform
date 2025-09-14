@@ -1,9 +1,25 @@
 const API_BASE_URL = 'http://localhost:3000/api/v1';
 
 class ApiService {
+  setAuthToken(token) {
+    this.authToken = token;
+    if (token) {
+      localStorage.setItem('auth_token', token);
+    } else {
+      localStorage.removeItem('auth_token');
+    }
+  }
+
+  getAuthToken() {
+    if (!this.authToken) {
+      this.authToken = localStorage.getItem('auth_token');
+    }
+    return this.authToken;
+  }
+
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     const config = {
       ...options,
       headers: {
@@ -11,6 +27,11 @@ class ApiService {
         ...options.headers,
       },
     };
+
+    const token = this.getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
     try {
       const response = await fetch(url, config);
