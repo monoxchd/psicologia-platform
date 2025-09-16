@@ -1,5 +1,4 @@
 import apiService from './api.js'
-import urlAuthService from './urlAuthService.js'
 
 class AuthService {
   constructor() {
@@ -84,7 +83,6 @@ class AuthService {
     this.isAuthenticated = false
     localStorage.removeItem('user')
     localStorage.removeItem('auth_token')
-    urlAuthService.clearAuth()
   }
 
   getUser() {
@@ -104,18 +102,9 @@ class AuthService {
   }
 
   isLoggedIn() {
-    const hasUidAuth = urlAuthService.isAuthenticated()
     const token = apiService.getAuthToken()
     const user = this.getUser()
-    return hasUidAuth && (!!(token && user))
-  }
-
-  isUidAuthenticated() {
-    return urlAuthService.isAuthenticated()
-  }
-
-  requiresUidAuth() {
-    return !urlAuthService.isAuthenticated()
+    return !!(token && user)
   }
 
   isTherapist() {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Input } from '@/components/ui/input.jsx'
@@ -23,14 +23,11 @@ import {
 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import apiService from '@/services/api.js'
-import dashboardService from '@/services/dashboardService.js'
 import { toast } from 'sonner'
 
 export default function ProfileManagement({ user, setUser }) {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [userStats, setUserStats] = useState(null)
-  const [statsLoading, setStatsLoading] = useState(true)
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
     defaultValues: {
@@ -43,23 +40,6 @@ export default function ProfileManagement({ user, setUser }) {
       date_of_birth: user?.date_of_birth || '',
     }
   })
-
-  useEffect(() => {
-    const loadUserStats = async () => {
-      try {
-        const stats = await dashboardService.getDashboardStats()
-        setUserStats(dashboardService.formatStatsForUI(stats))
-      } catch (error) {
-        console.error('Failed to load user stats:', error)
-      } finally {
-        setStatsLoading(false)
-      }
-    }
-
-    if (user) {
-      loadUserStats()
-    }
-  }, [user])
 
   const onSubmit = async (data) => {
     setLoading(true)
@@ -362,47 +342,31 @@ export default function ProfileManagement({ user, setUser }) {
               <CardTitle>Estatísticas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {statsLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((_, index) => (
-                    <div key={index}>
-                      <div className="flex items-center justify-between">
-                        <div className="h-4 bg-gray-200 rounded w-24"></div>
-                        <div className="h-4 bg-gray-200 rounded w-8"></div>
-                      </div>
-                      {index < 2 && <Separator className="mt-4" />}
-                    </div>
-                  ))}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Heart className="h-4 w-4 text-red-500 mr-2" />
+                  <span className="text-sm">Sessões Realizadas</span>
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Heart className="h-4 w-4 text-red-500 mr-2" />
-                      <span className="text-sm">Sessões Realizadas</span>
-                    </div>
-                    <span className="font-semibold">{userStats?.totalSessions || 0}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 text-blue-500 mr-2" />
-                      <span className="text-sm">Tempo Total</span>
-                    </div>
-                    <span className="font-semibold">{userStats?.totalHours || 0}h</span>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">Membro desde</span>
-                    </div>
-                    <span className="font-semibold text-sm">
-                      {formatDate(user?.created_at)}
-                    </span>
-                  </div>
-                </>
-              )}
+                <span className="font-semibold">24</span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 text-blue-500 mr-2" />
+                  <span className="text-sm">Tempo Total</span>
+                </div>
+                <span className="font-semibold">18h</span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 text-green-500 mr-2" />
+                  <span className="text-sm">Membro desde</span>
+                </div>
+                <span className="font-semibold text-sm">
+                  {formatDate(user?.created_at)}
+                </span>
+              </div>
             </CardContent>
           </Card>
 
@@ -410,34 +374,20 @@ export default function ProfileManagement({ user, setUser }) {
             <Card>
               <CardHeader>
                 <CardTitle>Preferências</CardTitle>
-                <CardDescription>
-                  Configure suas preferências de terapia
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div className="text-sm">
-                  <span className="text-gray-500">Especialidades de interesse:</span>
-                  <p className="font-medium mt-1">Ansiedade, Depressão</p>
+                  <span className="text-gray-500">Especialidade preferida:</span>
+                  <p className="font-medium mt-1">Terapia Cognitivo-Comportamental</p>
                 </div>
                 <div className="text-sm">
-                  <span className="text-gray-500">Horários preferenciais:</span>
+                  <span className="text-gray-500">Horário preferido:</span>
                   <p className="font-medium mt-1">Tarde (14:00 - 18:00)</p>
                 </div>
                 <div className="text-sm">
                   <span className="text-gray-500">Modalidade:</span>
-                  <p className="font-medium mt-1">Online preferido</p>
+                  <p className="font-medium mt-1">Online e Presencial</p>
                 </div>
-                <div className="text-sm">
-                  <span className="text-gray-500">Notificações:</span>
-                  <p className="font-medium mt-1">Email e SMS ativados</p>
-                </div>
-                <div className="text-sm">
-                  <span className="text-gray-500">Idioma:</span>
-                  <p className="font-medium mt-1">Português</p>
-                </div>
-                <Button variant="outline" size="sm" className="mt-3" onClick={() => toast.info('Configuração de preferências em desenvolvimento')}>
-                  Editar Preferências
-                </Button>
               </CardContent>
             </Card>
           )}
