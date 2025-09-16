@@ -26,56 +26,24 @@ export default function CreditBalance({ user }) {
   const navigate = useNavigate()
   const [credits, setCredits] = useState(null)
   const [transactions, setTransactions] = useState([])
+  const [creditPackages, setCreditPackages] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
   const fetchCreditData = async () => {
     try {
-      const [creditsResponse, transactionsResponse] = await Promise.all([
+      const [creditsResponse, transactionsResponse, packagesResponse] = await Promise.all([
         apiService.get('/credits/balance'),
-        apiService.get('/credits/transactions', { limit: 10 })
+        apiService.get('/credits/transactions', { limit: 10 }),
+        apiService.get('/credits/packages')
       ])
 
       setCredits(creditsResponse.credits)
       setTransactions(transactionsResponse.transactions || [])
+      setCreditPackages(packagesResponse.packages || [])
     } catch (error) {
       console.error('Error fetching credit data:', error)
       toast.error('Erro ao carregar dados dos créditos')
-
-      // Fallback data for development
-      setCredits({
-        current_balance: 120,
-        total_purchased: 300,
-        total_used: 180,
-        expires_at: '2024-07-15',
-        last_purchase: '2024-01-10'
-      })
-      setTransactions([
-        {
-          id: 1,
-          type: 'purchase',
-          amount: 60,
-          description: 'Compra de créditos - Pacote Médio',
-          date: '2024-01-10',
-          status: 'completed'
-        },
-        {
-          id: 2,
-          type: 'usage',
-          amount: -50,
-          description: 'Sessão com Dra. Silva - 50 minutos',
-          date: '2024-01-08',
-          status: 'completed'
-        },
-        {
-          id: 3,
-          type: 'usage',
-          amount: -30,
-          description: 'Sessão com Dr. Santos - 30 minutos',
-          date: '2024-01-05',
-          status: 'completed'
-        },
-      ])
     } finally {
       setLoading(false)
     }
@@ -96,6 +64,17 @@ export default function CreditBalance({ user }) {
     if (!dateString) return 'N/A'
     const date = new Date(dateString)
     return date.toLocaleDateString('pt-BR')
+  }
+
+  const handlePurchaseCredits = async (packageId) => {
+    try {
+      const response = await apiService.post('/credits/purchase', { package_id: packageId })
+      toast.success(response.message || 'Créditos comprados com sucesso!')
+      await fetchCreditData() // Refresh data
+    } catch (error) {
+      console.error('Purchase error:', error)
+      toast.error('Erro ao comprar créditos: ' + (error.message || 'Tente novamente'))
+    }
   }
 
   const getDaysUntilExpiry = (dateString) => {
@@ -123,11 +102,6 @@ export default function CreditBalance({ user }) {
     }
   }
 
-  const creditPackages = [
-    { credits: 30, price: 60, popular: false, description: "Ideal para experimentar" },
-    { credits: 60, price: 100, popular: true, description: "Mais popular - melhor valor" },
-    { credits: 120, price: 180, popular: false, description: "Para cuidado contínuo" }
-  ]
 
   if (loading) {
     return (
@@ -147,8 +121,8 @@ export default function CreditBalance({ user }) {
     )
   }
 
-  const daysUntilExpiry = getDaysUntilExpiry(credits?.expires_at)
-  const usagePercentage = credits ? ((credits.total_used / credits.total_purchased) * 100) : 0
+  const daysUntilExpiry = credits?.days_until_expiry || getDaysUntilExpiry(credits?.expires_at)
+  const usagePercentage = credits?.usage_percentage || (credits ? ((credits.total_used / credits.total_purchased) * 100) : 0)
 
   return (
     <div className="space-y-6">
@@ -164,7 +138,7 @@ export default function CreditBalance({ user }) {
               {credits?.current_balance || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              ~{Math.floor((credits?.current_balance || 0) / 50)}-{Math.floor((credits?.current_balance || 0) / 30)} sessões restantes
+              ~{credits?.sessions_remaining_estimate || Math.floor((credits?.current_balance || 0) / 50)} sessões restantes
             </p>
             {daysUntilExpiry !== null && (
               <div className="mt-2">
@@ -235,32 +209,42 @@ export default function CreditBalance({ user }) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {creditPackages.map((pkg, index) => (
-              <Card key={index} className={`cursor-pointer transition-all hover:scale-105 ${pkg.popular ? 'ring-2 ring-blue-500' : ''}`}>
-                {pkg.popular && (
-                  <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-blue-600">
-                    Recomendado
-                  </Badge>
-                )}
-                <CardHeader className="text-center relative">
-                  <CardTitle className="text-xl">{pkg.credits} Créditos</CardTitle>
-                  <CardDescription className="text-xs">{pkg.description}</CardDescription>
-                  <div className="text-3xl font-bold text-blue-600">R${pkg.price}</div>
-                  <div className="text-xs text-gray-500">R${(pkg.price/pkg.credits).toFixed(2)} por crédito</div>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    className="w-full"
-                    onClick={() => navigate('/credits')}
-                    variant={pkg.popular ? "default" : "outline"}
-                    size="sm"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Comprar
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+            {creditPackages.length > 0 ? (
+              creditPackages.map((pkg, index) => (
+                <Card key={pkg.id || index} className={`cursor-pointer transition-all hover:scale-105 ${pkg.popular ? 'ring-2 ring-blue-500' : ''}`}>
+                  {pkg.popular && (
+                    <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-blue-600">
+                      Recomendado
+                    </Badge>
+                  )}
+                  <CardHeader className="text-center relative">
+                    <CardTitle className="text-xl">{pkg.credits} Créditos</CardTitle>
+                    <CardDescription className="text-xs">{pkg.description}</CardDescription>
+                    <div className="text-3xl font-bold text-blue-600">{pkg.formatted_price || `R$${pkg.price}`}</div>
+                    <div className="text-xs text-gray-500">R${pkg.price_per_credit?.toFixed(2) || (pkg.price/pkg.credits).toFixed(2)} por crédito</div>
+                    {pkg.sessions_estimate && (
+                      <div className="text-xs text-gray-400">~{pkg.sessions_estimate} sessões</div>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      className="w-full"
+                      onClick={() => handlePurchaseCredits(pkg.id)}
+                      variant={pkg.popular ? "default" : "outline"}
+                      size="sm"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Comprar
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-8">
+                <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Nenhum pacote disponível no momento</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -327,7 +311,7 @@ export default function CreditBalance({ user }) {
       </Card>
 
       {/* Low Credit Warning */}
-      {credits && credits.current_balance <= 30 && (
+      {credits?.low_balance && (
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-4">
@@ -343,7 +327,14 @@ export default function CreditBalance({ user }) {
                 <Button
                   size="sm"
                   className="mt-3"
-                  onClick={() => navigate('/credits')}
+                  onClick={() => {
+                    if (creditPackages.length > 0) {
+                      const popularPackage = creditPackages.find(p => p.popular) || creditPackages[0]
+                      handlePurchaseCredits(popularPackage.id)
+                    } else {
+                      navigate('/credits')
+                    }
+                  }}
                 >
                   Comprar Créditos
                 </Button>

@@ -1,4 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
+import AuthGuard from './components/auth/AuthGuard.jsx'
+import AccessPage from './pages/AccessPage.jsx'
 import LandingPage from './pages/LandingPage.jsx'
 import FormPage from './pages/FormPage.jsx'
 import CreditsPage from './pages/CreditsPage.jsx'
@@ -16,63 +18,71 @@ import ArticleEditorPage from './pages/ArticleEditorPage.jsx'
 
 export const router = createBrowserRouter([
   {
+    path: "/access",
+    element: <AccessPage />
+  },
+  {
     path: "/",
-    element: <LandingPage />
+    element: <AuthGuard><DashboardPage /></AuthGuard>
   },
   {
     path: "/dashboard",
-    element: <DashboardPage />
+    element: <AuthGuard><DashboardPage /></AuthGuard>
+  },
+  {
+    path: "/landing",
+    element: <AuthGuard><LandingPage /></AuthGuard>
   },
   {
     path: "/form",
-    element: <FormPage />
+    element: <AuthGuard><FormPage /></AuthGuard>
   },
   {
     path: "/credits",
-    element: <CreditsPage />
+    element: <AuthGuard><CreditsPage /></AuthGuard>
   },
   {
     path: "/matching",
-    element: <MatchingPage />
+    element: <AuthGuard><MatchingPage /></AuthGuard>
   },
   {
     path: "/scheduling",
-    element: <SchedulingPage />
+    element: <AuthGuard><SchedulingPage /></AuthGuard>
   },
   {
     path: "/confirmation",
-    element: <ConfirmationPage />
+    element: <AuthGuard><ConfirmationPage /></AuthGuard>
   },
   {
     path: "/therapist-admin",
-    element: <TherapistAdminPage />
+    element: <AuthGuard><TherapistAdminPage /></AuthGuard>
   },
   {
     path: "/login",
-    element: <LoginPage />
+    element: <AuthGuard><LoginPage /></AuthGuard>
   },
   {
     path: "/register",
-    element: <RegisterPage />
+    element: <AuthGuard><RegisterPage /></AuthGuard>
   },
   {
     path: "/blog",
-    element: <BlogPage />
+    element: <AuthGuard><BlogPage /></AuthGuard>
   },
   {
     path: "/blog/:slug",
-    element: <ArticlePage />
+    element: <AuthGuard><ArticlePage /></AuthGuard>
   },
   {
     path: "/blog-admin",
-    element: <BlogAdminPage />
+    element: <AuthGuard><BlogAdminPage /></AuthGuard>
   },
   {
     path: "/blog-admin/new",
-    element: <ArticleEditorPage />
+    element: <AuthGuard><ArticleEditorPage /></AuthGuard>
   },
   {
     path: "/blog-admin/:slug/edit",
-    element: <ArticleEditorPage />
+    element: <AuthGuard><ArticleEditorPage /></AuthGuard>
   }
 ])
