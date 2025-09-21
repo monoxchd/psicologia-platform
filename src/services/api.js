@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:3000/api/v1';
+const API_BASE_URL = import.meta.env.MODE === 'production'
+  ? 'https://terapiaconecta.com.br/api/v1'
+  : 'http://localhost:3000/api/v1';
 
 class ApiService {
   setAuthToken(token) {
