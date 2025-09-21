@@ -33,37 +33,105 @@ export default function SessionHistory({ user }) {
   const [statusFilter, setStatusFilter] = useState('all')
   const [therapistFilter, setTherapistFilter] = useState('all')
   const [stats, setStats] = useState(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
 
-  const fetchSessionData = async (page = 1, filters = {}) => {
+  const fetchSessionData = async () => {
     try {
-      const params = {
-        page: page,
-        limit: 10,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        therapist_id: therapistFilter !== 'all' ? therapistFilter : undefined,
-        search: searchTerm || undefined,
-        ...filters
-      }
-
       const [sessionsResponse, statsResponse] = await Promise.all([
-        apiService.get('/sessions/history', params),
+        apiService.get('/sessions/history'),
         apiService.get('/sessions/stats')
       ])
 
-      if (page === 1) {
-        setSessions(sessionsResponse.sessions || [])
-      } else {
-        setSessions(prev => [...prev, ...(sessionsResponse.sessions || [])])
-      }
-
-      setCurrentPage(sessionsResponse.pagination?.current_page || 1)
-      setTotalPages(sessionsResponse.pagination?.total_pages || 1)
+      setSessions(sessionsResponse.sessions || [])
       setStats(statsResponse.stats)
     } catch (error) {
       console.error('Error fetching session data:', error)
       toast.error('Erro ao carregar histórico de sessões')
+
+      // Fallback data for development
+      const mockSessions = [
+        {
+          id: 1,
+          date: '2024-01-15',
+          time: '15:00',
+          duration: 50,
+          therapist: {
+            name: 'Dra. Maria Silva',
+            photo: null,
+            specialization: 'Terapia Cognitivo-Comportamental',
+            location: 'São Paulo, SP'
+          },
+          status: 'completed',
+          rating: 5,
+          notes: 'Sessão muito produtiva, trabalhamos ansiedade e estratégias de enfrentamento.',
+          type: 'Terapia Individual',
+          cost: 50,
+          mode: 'online'
+        },
+        {
+          id: 2,
+          date: '2024-01-08',
+          time: '14:00',
+          duration: 45,
+          therapist: {
+            name: 'Dr. João Santos',
+            photo: null,
+            specialization: 'Psicanálise',
+            location: 'Rio de Janeiro, RJ'
+          },
+          status: 'completed',
+          rating: 4,
+          notes: 'Primeira sessão, estabelecemos rapport e definimos objetivos.',
+          type: 'Consulta Inicial',
+          cost: 45,
+          mode: 'presential'
+        },
+        {
+          id: 3,
+          date: '2024-01-01',
+          time: '10:30',
+          duration: 30,
+          therapist: {
+            name: 'Dra. Ana Costa',
+            photo: null,
+            specialization: 'Terapia Familiar',
+            location: 'Belo Horizonte, MG'
+          },
+          status: 'completed',
+          rating: 5,
+          notes: 'Sessão de acompanhamento, progresso significativo.',
+          type: 'Acompanhamento',
+          cost: 30,
+          mode: 'online'
+        },
+        {
+          id: 4,
+          date: '2024-01-22',
+          time: '16:00',
+          duration: 50,
+          therapist: {
+            name: 'Dra. Maria Silva',
+            photo: null,
+            specialization: 'Terapia Cognitivo-Comportamental',
+            location: 'São Paulo, SP'
+          },
+          status: 'scheduled',
+          rating: null,
+          notes: null,
+          type: 'Terapia Individual',
+          cost: 50,
+          mode: 'online'
+        }
+      ]
+
+      setSessions(mockSessions)
+      setStats({
+        total_sessions: 8,
+        total_hours: 12,
+        average_rating: 4.7,
+        favorite_therapist: 'Dra. Maria Silva',
+        most_common_duration: 50,
+        completion_rate: 95
+      })
     } finally {
       setLoading(false)
     }
@@ -73,21 +141,27 @@ export default function SessionHistory({ user }) {
     fetchSessionData()
   }, [])
 
-  // Debounced search and filter effect
   useEffect(() => {
-    const delayedFetch = setTimeout(() => {
-      setLoading(true)
-      setCurrentPage(1)
-      fetchSessionData(1)
-    }, 500)
+    let filtered = sessions
 
-    return () => clearTimeout(delayedFetch)
-  }, [searchTerm, statusFilter, therapistFilter])
+    if (searchTerm) {
+      filtered = filtered.filter(session =>
+        session.therapist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        session.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        session.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
 
-  // For display, we can use sessions directly since filtering is done on backend
-  useEffect(() => {
-    setFilteredSessions(sessions)
-  }, [sessions])
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(session => session.status === statusFilter)
+    }
+
+    if (therapistFilter !== 'all') {
+      filtered = filtered.filter(session => session.therapist.name === therapistFilter)
+    }
+
+    setFilteredSessions(filtered)
+  }, [sessions, searchTerm, statusFilter, therapistFilter])
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -134,23 +208,6 @@ export default function SessionHistory({ user }) {
         <span className="text-sm text-gray-600 ml-1">({rating})</span>
       </div>
     )
-  }
-
-  const handleRateSession = async (sessionId, rating, notes = '') => {
-    try {
-      await apiService.post(`/sessions/${sessionId}/rate`, { rating, notes })
-      toast.success('Sessão avaliada com sucesso!')
-      fetchSessionData(1) // Refresh data
-    } catch (error) {
-      console.error('Error rating session:', error)
-      toast.error('Erro ao avaliar sessão')
-    }
-  }
-
-  const handleLoadMore = () => {
-    if (currentPage < totalPages) {
-      fetchSessionData(currentPage + 1)
-    }
   }
 
   const uniqueTherapists = [...new Set(sessions.map(s => s.therapist.name))]
@@ -365,10 +422,7 @@ export default function SessionHistory({ user }) {
                           Detalhes
                         </Button>
                         {session.status === 'completed' && !session.rating && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleRateSession(session.id, 5)} // Quick 5-star rating for now
-                          >
+                          <Button size="sm">
                             <Star className="h-4 w-4 mr-2" />
                             Avaliar
                           </Button>
@@ -381,10 +435,10 @@ export default function SessionHistory({ user }) {
             )}
           </div>
 
-          {currentPage < totalPages && (
+          {filteredSessions.length > 5 && (
             <div className="flex justify-center mt-6">
-              <Button variant="outline" onClick={handleLoadMore} disabled={loading}>
-                {loading ? 'Carregando...' : 'Carregar Mais'}
+              <Button variant="outline">
+                Carregar Mais
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </div>

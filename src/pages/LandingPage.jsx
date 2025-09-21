@@ -25,13 +25,21 @@ export default function LandingPage() {
               <Heart className="h-8 w-8 text-blue-600" />
               <span className="text-2xl font-bold text-gray-900">Trogon</span>
             </div>
-            <div className="hidden md:flex space-x-6">
+            <div className="hidden md:flex space-x-6 items-center">
               <a href="#como-funciona" className="text-gray-600 hover:text-blue-600">Como Funciona</a>
               <a href="#terapeutas" className="text-gray-600 hover:text-blue-600">Terapeutas</a>
               <a href="#psicologos" className="text-gray-600 hover:text-blue-600">Para Psicólogos</a>
               <a href="#precos" className="text-gray-600 hover:text-blue-600">Preços</a>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/login')}
+                className="ml-4"
+              >
+                Entrar
+              </Button>
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => navigate('/therapist-admin')}
                 className="text-gray-600 hover:text-blue-600"

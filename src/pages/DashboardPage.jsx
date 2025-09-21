@@ -22,9 +22,6 @@ import {
   Wallet
 } from 'lucide-react'
 import authService from '@/services/authService.js'
-import urlAuthService from '@/services/urlAuthService.js'
-import dashboardService from '@/services/dashboardService.js'
-import apiService from '@/services/api.js'
 import ProfileManagement from '@/components/dashboard/ProfileManagement.jsx'
 import CreditBalance from '@/components/dashboard/CreditBalance.jsx'
 import SessionHistory from '@/components/dashboard/SessionHistory.jsx'
@@ -36,86 +33,21 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null)
   const [activeTab, setActiveTab] = useState('overview')
   const [loading, setLoading] = useState(true)
-  const [dashboardStats, setDashboardStats] = useState(null)
-  const [recentSessions, setRecentSessions] = useState([])
-  const [upcomingAppointments, setUpcomingAppointments] = useState([])
-  const [dataLoading, setDataLoading] = useState(false)
-  const [dataError, setDataError] = useState(null)
-
-  const loadDashboardData = async () => {
-    setDataLoading(true)
-    setDataError(null)
-    try {
-      const [stats, sessions, appointments] = await Promise.all([
-        dashboardService.getDashboardStats(),
-        dashboardService.getRecentSessions(3),
-        dashboardService.getUpcomingAppointments()
-      ])
-
-      setDashboardStats(dashboardService.formatStatsForUI(stats))
-      setRecentSessions(dashboardService.formatSessionsForUI(sessions))
-      setUpcomingAppointments(dashboardService.formatAppointmentsForUI(appointments))
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error)
-      setDataError('Erro ao carregar dados do dashboard. Tente novamente.')
-      // Set fallback data for better UX
-      setDashboardStats({
-        creditsRemaining: 0,
-        totalSessions: 0,
-        totalHours: 0,
-        sessionsThisMonth: 0,
-        averageSessionDuration: 0,
-        estimatedSessionsRemaining: 0
-      })
-    } finally {
-      setDataLoading(false)
-    }
-  }
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Check if user has UID authentication
-      if (!urlAuthService.isAuthenticated()) {
-        navigate('/access')
+      if (!authService.isLoggedIn()) {
+        navigate('/login')
         return
       }
 
-      // For UID-only access, try to get a JWT token first
       const currentUser = await authService.getCurrentUser()
       if (currentUser) {
         setUser(currentUser)
       } else {
-        // Try to convert UID to JWT token
-        const uid = urlAuthService.getValidatedUid()
-        try {
-          const response = await apiService.post('/auth/uid-to-jwt', { uid })
-          if (response.token && response.user) {
-            // Set the JWT token for future API calls
-            apiService.setAuthToken(response.token)
-            authService.user = response.user
-            authService.isAuthenticated = true
-            localStorage.setItem('user', JSON.stringify(response.user))
-            setUser(response.user)
-          } else {
-            throw new Error('Failed to get JWT token')
-          }
-        } catch (error) {
-          console.error('UID to JWT conversion failed:', error)
-          // Fallback to basic user object (but API calls will still fail)
-          setUser({
-            id: `uid-${uid}`,
-            name: 'UID User',
-            email: 'uid@access.com',
-            user_type: 'client'
-          })
-        }
+        navigate('/login')
       }
       setLoading(false)
-
-      // Load dashboard data after user is set and we have proper auth
-      if (currentUser || apiService.getAuthToken()) {
-        loadDashboardData()
-      }
     }
 
     checkAuth()
@@ -123,8 +55,7 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     authService.logout()
-    urlAuthService.clearAuth()
-    navigate('/access')
+    navigate('/login')
   }
 
   if (loading) {
@@ -178,25 +109,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Error Banner */}
-        {dataError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="text-red-600 text-sm font-medium">{dataError}</div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadDashboardData}
-                disabled={dataLoading}
-              >
-                Tentar novamente
-              </Button>
-            </div>
-          </div>
-        )}
-
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Navigation */}
           <TabsList className="grid w-full grid-cols-6 lg:w-fit lg:grid-cols-6">
@@ -223,11 +135,9 @@ export default function DashboardPage() {
                   <CreditCard className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {dataLoading ? '...' : dashboardStats?.creditsRemaining || 0}
-                  </div>
+                  <div className="text-2xl font-bold text-blue-600">120</div>
                   <p className="text-xs text-muted-foreground">
-                    ~{dashboardStats?.estimatedSessionsRemaining || 0} sessões restantes
+                    ~2-4 sessões restantes
                   </p>
                 </CardContent>
               </Card>
@@ -240,11 +150,9 @@ export default function DashboardPage() {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {dataLoading ? '...' : upcomingAppointments[0]?.date || 'Nenhuma'}
-                  </div>
+                  <div className="text-2xl font-bold">Hoje</div>
                   <p className="text-xs text-muted-foreground">
-                    {upcomingAppointments[0]?.therapist ? `com ${upcomingAppointments[0].therapist}` : 'Agende uma sessão'}
+                    15:00 com Dra. Silva
                   </p>
                 </CardContent>
               </Card>
@@ -257,11 +165,9 @@ export default function DashboardPage() {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {dataLoading ? '...' : dashboardStats?.totalSessions || 0}
-                  </div>
+                  <div className="text-2xl font-bold">8</div>
                   <p className="text-xs text-muted-foreground">
-                    +{dashboardStats?.sessionsThisMonth || 0} este mês
+                    +2 este mês
                   </p>
                 </CardContent>
               </Card>
@@ -274,11 +180,9 @@ export default function DashboardPage() {
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {dataLoading ? '...' : `${dashboardStats?.totalHours || 0}h`}
-                  </div>
+                  <div className="text-2xl font-bold">12h</div>
                   <p className="text-xs text-muted-foreground">
-                    {dashboardStats?.averageSessionDuration || 0}min média por sessão
+                    30min média por sessão
                   </p>
                 </CardContent>
               </Card>
@@ -324,33 +228,19 @@ export default function DashboardPage() {
                   <CardTitle>Sessões Recentes</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {dataLoading ? (
-                    <div className="space-y-4">
-                      {[1, 2, 3].map((_, index) => (
-                        <div key={index} className="flex items-center justify-between py-2">
-                          <div>
-                            <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
-                            <div className="h-3 bg-gray-200 rounded w-32"></div>
-                          </div>
-                          <div className="h-6 bg-gray-200 rounded w-16"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : recentSessions.length > 0 ? (
-                    recentSessions.map((session, index) => (
-                      <div key={session.id || index} className="flex items-center justify-between py-2">
-                        <div>
-                          <div className="font-medium">{session.therapist}</div>
-                          <div className="text-sm text-gray-500">{session.date} • {session.duration}</div>
-                        </div>
-                        <Badge variant="secondary">{session.status}</Badge>
+                  {[
+                    { date: '2024-01-15', therapist: 'Dra. Silva', duration: '50 min', status: 'Concluída' },
+                    { date: '2024-01-08', therapist: 'Dr. Santos', duration: '45 min', status: 'Concluída' },
+                    { date: '2024-01-01', therapist: 'Dra. Silva', duration: '30 min', status: 'Concluída' },
+                  ].map((session, index) => (
+                    <div key={index} className="flex items-center justify-between py-2">
+                      <div>
+                        <div className="font-medium">{session.therapist}</div>
+                        <div className="text-sm text-gray-500">{session.date} • {session.duration}</div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-gray-500">
-                      Nenhuma sessão realizada ainda
+                      <Badge variant="secondary">{session.status}</Badge>
                     </div>
-                  )}
+                  ))}
                 </CardContent>
               </Card>
 
@@ -359,35 +249,19 @@ export default function DashboardPage() {
                   <CardTitle>Próximos Agendamentos</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {dataLoading ? (
-                    <div className="space-y-4">
-                      {[1, 2, 3].map((_, index) => (
-                        <div key={index} className="flex items-center justify-between py-2">
-                          <div>
-                            <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
-                            <div className="h-3 bg-gray-200 rounded w-32"></div>
-                          </div>
-                          <div className="h-6 bg-gray-200 rounded w-20"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : upcomingAppointments.length > 0 ? (
-                    upcomingAppointments.slice(0, 3).map((appointment, index) => (
-                      <div key={appointment.id || index} className="flex items-center justify-between py-2">
-                        <div>
-                          <div className="font-medium">{appointment.therapist}</div>
-                          <div className="text-sm text-gray-500">{appointment.date}</div>
-                        </div>
-                        <Badge variant={appointment.startingSoon ? "default" : "outline"}>
-                          {appointment.type}
-                        </Badge>
+                  {[
+                    { date: 'Hoje, 15:00', therapist: 'Dra. Silva', type: 'Terapia Individual' },
+                    { date: 'Quinta, 10:00', therapist: 'Dr. Santos', type: 'Acompanhamento' },
+                    { date: 'Próx. Seg, 14:30', therapist: 'Dra. Silva', type: 'Terapia Individual' },
+                  ].map((appointment, index) => (
+                    <div key={index} className="flex items-center justify-between py-2">
+                      <div>
+                        <div className="font-medium">{appointment.therapist}</div>
+                        <div className="text-sm text-gray-500">{appointment.date}</div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-gray-500">
-                      Nenhum agendamento próximo
+                      <Badge variant="outline">{appointment.type}</Badge>
                     </div>
-                  )}
+                  ))}
                 </CardContent>
               </Card>
             </div>

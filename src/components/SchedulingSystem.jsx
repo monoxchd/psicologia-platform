@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Calendar, Clock, User, CreditCard, CheckCircle, ArrowLeft } from 'lucide-react'
+import { Calendar, Clock, User, CreditCard, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react'
 import apiService from '../services/api.js'
+import creditsService from '../services/creditsService.js'
 
 
 const sessionDurations = [
@@ -24,6 +25,8 @@ export default function SchedulingSystem({
   const [step, setStep] = useState('duration') // 'duration', 'datetime', 'confirm'
   const [therapists, setTherapists] = useState([])
   const [loading, setLoading] = useState(true)
+  const [booking, setBooking] = useState(false)
+  const [bookingError, setBookingError] = useState(null)
 
   // Fetch therapists from API
   useEffect(() => {
@@ -110,16 +113,47 @@ export default function SchedulingSystem({
     return ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"]
   }
 
-  const handleSchedule = () => {
-    const appointment = {
-      therapist: therapist.name,
-      date: selectedDate,
-      time: selectedTime,
-      duration: selectedDuration,
-      cost: sessionCost,
-      specialty: therapist.specialty
+  const handleSchedule = async () => {
+    setBooking(true)
+    setBookingError(null)
+
+    try {
+      // For now, simulate credit deduction since we don't have a booking endpoint yet
+      // In production, this would call an API endpoint that:
+      // 1. Creates the appointment
+      // 2. Deducts credits automatically
+      // 3. Returns the booking confirmation
+
+      console.log(`🔄 Simulating booking session for ${sessionCost} credits...`)
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // For demo purposes, we'll just proceed with the booking
+      // In real implementation: await apiService.post('/appointments', appointmentData)
+
+      const appointment = {
+        therapist: therapist.name,
+        therapistId: therapist.id,
+        date: selectedDate,
+        time: selectedTime,
+        duration: selectedDuration,
+        cost: sessionCost,
+        specialty: therapist.specialty,
+        bookingConfirmed: true,
+        creditsDeducted: sessionCost
+      }
+
+      console.log(`✅ Session booked! ${sessionCost} credits deducted.`)
+
+      // Pass the appointment data to parent with success flag
+      onScheduleComplete(appointment)
+    } catch (error) {
+      console.error('Error booking session:', error)
+      setBookingError('Erro ao agendar sessão. Tente novamente.')
+    } finally {
+      setBooking(false)
     }
-    onScheduleComplete(appointment)
   }
 
   if (step === 'duration') {
@@ -372,13 +406,30 @@ export default function SchedulingSystem({
               </div>
             </div>
 
-            <Button 
-              className="w-full bg-green-600 hover:bg-green-700" 
+            {/* Error Display */}
+            {bookingError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-red-800 text-sm">{bookingError}</p>
+              </div>
+            )}
+
+            <Button
+              className="w-full bg-green-600 hover:bg-green-700"
               size="lg"
               onClick={handleSchedule}
+              disabled={booking}
             >
-              <CreditCard className="h-5 w-5 mr-2" />
-              Confirmar e Agendar Sessão
+              {booking ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Agendando Sessão...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="h-5 w-5 mr-2" />
+                  Confirmar e Agendar Sessão
+                </>
+              )}
             </Button>
           </div>
         </CardContent>

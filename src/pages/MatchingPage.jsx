@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Star, CheckCircle, Calendar } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import therapistService from '../services/therapistService'
+import creditsService from '../services/creditsService.js'
 
 export default function MatchingPage() {
   const navigate = useNavigate()
@@ -13,10 +14,23 @@ export default function MatchingPage() {
   const [therapists, setTherapists] = useState([])
   const [loadingTherapists, setLoadingTherapists] = useState(false)
   const [therapistError, setTherapistError] = useState(null)
+  const [userCredits, setUserCredits] = useState(0)
 
   useEffect(() => {
     fetchTherapists()
+    fetchUserCredits()
   }, [])
+
+  const fetchUserCredits = async () => {
+    try {
+      const response = await creditsService.getBalance()
+      if (response.success) {
+        setUserCredits(response.data.current_balance || 0)
+      }
+    } catch (error) {
+      console.error('Failed to load user credits:', error)
+    }
+  }
 
   const fetchTherapists = async () => {
     setLoadingTherapists(true)
@@ -66,12 +80,15 @@ export default function MatchingPage() {
   }
 
   const handleTherapistSelection = (therapistId) => {
-    navigate('/scheduling', { 
-      state: { 
-        formData, 
-        selectedCredits, 
-        selectedTherapist: therapistId 
-      } 
+    // Find the selected therapist
+    const selectedTherapist = therapists.find(t => t.id === therapistId)
+
+    navigate('/scheduling', {
+      state: {
+        formData,
+        selectedCredits: selectedCredits || userCredits, // Use either passed credits or fetched credits
+        selectedTherapist: selectedTherapist || therapistId
+      }
     })
   }
 
@@ -84,6 +101,13 @@ export default function MatchingPage() {
             <CardDescription className="text-lg">
               Baseado no seu perfil, encontramos estes profissionais ideais
             </CardDescription>
+            {userCredits > 0 && (
+              <div className="mt-4 bg-blue-50 p-4 rounded-lg">
+                <div className="text-sm text-blue-800">
+                  Seus créditos disponíveis: <span className="font-bold text-blue-600">{userCredits} créditos</span>
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             {therapistError && (

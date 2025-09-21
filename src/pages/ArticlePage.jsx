@@ -3,20 +3,42 @@ import { useParams, Link } from 'react-router-dom'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
-import { Calendar, Clock, Eye, ArrowLeft, Share2 } from 'lucide-react'
+import { Calendar, Clock, Eye, ArrowLeft, Share2, CheckCircle, Loader2 } from 'lucide-react'
 import { blogService } from '../services/blogService'
 import SEOHead from '../components/SEOHead'
 import StructuredData from '../components/StructuredData'
+import creditsService from '../services/creditsService.js'
+import authService from '../services/authService.js'
+import CreditEarnedPopup from '../components/CreditEarnedPopup.jsx'
 
 const ArticlePage = () => {
   const { slug } = useParams()
   const [article, setArticle] = useState(null)
   const [relatedArticles, setRelatedArticles] = useState([])
   const [loading, setLoading] = useState(true)
+  const [hasReadArticle, setHasReadArticle] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [showCreditPopup, setShowCreditPopup] = useState(false)
+  const [userCredits, setUserCredits] = useState(0)
 
   useEffect(() => {
     loadArticle()
+    loadUserData()
   }, [slug])
+
+  const loadUserData = async () => {
+    try {
+      if (authService.isLoggedIn()) {
+        // Load user's current credit balance
+        const balanceResponse = await creditsService.getBalance()
+        if (balanceResponse.success) {
+          setUserCredits(balanceResponse.data.current_balance || 0)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error)
+    }
+  }
 
   const loadArticle = async () => {
     try {
@@ -50,6 +72,37 @@ const ArticlePage = () => {
       } catch (error) {
         console.error('Error copying to clipboard:', error)
       }
+    }
+  }
+
+  const handleFinishReading = async () => {
+    if (hasReadArticle || isProcessing || !authService.isLoggedIn()) return
+
+    setIsProcessing(true)
+
+    try {
+      console.log(`🔄 Earning credits for article: ${article.id}`)
+
+      // Call the REAL backend to earn credits
+      const result = await creditsService.earnCreditsForReading(article.id)
+
+      if (result.success) {
+        setHasReadArticle(true)
+        setUserCredits(result.data.new_balance)
+        setShowCreditPopup(true)
+        console.log(`✅ Credits earned! New balance: ${result.data.new_balance}`)
+      } else if (result.already_earned) {
+        setHasReadArticle(true)
+        console.log('Credits already earned for this article')
+      } else {
+        console.error('Error earning credits:', result.error)
+        alert('Erro ao ganhar créditos. Tente novamente.')
+      }
+    } catch (error) {
+      console.error('Error marking article as read:', error)
+      alert('Erro ao processar leitura. Tente novamente.')
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -200,6 +253,48 @@ const ArticlePage = () => {
                   dangerouslySetInnerHTML={{ __html: article.content }}
                 />
 
+                {/* Credit Earning Section */}
+                {authService.isLoggedIn() && (
+                  <div className="mt-8 pt-6 border-t">
+                    {!hasReadArticle ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                        <h3 className="text-lg font-semibold text-green-800 mb-2">
+                          🎯 Complete a leitura para ganhar créditos!
+                        </h3>
+                        <p className="text-green-700 mb-4">
+                          Ganhe <strong>+5 créditos</strong> marcando este artigo como lido
+                        </p>
+                        <Button
+                          onClick={handleFinishReading}
+                          disabled={isProcessing}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Processando...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Marcar como Lido
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                        <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                          ✅ Artigo concluído!
+                        </h3>
+                        <p className="text-blue-700">
+                          +5 créditos foram adicionados à sua conta
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Tags */}
                 {article.tags && article.tags.length > 0 && (
                   <div className="mt-8 pt-8 border-t">
@@ -260,6 +355,15 @@ const ArticlePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Credit Earned Popup */}
+      <CreditEarnedPopup
+        isOpen={showCreditPopup}
+        onClose={() => setShowCreditPopup(false)}
+        creditsEarned={5}
+        activity="lendo um artigo"
+        totalCredits={userCredits}
+      />
     </div>
   )
 }

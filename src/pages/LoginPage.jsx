@@ -16,8 +16,8 @@ export default function LoginPage() {
       const response = await authService.login(values.email, values.password)
 
       if (response.success) {
-        // Redirect to dashboard for both user types
-        navigate('/dashboard')
+        // Redirect to simplified dashboard for gamified journey
+        navigate('/simple-dashboard')
       } else {
         setError(response.error || "Login failed. Please try again.")
       }
