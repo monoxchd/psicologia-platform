@@ -68,7 +68,7 @@ export default function LandingPage() {
                 <Button 
                   size="lg" 
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg"
-                  onClick={() => navigate('/form')}
+                  onClick={() => navigate('/login')}
                 >
                   Começar Agora
                   <ArrowRight className="ml-2 h-5 w-5" />
