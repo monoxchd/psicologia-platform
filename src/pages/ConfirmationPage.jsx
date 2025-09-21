@@ -69,7 +69,7 @@ export default function ConfirmationPage() {
                     Agendar Outra Sessão
                   </Button>
                   <Button 
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/simple-dashboard')}
                     className="flex-1 bg-blue-600 hover:bg-blue-700"
                   >
                     Voltar ao Início
