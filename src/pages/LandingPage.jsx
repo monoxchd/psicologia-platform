@@ -23,7 +23,7 @@ export default function LandingPage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2">
               <Heart className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">Trogon</span>
+              <span className="text-2xl font-bold text-gray-900">TerapiaConecta.com.br</span>
             </div>
             <div className="hidden md:flex space-x-6 items-center">
               <a href="#como-funciona" className="text-gray-600 hover:text-blue-600">Como Funciona</a>
