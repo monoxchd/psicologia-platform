@@ -11,6 +11,8 @@ import RegisterPage from './pages/RegisterPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import SimpleDashboardPage from './pages/SimpleDashboardPage.jsx'
 import DemoJourneyPage from './pages/DemoJourneyPage.jsx'
+import SchedulingJourneyPage from './pages/SchedulingJourneyPage.jsx'
+import GoogleCallbackPage from './pages/GoogleCallbackPage.jsx'
 import BlogPage from './pages/BlogPage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
 import BlogAdminPage from './pages/BlogAdminPage.jsx'
@@ -32,6 +34,14 @@ export const router = createBrowserRouter([
   {
     path: "/demo-journey",
     element: <DemoJourneyPage />
+  },
+  {
+    path: "/scheduling-journey",
+    element: <SchedulingJourneyPage />
+  },
+  {
+    path: "/auth/google/callback",
+    element: <GoogleCallbackPage />
   },
   {
     path: "/form",
