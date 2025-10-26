@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { ArrowLeft, Save, Eye } from 'lucide-react'
 import { blogService } from '../services/blogService'
+import EditorJSComponent from '../components/EditorJS'
 
 const ArticleEditorPage = () => {
   const { slug } = useParams()
   const navigate = useNavigate()
   const isEditing = Boolean(slug)
+  const editorRef = useRef(null)
 
   const [article, setArticle] = useState({
     title: '',
@@ -25,6 +27,8 @@ const ArticleEditorPage = () => {
     tag_ids: []
   })
 
+  const [editorData, setEditorData] = useState({ blocks: [] }) // Initialize with empty EditorJS structure
+  const [editorKey, setEditorKey] = useState(0) // Key to force re-render EditorJS when loading new article
   const [categories, setCategories] = useState([])
   const [tags, setTags] = useState([])
   const [loading, setLoading] = useState(false)
@@ -55,6 +59,19 @@ const ArticleEditorPage = () => {
       setLoading(true)
       const response = await blogService.getArticle(slug)
       const articleData = response.article
+
+      // Parse EditorJS JSON content
+      let parsedContent = null
+      try {
+        parsedContent = JSON.parse(articleData.content)
+      } catch (e) {
+        console.error('Error parsing article content:', e)
+        parsedContent = { blocks: [] }
+      }
+
+      setEditorData(parsedContent)
+      setEditorKey(prev => prev + 1) // Force re-render of EditorJS with new data
+
       setArticle({
         title: articleData.title,
         content: articleData.content,
@@ -77,8 +94,23 @@ const ArticleEditorPage = () => {
   const handleSave = async (status = article.status) => {
     try {
       setSaving(true)
-      const token = localStorage.getItem('authToken')
-      const articleData = { ...article, status }
+      const token = localStorage.getItem('auth_token')
+
+      // Get current content from EditorJS
+      const editorContent = await editorRef.current?.save()
+      if (!editorContent) {
+        alert('Erro ao obter conteúdo do editor')
+        return
+      }
+
+      // Convert EditorJS data to JSON string
+      const contentJSON = JSON.stringify(editorContent)
+
+      const articleData = {
+        ...article,
+        content: contentJSON,
+        status
+      }
 
       let response
       if (isEditing) {
@@ -90,7 +122,7 @@ const ArticleEditorPage = () => {
       if (!isEditing) {
         navigate(`/blog-admin/${response.article.slug}/edit`)
       } else {
-        setArticle(prev => ({ ...prev, status }))
+        setArticle(prev => ({ ...prev, status, content: contentJSON }))
       }
 
       alert(isEditing ? 'Artigo atualizado!' : 'Artigo criado!')
@@ -118,6 +150,11 @@ const ArticleEditorPage = () => {
         ? prev.tag_ids.filter(id => id !== tagId)
         : [...prev.tag_ids, tagId]
     }))
+  }
+
+  const hasEditorContent = () => {
+    // Check if editor has any non-empty blocks
+    return editorData && editorData.blocks && editorData.blocks.length > 0
   }
 
   if (loading) {
@@ -171,7 +208,7 @@ const ArticleEditorPage = () => {
             </Button>
             <Button
               onClick={() => handleSave('published')}
-              disabled={saving || !article.title || !article.content}
+              disabled={saving || !article.title || !hasEditorContent()}
             >
               {saving ? 'Publicando...' : 'Publicar'}
             </Button>
@@ -192,18 +229,22 @@ const ArticleEditorPage = () => {
               />
             </div>
 
-            {/* Content */}
+            {/* Content - EditorJS */}
             <div>
               <label className="block text-sm font-medium mb-2">Conteúdo *</label>
-              <Textarea
-                value={article.content}
-                onChange={(e) => setArticle(prev => ({ ...prev, content: e.target.value }))}
-                placeholder="Escreva o conteúdo do artigo usando HTML..."
-                rows={20}
-                className="font-mono"
+              <EditorJSComponent
+                key={editorKey}
+                ref={editorRef}
+                data={editorData}
+                onChange={(data) => {
+                  // Update editor data state for validation
+                  setEditorData(data)
+                }}
+                holder="article-editor"
+                placeholder="Comece a escrever seu artigo..."
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Você pode usar HTML para formatação (p, h2, h3, strong, em, ul, ol, li, a, etc.)
+              <p className="text-xs text-gray-500 mt-2">
+                Use o botão <strong>+</strong> à esquerda para adicionar blocos (títulos, listas, imagens, código, etc.)
               </p>
             </div>
 

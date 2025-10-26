@@ -35,12 +35,18 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      
+
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        // Create error with backend validation errors
+        const error = new Error(`API Error: ${response.status} ${response.statusText}`);
+        error.status = response.status;
+        error.errors = data.errors || [data.error]; // Backend errors array
+        throw error;
       }
-      
-      return await response.json();
+
+      return data;
     } catch (error) {
       console.error('API Request failed:', error);
       throw error;

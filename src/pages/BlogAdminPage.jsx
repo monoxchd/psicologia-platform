@@ -16,7 +16,7 @@ const BlogAdminPage = () => {
 
   const loadMyArticles = async () => {
     try {
-      const token = localStorage.getItem('authToken')
+      const token = localStorage.getItem('auth_token')
       if (!token) {
         console.error('No auth token found')
         return
@@ -34,7 +34,7 @@ const BlogAdminPage = () => {
     if (!confirm('Tem certeza que deseja excluir este artigo?')) return
 
     try {
-      const token = localStorage.getItem('authToken')
+      const token = localStorage.getItem('auth_token')
       await blogService.deleteArticle(slug, token)
       setArticles(articles.filter(article => article.slug !== slug))
     } catch (error) {

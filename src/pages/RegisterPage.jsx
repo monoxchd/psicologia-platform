@@ -16,8 +16,11 @@ export default function RegisterPage() {
       const response = await authService.register(values)
 
       if (response.success) {
-        // Redirect to dashboard for all user types
-        navigate('/dashboard')
+        // Redirect based on user type
+        const redirectPath = response.user.user_type === 'therapist'
+          ? '/therapist/dashboard'
+          : '/simple-dashboard'
+        navigate(redirectPath)
       } else {
         setError(response.error || "Registration failed. Please try again.")
       }
