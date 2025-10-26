@@ -15,6 +15,8 @@ import BlogPage from './pages/BlogPage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
 import BlogAdminPage from './pages/BlogAdminPage.jsx'
 import ArticleEditorPage from './pages/ArticleEditorPage.jsx'
+import EditorTestPage from './pages/EditorTestPage.jsx'
+import TherapistDashboardPage from './pages/TherapistDashboardPage.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -84,5 +86,13 @@ export const router = createBrowserRouter([
   {
     path: "/blog-admin/:slug/edit",
     element: <ArticleEditorPage />
+  },
+  {
+    path: "/editor-test",
+    element: <EditorTestPage />
+  },
+  {
+    path: "/therapist/dashboard",
+    element: <TherapistDashboardPage />
   }
 ])

@@ -10,6 +10,7 @@ import StructuredData from '../components/StructuredData'
 import creditsService from '../services/creditsService.js'
 import authService from '../services/authService.js'
 import CreditEarnedPopup from '../components/CreditEarnedPopup.jsx'
+import EditorJSRenderer from '../components/EditorJSRenderer'
 
 const ArticlePage = () => {
   const { slug } = useParams()
@@ -248,9 +249,16 @@ const ArticlePage = () => {
                 </div>
 
                 {/* Content */}
-                <div
-                  className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-a:text-blue-600"
-                  dangerouslySetInnerHTML={{ __html: article.content }}
+                <EditorJSRenderer
+                  data={(() => {
+                    try {
+                      return JSON.parse(article.content);
+                    } catch (e) {
+                      console.error('Error parsing article content:', e);
+                      return { blocks: [] };
+                    }
+                  })()}
+                  className="prose-headings:text-gray-900 prose-a:text-blue-600"
                 />
 
                 {/* Credit Earning Section */}

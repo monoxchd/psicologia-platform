@@ -50,7 +50,8 @@ class AuthService {
       console.error('Registration error:', error)
       return {
         success: false,
-        error: error.message || 'Registration failed'
+        error: error.errors ? error.errors.join(', ') : (error.message || 'Registration failed'),
+        errors: error.errors // Pass through backend validation errors
       }
     }
   }
