@@ -8,6 +8,7 @@ import { Badge } from '../components/ui/badge'
 import { ArrowLeft, Save, Eye } from 'lucide-react'
 import { blogService } from '../services/blogService'
 import EditorJSComponent from '../components/EditorJS'
+import FeaturedImageUpload from '../components/FeaturedImageUpload'
 
 const ArticleEditorPage = () => {
   const { slug } = useParams()
@@ -33,6 +34,7 @@ const ArticleEditorPage = () => {
   const [tags, setTags] = useState([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [featuredImage, setFeaturedImage] = useState(null) // ActiveStorage featured image URLs
 
   useEffect(() => {
     loadFormData()
@@ -71,6 +73,9 @@ const ArticleEditorPage = () => {
 
       setEditorData(parsedContent)
       setEditorKey(prev => prev + 1) // Force re-render of EditorJS with new data
+
+      // Set featured image from ActiveStorage if available
+      setFeaturedImage(articleData.featured_image || null)
 
       setArticle({
         title: articleData.title,
@@ -150,6 +155,31 @@ const ArticleEditorPage = () => {
         ? prev.tag_ids.filter(id => id !== tagId)
         : [...prev.tag_ids, tagId]
     }))
+  }
+
+  // Featured image upload handler
+  const handleFeaturedImageUpload = async (file) => {
+    if (!isEditing) {
+      alert('Salve o artigo como rascunho primeiro para adicionar uma imagem de destaque.')
+      throw new Error('Article must be saved first')
+    }
+
+    const token = localStorage.getItem('auth_token')
+    const result = await blogService.uploadFeaturedImage(slug, file, token)
+    setFeaturedImage(result.featured_image)
+  }
+
+  // Featured image delete handler
+  const handleFeaturedImageDelete = async () => {
+    const token = localStorage.getItem('auth_token')
+    await blogService.deleteFeaturedImage(slug, token)
+    setFeaturedImage(null)
+  }
+
+  // EditorJS content image upload handler
+  const handleContentImageUpload = async (file) => {
+    const token = localStorage.getItem('auth_token')
+    return blogService.uploadContentImage(file, token)
   }
 
   const hasEditorContent = () => {
@@ -242,6 +272,7 @@ const ArticleEditorPage = () => {
                 }}
                 holder="article-editor"
                 placeholder="Comece a escrever seu artigo..."
+                onImageUpload={handleContentImageUpload}
               />
               <p className="text-xs text-gray-500 mt-2">
                 Use o botão <strong>+</strong> à esquerda para adicionar blocos (títulos, listas, imagens, código, etc.)
@@ -261,12 +292,17 @@ const ArticleEditorPage = () => {
 
             {/* Featured Image */}
             <div>
-              <label className="block text-sm font-medium mb-2">URL da Imagem de Destaque</label>
-              <Input
-                value={article.featured_image_url}
-                onChange={(e) => setArticle(prev => ({ ...prev, featured_image_url: e.target.value }))}
-                placeholder="https://exemplo.com/imagem.jpg"
+              <FeaturedImageUpload
+                currentImage={featuredImage || article.featured_image_url}
+                onUpload={handleFeaturedImageUpload}
+                onDelete={handleFeaturedImageDelete}
+                disabled={!isEditing}
               />
+              {!isEditing && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Salve o artigo como rascunho primeiro para poder adicionar uma imagem de destaque.
+                </p>
+              )}
             </div>
 
             {/* SEO Settings */}
