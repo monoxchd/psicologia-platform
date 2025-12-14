@@ -113,5 +113,57 @@ export const blogService = {
     })
     if (!response.ok) throw new Error('Failed to create tag')
     return response.json()
+  },
+
+  // Image upload methods
+  async uploadFeaturedImage(articleSlug, imageFile, token) {
+    const formData = new FormData()
+    formData.append('image', imageFile)
+
+    const response = await fetch(`${API_BASE_URL}/articles/${articleSlug}/featured_image`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+        // Note: Don't set Content-Type for FormData - browser sets it with boundary
+      },
+      body: formData
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to upload featured image')
+    }
+    return response.json()
+  },
+
+  async deleteFeaturedImage(articleSlug, token) {
+    const response = await fetch(`${API_BASE_URL}/articles/${articleSlug}/featured_image`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to delete featured image')
+    }
+    return response.json()
+  },
+
+  async uploadContentImage(imageFile, token) {
+    const formData = new FormData()
+    formData.append('image', imageFile)
+
+    const response = await fetch(`${API_BASE_URL}/content_images`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    })
+
+    // Return the raw response for EditorJS format
+    return response.json()
   }
 }

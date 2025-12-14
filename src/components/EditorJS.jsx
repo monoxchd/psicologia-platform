@@ -18,13 +18,15 @@ import LinkTool from '@editorjs/link';
  * @param {String} props.holder - ID for the editor container (default: 'editorjs')
  * @param {String} props.placeholder - Placeholder text
  * @param {Boolean} props.readOnly - Read-only mode
+ * @param {Function} props.onImageUpload - Callback for image uploads (should return Promise with EditorJS format)
  */
 const EditorJSComponent = forwardRef(({
   data = null,
   onChange = () => {},
   holder = 'editorjs',
   placeholder = 'Comece a escrever seu artigo...',
-  readOnly = false
+  readOnly = false,
+  onImageUpload = null
 }, ref) => {
   const editorInstanceRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
@@ -123,10 +125,16 @@ const EditorJSComponent = forwardRef(({
 
                   /**
                    * Upload image by file
-                   * For now, we'll use a basic approach
-                   * Later we can enhance this to upload to a server
+                   * Uses server upload if onImageUpload callback is provided,
+                   * otherwise falls back to base64 encoding
                    */
                   uploadByFile(file) {
+                    // If server upload handler is provided, use it
+                    if (onImageUpload) {
+                      return onImageUpload(file);
+                    }
+
+                    // Fallback to base64 encoding (not recommended for production)
                     return new Promise((resolve, reject) => {
                       const reader = new FileReader();
 
@@ -134,8 +142,7 @@ const EditorJSComponent = forwardRef(({
                         resolve({
                           success: 1,
                           file: {
-                            url: e.target.result, // base64 data URL
-                            // In production, you'd want to upload to server and get URL
+                            url: e.target.result,
                           }
                         });
                       };
