@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Star, Banknote, User, MessageCircle, ExternalLink } from 'lucide-react'
+import { Star, Banknote, User, MessageCircle, ExternalLink, Brain } from 'lucide-react'
 import therapistService from '../services/therapistService'
 
 function TherapistsList() {
@@ -65,7 +65,9 @@ function TherapistsList() {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="text-4xl">{therapist.image}</div>
+                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Brain className="h-7 w-7 text-purple-600" />
+                  </div>
                   <div>
                     <CardTitle className="text-lg">{therapist.name}</CardTitle>
                     <CardDescription>{therapist.specialty}</CardDescription>

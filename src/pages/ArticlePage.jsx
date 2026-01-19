@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
-import { Calendar, Clock, Eye, ArrowLeft, Share2, CheckCircle, Loader2 } from 'lucide-react'
+import { Calendar, Clock, Eye, ArrowLeft, Share2, CheckCircle, Loader2, Brain } from 'lucide-react'
 import { blogService } from '../services/blogService'
 import SEOHead from '../components/SEOHead'
 import StructuredData from '../components/StructuredData'
@@ -237,11 +237,9 @@ const ArticlePage = () => {
 
                 {/* Author Info */}
                 <div className="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-lg">
-                  <img
-                    src={article.author.profile_image_url || '/default-avatar.png'}
-                    alt={article.author.name}
-                    className="w-12 h-12 rounded-full"
-                  />
+                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Brain className="h-7 w-7 text-purple-600" />
+                  </div>
                   <div>
                     <p className="font-semibold">{article.author.name}</p>
                     <p className="text-gray-600">{article.author.specialty}</p>
@@ -259,6 +257,7 @@ const ArticlePage = () => {
                     }
                   })()}
                   className="prose-headings:text-gray-900 prose-a:text-blue-600"
+                  showTherapistCTA={true}
                 />
 
                 {/* Credit Earning Section */}

@@ -4,7 +4,7 @@ import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
-import { Search, Calendar, Clock, Eye } from 'lucide-react'
+import { Search, Calendar, Clock, Eye, Brain, ArrowLeft } from 'lucide-react'
 import { blogService } from '../services/blogService'
 import SEOHead from '../components/SEOHead'
 
@@ -102,9 +102,15 @@ const BlogPage = () => {
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-4">Blog de Saúde Mental</h1>
-          <p className="text-xl opacity-90">Insights e orientações de terapeutas licenciados</p>
+        <div className="container mx-auto px-4">
+          <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-6 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar à página inicial
+          </Link>
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">Blog de Saúde Mental</h1>
+            <p className="text-xl opacity-90">Insights e orientações de terapeutas licenciados</p>
+          </div>
         </div>
       </div>
 
@@ -203,11 +209,9 @@ const BlogPage = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <img
-                    src={article.author.profile_image_url || '/default-avatar.png'}
-                    alt={article.author.name}
-                    className="w-8 h-8 rounded-full"
-                  />
+                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Brain className="h-5 w-5 text-purple-600" />
+                  </div>
                   <div>
                     <p className="font-medium text-sm">{article.author.name}</p>
                     <p className="text-xs text-gray-500">{article.author.specialty}</p>

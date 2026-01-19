@@ -1,4 +1,27 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+
+/**
+ * Inline CTA Component for therapist matching
+ */
+const InlineTherapistCTA = () => (
+  <div className="my-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-lg">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <p className="font-medium text-gray-800">Precisa de apoio profissional?</p>
+        <p className="text-sm text-gray-600">Conecte-se com psicólogos licenciados</p>
+      </div>
+      <Link
+        to="/matching"
+        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+      >
+        Encontrar Terapeuta
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </div>
+  </div>
+);
 
 /**
  * EditorJS Renderer Component
@@ -8,8 +31,9 @@ import React from 'react';
  * @param {Object} props
  * @param {Object} props.data - EditorJS data object with blocks array
  * @param {String} props.className - Additional CSS classes
+ * @param {Boolean} props.showTherapistCTA - Show CTA after headers
  */
-const EditorJSRenderer = ({ data, className = '' }) => {
+const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false }) => {
   if (!data || !data.blocks || !Array.isArray(data.blocks)) {
     return null;
   }
@@ -19,6 +43,15 @@ const EditorJSRenderer = ({ data, className = '' }) => {
 
     switch (type) {
       case 'header':
+        // Add CTA after headers (but not the first one to avoid CTA at very top)
+        if (showTherapistCTA && index > 0) {
+          return (
+            <React.Fragment key={index}>
+              {renderHeader(blockData, `header-${index}`)}
+              <InlineTherapistCTA />
+            </React.Fragment>
+          );
+        }
         return renderHeader(blockData, index);
 
       case 'paragraph':
