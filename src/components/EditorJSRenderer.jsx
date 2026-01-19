@@ -14,7 +14,7 @@ const InlineTherapistCTA = () => (
       </div>
       <Link
         to="/matching"
-        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors whitespace-nowrap"
+        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 !text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors whitespace-nowrap no-underline"
       >
         Encontrar Terapeuta
         <ArrowRight className="h-4 w-4" />
