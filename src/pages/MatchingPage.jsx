@@ -1,36 +1,21 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Star, CheckCircle, Calendar } from 'lucide-react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Star, CheckCircle, Calendar, MessageCircle, ExternalLink } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import therapistService from '../services/therapistService'
-import creditsService from '../services/creditsService.js'
 
 export default function MatchingPage() {
-  const navigate = useNavigate()
   const location = useLocation()
-  const { formData, selectedCredits } = location.state || {}
-  
+  const { formData } = location.state || {}
+
   const [therapists, setTherapists] = useState([])
   const [loadingTherapists, setLoadingTherapists] = useState(false)
   const [therapistError, setTherapistError] = useState(null)
-  const [userCredits, setUserCredits] = useState(0)
 
   useEffect(() => {
     fetchTherapists()
-    fetchUserCredits()
   }, [])
-
-  const fetchUserCredits = async () => {
-    try {
-      const response = await creditsService.getBalance()
-      if (response.success) {
-        setUserCredits(response.data.current_balance || 0)
-      }
-    } catch (error) {
-      console.error('Failed to load user credits:', error)
-    }
-  }
 
   const fetchTherapists = async () => {
     setLoadingTherapists(true)
@@ -42,54 +27,9 @@ export default function MatchingPage() {
     } catch (error) {
       console.error('Failed to load therapists:', error)
       setTherapistError('Não foi possível carregar os terapeutas. Por favor, tente novamente.')
-      setTherapists([
-        {
-          id: "ana-silva",
-          name: "Dra. Ana Silva",
-          specialty: "Ansiedade e Depressão",
-          experience: "8 anos",
-          rating: 4.9,
-          creditsPerMinute: 2.0,
-          available: "Hoje às 14h",
-          image: "👩‍⚕️"
-        },
-        {
-          id: "carlos-santos",
-          name: "Dr. Carlos Santos",
-          specialty: "Terapia Cognitiva",
-          experience: "12 anos", 
-          rating: 4.8,
-          creditsPerMinute: 2.5,
-          available: "Amanhã às 10h",
-          image: "👨‍⚕️"
-        },
-        {
-          id: "maria-costa",
-          name: "Dra. Maria Costa",
-          specialty: "Relacionamentos",
-          experience: "6 anos",
-          rating: 4.9,
-          creditsPerMinute: 1.8,
-          available: "Hoje às 16h",
-          image: "👩‍⚕️"
-        }
-      ])
     } finally {
       setLoadingTherapists(false)
     }
-  }
-
-  const handleTherapistSelection = (therapistId) => {
-    // Find the selected therapist
-    const selectedTherapist = therapists.find(t => t.id === therapistId)
-
-    navigate('/scheduling', {
-      state: {
-        formData,
-        selectedCredits: selectedCredits || userCredits, // Use either passed credits or fetched credits
-        selectedTherapist: selectedTherapist || therapistId
-      }
-    })
   }
 
   return (
@@ -101,13 +41,6 @@ export default function MatchingPage() {
             <CardDescription className="text-lg">
               Baseado no seu perfil, encontramos estes profissionais ideais
             </CardDescription>
-            {userCredits > 0 && (
-              <div className="mt-4 bg-blue-50 p-4 rounded-lg">
-                <div className="text-sm text-blue-800">
-                  Seus créditos disponíveis: <span className="font-bold text-blue-600">{userCredits} créditos</span>
-                </div>
-              </div>
-            )}
           </CardHeader>
           <CardContent>
             {therapistError && (
@@ -140,8 +73,8 @@ export default function MatchingPage() {
                   <CardContent className="text-center">
                     <div className="space-y-2 mb-6">
                       <div className="text-sm">
-                        <span className="font-medium">Custo por minuto:</span>{' '}
-                        <span className="text-blue-600 font-bold">{therapist.creditsPerMinute} créditos</span>
+                        <span className="font-medium">Valor:</span>{' '}
+                        <span className="text-green-600 font-bold">R$ {therapist.creditsPerMinute}/consulta</span>
                       </div>
                       <div className="text-sm">
                         <span className="font-medium">Disponível:</span>{' '}
@@ -149,15 +82,26 @@ export default function MatchingPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Button 
-                        className="w-full"
-                        onClick={() => handleTherapistSelection(therapist.id)}
+                      <Button
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        onClick={() => {
+                          const message = encodeURIComponent(`Olá! Gostaria de agendar uma sessão com ${therapist.name}. Vi o perfil na TerapiaConecta.`)
+                          window.open(`https://wa.me/5511914214449?text=${message}`, '_blank')
+                        }}
                       >
-                        Agendar Sessão
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Agendar via WhatsApp
                       </Button>
-                      <Button variant="outline" className="w-full">
-                        ❤️ Favoritar
-                      </Button>
+                      {therapist.personalSiteUrl && (
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => window.open(therapist.personalSiteUrl, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Ver Site
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -177,12 +121,8 @@ export default function MatchingPage() {
                   Psicólogos compatíveis encontrados
                 </div>
                 <div className="flex items-center text-green-800">
-                  <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                  Sistema de créditos explicado
-                </div>
-                <div className="flex items-center text-green-800">
                   <Calendar className="h-4 w-4 text-green-600 mr-2" />
-                  Próximo: Escolher psicólogo e agendar primeira sessão
+                  Próximo: Escolher psicólogo e agendar via WhatsApp
                 </div>
               </div>
             </div>

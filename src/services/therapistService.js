@@ -51,12 +51,14 @@ class TherapistService {
       experience: `${therapist.experience_years} anos`,
       rating: therapist.rating,
       creditsPerMinute: therapist.credits_per_minute,
-      available: therapist.next_available 
+      available: therapist.next_available
         ? `${therapist.next_available} às ${therapist.next_available_time}`
         : 'Verificar disponibilidade',
       image: therapist.profile_image_url || '👨‍⚕️',
       bio: therapist.bio,
-      crpNumber: therapist.crp_number
+      crpNumber: therapist.crp_number,
+      personalSiteUrl: therapist.personal_site_url,
+      calendlyUrl: therapist.calendly_url
     };
   }
 

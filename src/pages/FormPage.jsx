@@ -5,12 +5,15 @@ import { Input } from '@/components/ui/input.jsx'
 import { Label } from '@/components/ui/label.jsx'
 import { Textarea } from '@/components/ui/textarea.jsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import leadService from '../services/leadService'
 
 export default function FormPage() {
   const navigate = useNavigate()
-  
+  const [loading, setLoading] = useState(false)
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -26,9 +29,31 @@ export default function FormPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    navigate('/credits', { state: { formData } })
+    setLoading(true)
+
+    try {
+      // Save lead to backend
+      await leadService.createLead({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        age_range: formData.age,
+        concerns: formData.concerns,
+        preferred_time: formData.preferredTime,
+        therapy_experience: formData.hasTherapyExperience,
+        urgency: formData.urgency
+      })
+
+      // Navigate to matching page
+      navigate('/matching', { state: { formData } })
+    } catch (error) {
+      console.error('Failed to save lead:', error)
+      toast.error('Erro ao enviar formulário. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -160,9 +185,18 @@ export default function FormPage() {
                 >
                   Voltar
                 </Button>
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                  Continuar para Créditos
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      Ver Psicólogos Recomendados
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

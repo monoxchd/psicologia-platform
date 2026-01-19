@@ -41,14 +41,6 @@ export default function LandingPage() {
               <a href="#como-funciona" className="text-gray-600 hover:text-blue-600">Como Funciona</a>
               <a href="#terapeutas" className="text-gray-600 hover:text-blue-600">Terapeutas</a>
               <Link to="/blog" className="text-gray-600 hover:text-blue-600">Blog</Link>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/login')}
-                className="ml-4"
-              >
-                Entrar
-              </Button>
             </div>
           </div>
         </div>
