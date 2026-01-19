@@ -214,23 +214,23 @@ const ArticlePage = () => {
                 <h1 className="text-4xl font-bold mb-4">{article.title}</h1>
 
                 {/* Meta Info */}
-                <div className="flex items-center justify-between border-b pb-6 mb-8">
-                  <div className="flex items-center gap-6 text-sm text-gray-600">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-6 mb-8">
+                  <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-600">
                     <span className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
+                      <Calendar className="h-5 w-5 sm:h-4 sm:w-4" />
                       {formatDate(article.published_at)}
                     </span>
                     <span className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      {article.read_time_minutes} min de leitura
+                      <Clock className="h-5 w-5 sm:h-4 sm:w-4" />
+                      {article.read_time_minutes} min
                     </span>
                     <span className="flex items-center gap-2">
-                      <Eye className="h-4 w-4" />
-                      {article.views_count} visualizações
+                      <Eye className="h-5 w-5 sm:h-4 sm:w-4" />
+                      {article.views_count} views
                     </span>
                   </div>
-                  <Button onClick={handleShare} variant="outline" size="sm">
-                    <Share2 className="h-4 w-4 mr-2" />
+                  <Button onClick={handleShare} variant="outline" size="sm" className="w-full sm:w-auto">
+                    <Share2 className="h-5 w-5 sm:h-4 sm:w-4 mr-2" />
                     Compartilhar
                   </Button>
                 </div>

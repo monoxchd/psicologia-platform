@@ -14,7 +14,7 @@ const InlineTherapistCTA = () => (
       </div>
       <Link
         to="/matching"
-        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors whitespace-nowrap"
       >
         Encontrar Terapeuta
         <ArrowRight className="h-4 w-4" />
@@ -24,6 +24,24 @@ const InlineTherapistCTA = () => (
 );
 
 /**
+ * Calculate strategic positions for CTAs (at ~25%, 50%, 75% of content)
+ */
+const getCTAPositions = (totalBlocks) => {
+  if (totalBlocks < 6) return []; // Too short for CTAs
+  if (totalBlocks < 10) return [Math.floor(totalBlocks / 2)]; // 1 CTA in middle
+  if (totalBlocks < 15) return [
+    Math.floor(totalBlocks / 3),
+    Math.floor(totalBlocks * 2 / 3)
+  ]; // 2 CTAs
+  // 3 CTAs for longer articles
+  return [
+    Math.floor(totalBlocks / 4),
+    Math.floor(totalBlocks / 2),
+    Math.floor(totalBlocks * 3 / 4)
+  ];
+};
+
+/**
  * EditorJS Renderer Component
  *
  * Renders EditorJS JSON blocks as HTML
@@ -31,51 +49,60 @@ const InlineTherapistCTA = () => (
  * @param {Object} props
  * @param {Object} props.data - EditorJS data object with blocks array
  * @param {String} props.className - Additional CSS classes
- * @param {Boolean} props.showTherapistCTA - Show CTA after headers
+ * @param {Boolean} props.showTherapistCTA - Show CTA at strategic reading positions
  */
 const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false }) => {
   if (!data || !data.blocks || !Array.isArray(data.blocks)) {
     return null;
   }
 
+  const totalBlocks = data.blocks.length;
+  const ctaPositions = showTherapistCTA ? getCTAPositions(totalBlocks) : [];
+
   const renderBlock = (block, index) => {
     const { type, data: blockData } = block;
+    const shouldShowCTA = ctaPositions.includes(index);
 
+    // Render the block content
+    let blockContent;
     switch (type) {
       case 'header':
-        // Add CTA after headers (but not the first one to avoid CTA at very top)
-        if (showTherapistCTA && index > 0) {
-          return (
-            <React.Fragment key={index}>
-              {renderHeader(blockData, `header-${index}`)}
-              <InlineTherapistCTA />
-            </React.Fragment>
-          );
-        }
-        return renderHeader(blockData, index);
-
+        blockContent = renderHeader(blockData, index);
+        break;
       case 'paragraph':
-        return renderParagraph(blockData, index);
-
+        blockContent = renderParagraph(blockData, index);
+        break;
       case 'list':
-        return renderList(blockData, index);
-
+        blockContent = renderList(blockData, index);
+        break;
       case 'quote':
-        return renderQuote(blockData, index);
-
+        blockContent = renderQuote(blockData, index);
+        break;
       case 'code':
-        return renderCode(blockData, index);
-
+        blockContent = renderCode(blockData, index);
+        break;
       case 'image':
-        return renderImage(blockData, index);
-
+        blockContent = renderImage(blockData, index);
+        break;
       case 'embed':
-        return renderEmbed(blockData, index);
-
+        blockContent = renderEmbed(blockData, index);
+        break;
       default:
         console.warn(`Unknown block type: ${type}`);
         return null;
     }
+
+    // Add CTA after block if it's a strategic position
+    if (shouldShowCTA) {
+      return (
+        <React.Fragment key={index}>
+          {blockContent}
+          <InlineTherapistCTA />
+        </React.Fragment>
+      );
+    }
+
+    return blockContent;
   };
 
   const renderHeader = (data, index) => {
