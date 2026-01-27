@@ -14,6 +14,7 @@ import BlogAdminPage from './pages/BlogAdminPage.jsx'
 import ArticleEditorPage from './pages/ArticleEditorPage.jsx'
 import TherapistDashboardPage from './pages/TherapistDashboardPage.jsx'
 import TherapistProfileEditPage from './pages/TherapistProfileEditPage.jsx'
+import AcolhimentoLandingPage from './pages/AcolhimentoLandingPage.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -79,5 +80,9 @@ export const router = createBrowserRouter([
   {
     path: "/therapist/profile/edit",
     element: <TherapistProfileEditPage />
+  },
+  {
+    path: "/acolhimento",
+    element: <AcolhimentoLandingPage />
   }
 ])
