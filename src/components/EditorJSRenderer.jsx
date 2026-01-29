@@ -87,6 +87,9 @@ const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false }) =>
       case 'embed':
         blockContent = renderEmbed(blockData, index);
         break;
+      case 'table':
+        blockContent = renderTable(blockData, index);
+        break;
       default:
         console.warn(`Unknown block type: ${type}`);
         return null;
@@ -256,6 +259,47 @@ const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false }) =>
           </figcaption>
         )}
       </figure>
+    );
+  };
+
+  const renderTable = (data, index) => {
+    const { withHeadings, content } = data;
+
+    if (!content || !Array.isArray(content) || content.length === 0) {
+      return null;
+    }
+
+    return (
+      <div key={index} className="mb-6 overflow-x-auto">
+        <table className="min-w-full border-collapse border border-gray-300 rounded-lg">
+          {withHeadings && content.length > 0 && (
+            <thead>
+              <tr className="bg-gray-100">
+                {content[0].map((cell, cellIndex) => (
+                  <th
+                    key={cellIndex}
+                    className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800"
+                    dangerouslySetInnerHTML={{ __html: cell }}
+                  />
+                ))}
+              </tr>
+            </thead>
+          )}
+          <tbody>
+            {content.slice(withHeadings ? 1 : 0).map((row, rowIndex) => (
+              <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                {row.map((cell, cellIndex) => (
+                  <td
+                    key={cellIndex}
+                    className="border border-gray-300 px-4 py-2 text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: cell }}
+                  />
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
   };
 

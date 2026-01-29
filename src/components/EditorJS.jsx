@@ -8,6 +8,7 @@ import InlineCode from '@editorjs/inline-code';
 import Embed from '@editorjs/embed';
 import Image from '@editorjs/image';
 import LinkTool from '@editorjs/link';
+import Table from '@editorjs/table';
 
 /**
  * EditorJS Component Wrapper
@@ -162,6 +163,15 @@ const EditorJSComponent = forwardRef(({
               class: LinkTool,
               config: {
                 endpoint: '', // We can add a backend endpoint later for link previews
+              }
+            },
+
+            table: {
+              class: Table,
+              inlineToolbar: true,
+              config: {
+                rows: 2,
+                cols: 3,
               }
             }
           },

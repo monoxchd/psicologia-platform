@@ -12,6 +12,9 @@ import authService from '../services/authService.js'
 import CreditEarnedPopup from '../components/CreditEarnedPopup.jsx'
 import EditorJSRenderer from '../components/EditorJSRenderer'
 
+// Feature flag for credits system - set to true to re-enable
+const CREDITS_ENABLED = false
+
 const ArticlePage = () => {
   const { slug } = useParams()
   const [article, setArticle] = useState(null)
@@ -261,7 +264,7 @@ const ArticlePage = () => {
                 />
 
                 {/* Credit Earning Section */}
-                {authService.isLoggedIn() && (
+                {CREDITS_ENABLED && authService.isLoggedIn() && (
                   <div className="mt-8 pt-6 border-t">
                     {!hasReadArticle ? (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
