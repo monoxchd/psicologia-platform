@@ -12,7 +12,8 @@ import {
   Calendar,
   TrendingUp,
   Edit,
-  LogOut
+  LogOut,
+  ClipboardList
 } from 'lucide-react'
 import authService from '../services/authService'
 import { blogService } from '../services/blogService'
@@ -337,6 +338,33 @@ const TherapistDashboardPage = () => {
                   <Button variant="outline" className="w-full">
                     <Edit className="h-4 w-4 mr-2" />
                     Editar Perfil
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* Triagem Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5" />
+                  Triagem
+                </CardTitle>
+                <CardDescription>
+                  Respostas dos questionários
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Link to="/therapist/questionarios/questionario-de-acolhimento/respostas">
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <ClipboardList className="h-4 w-4 mr-2" />
+                    Respostas Acolhimento
+                  </Button>
+                </Link>
+                <Link to="/therapist/questionarios/pre-treinamento-trabalho-altura/respostas">
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <ClipboardList className="h-4 w-4 mr-2" />
+                    Respostas Trabalho em Altura
                   </Button>
                 </Link>
               </CardContent>

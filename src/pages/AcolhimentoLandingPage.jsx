@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion.jsx'
-import { Ear, Lightbulb, Signpost, CheckCircle2, XCircle, Lock, MessageCircle } from 'lucide-react'
+import { Ear, Lightbulb, Signpost, CheckCircle2, XCircle, Lock, MessageCircle, ArrowRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import horizontalLogo from '../assets/horizontal-logo.png'
 
@@ -18,7 +18,7 @@ export default function AcolhimentoLandingPage() {
 
   const handleWhatsAppClick = () => {
     const phoneNumber = '5511914214449'
-    const message = encodeURIComponent('Olá, gostaria de agendar minha Sessão de Acolhimento.')
+    const message = encodeURIComponent('Olá, gostaria de saber mais sobre a Sessão de Acolhimento.')
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank')
   }
 
@@ -37,15 +37,22 @@ export default function AcolhimentoLandingPage() {
         </div>
       </header>
 
-      {/* Bloco 1: Hero + Headline */}
+      {/* Bloco 1: Hero — Emotional hook, no price */}
       <section className="bg-gradient-to-br from-slate-50 to-slate-100 py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            Não sabe por onde começar? Converse com um psicólogo por <span className="text-green-600">R$30</span> e descubra o caminho certo para você.
+            Não sabe por onde começar? <span className="text-green-600">Comece sendo ouvido.</span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed">
-            Uma conversa de 30 minutos para você ser ouvido, entender o que está sentindo, e descobrir se a terapia faz sentido pra você. Sem compromisso. Sem julgamento.
+            Uma conversa de 30 minutos com um psicólogo para você entender o que está sentindo e descobrir se a terapia faz sentido pra você. Sem compromisso. Sem julgamento.
           </p>
+          <Button
+            onClick={handleWhatsAppClick}
+            className="bg-green-600 hover:bg-green-700 text-white py-6 px-8 text-lg font-semibold rounded-lg inline-flex items-center gap-2"
+          >
+            Quero saber mais
+            <ArrowRight className="h-5 w-5" />
+          </Button>
         </div>
       </section>
 
@@ -66,7 +73,7 @@ export default function AcolhimentoLandingPage() {
             </p>
             
             <p className="text-lg text-gray-700 leading-relaxed">
-              Se você já pensou em fazer terapia, mas o <strong>preço</strong>, a <strong>vergonha</strong> ou a <strong>incerteza de como começar</strong> te impediram, essa conversa é para você. <strong>Não é preciso resolver tudo de uma vez.</strong>
+              Se você já pensou em fazer terapia, mas a <strong>vergonha</strong> ou a <strong>incerteza de como começar</strong> te impediram, essa conversa é para você. <strong>Não é preciso resolver tudo de uma vez.</strong>
             </p>
           </div>
         </div>
@@ -134,7 +141,7 @@ export default function AcolhimentoLandingPage() {
               <ul className="space-y-3">
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700">Um primeiro passo, leve e acessível.</span>
+                  <span className="text-gray-700">Um primeiro passo, leve e sem compromisso.</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
@@ -142,7 +149,7 @@ export default function AcolhimentoLandingPage() {
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700">Uma oportunidade de conhecer o processo.</span>
+                  <span className="text-gray-700">Uma oportunidade de conhecer o processo terapêutico.</span>
                 </li>
               </ul>
             </div>
@@ -171,7 +178,7 @@ export default function AcolhimentoLandingPage() {
         </div>
       </section>
 
-      {/* Bloco 4: Por Que Assim? */}
+      {/* Bloco 4: Por Que Assim? — Rewritten without price comparison */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-8">
@@ -179,17 +186,58 @@ export default function AcolhimentoLandingPage() {
           </h2>
           
           <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-            Sabemos que dar o primeiro passo pode ser difícil. Investir R$150 ou R$200 em uma primeira consulta sem saber se vai gostar do terapeuta ou do processo é um <strong>salto de confiança muito grande</strong>. Muita gente desiste antes mesmo de tentar.
+            Sabemos que dar o primeiro passo pode ser difícil. Começar um processo terapêutico sem saber como funciona, sem conhecer o profissional e sem entender se é o momento certo é um <strong>salto de confiança muito grande</strong>. Muita gente desiste antes mesmo de tentar.
           </p>
           
           <p className="text-lg text-gray-700 leading-relaxed">
-            Por isso, criamos a Sessão de Acolhimento. É a sua chance de <strong>"testar a água"</strong> por um valor acessível, entender como a terapia funciona e tomar uma decisão informada, <strong>sem pressão</strong>.
+            Por isso, criamos a Sessão de Acolhimento. É a sua chance de <strong>dar o primeiro passo com leveza</strong>, entender como a terapia funciona e tomar uma decisão informada, <strong>sem pressão</strong>.
           </p>
         </div>
       </section>
 
-      {/* Bloco 5: Quem Sou Eu */}
+      {/* Bloco 5: Como Funciona — New section replacing price-led flow */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+            Como funciona?
+          </h2>
+          
+          <div className="space-y-8">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                1
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Fale conosco pelo WhatsApp</h3>
+                <p className="text-gray-600">Nos conte um pouco sobre você e o que está buscando. Vamos te explicar como tudo funciona, tirar suas dúvidas e encontrar o melhor horário.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                2
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Tenha sua Sessão de Acolhimento</h3>
+                <p className="text-gray-600">Em 30 minutos, você será ouvido por um psicólogo da nossa equipe. É um espaço para falar livremente e entender o que está sentindo.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                3
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Receba um direcionamento personalizado</h3>
+                <p className="text-gray-600">Ao final, o psicólogo vai te orientar sobre os próximos passos — seja iniciar a terapia, explorar outras opções ou simplesmente refletir com mais clareza.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Bloco 6: Quem Sou Eu */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
             Quem vai te acolher?
@@ -207,7 +255,7 @@ export default function AcolhimentoLandingPage() {
                 </div>
                 <div className="flex-1 text-center sm:text-left">
                   <h3 className="text-2xl font-bold text-gray-900 mb-1">Denis Neves</h3>
-                  <p className="text-gray-600 mb-4">Psicólogo, CRP 06/123456</p>
+                  <p className="text-gray-600 mb-4">Psicólogo — CRP 06/XXXXX</p>
                   <p className="text-lg text-gray-700 italic">
                     "Acredito que todo mundo merece ser ouvido, especialmente quando não sabe nem o que dizer."
                   </p>
@@ -218,15 +266,15 @@ export default function AcolhimentoLandingPage() {
         </div>
       </section>
 
-      {/* Bloco 7: FAQ */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+      {/* Bloco 7: FAQ — Price removed, handled via WhatsApp */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
             Dúvidas Frequentes
           </h2>
           
           <Accordion type="single" collapsible className="space-y-4">
-            <AccordionItem value="item-1" className="border border-gray-200 rounded-lg px-6">
+            <AccordionItem value="item-1" className="border border-gray-200 rounded-lg px-6 bg-white">
               <AccordionTrigger className="text-lg font-semibold text-gray-900">
                 Preciso ter um problema "grave" para agendar?
               </AccordionTrigger>
@@ -235,7 +283,7 @@ export default function AcolhimentoLandingPage() {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="item-2" className="border border-gray-200 rounded-lg px-6">
+            <AccordionItem value="item-2" className="border border-gray-200 rounded-lg px-6 bg-white">
               <AccordionTrigger className="text-lg font-semibold text-gray-900">
                 E se eu não quiser continuar depois da sessão?
               </AccordionTrigger>
@@ -244,12 +292,30 @@ export default function AcolhimentoLandingPage() {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="item-3" className="border border-gray-200 rounded-lg px-6">
+            <AccordionItem value="item-3" className="border border-gray-200 rounded-lg px-6 bg-white">
               <AccordionTrigger className="text-lg font-semibold text-gray-900">
-                Como funciona o pagamento?
+                Quanto tempo dura a sessão?
               </AccordionTrigger>
               <AccordionContent className="text-gray-700">
-                O valor de R$30 é pago via Pix antes do nosso encontro, de forma simples e rápida.
+                A Sessão de Acolhimento dura 30 minutos. É tempo suficiente para uma conversa significativa, sem pressa.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-4" className="border border-gray-200 rounded-lg px-6 bg-white">
+              <AccordionTrigger className="text-lg font-semibold text-gray-900">
+                Como funciona o agendamento e o pagamento?
+              </AccordionTrigger>
+              <AccordionContent className="text-gray-700">
+                É simples: entre em contato pelo WhatsApp, escolha o melhor horário e nós te explicamos todos os detalhes, incluindo valores e forma de pagamento.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-5" className="border border-gray-200 rounded-lg px-6 bg-white">
+              <AccordionTrigger className="text-lg font-semibold text-gray-900">
+                A sessão é online ou presencial?
+              </AccordionTrigger>
+              <AccordionContent className="text-gray-700">
+                A Sessão de Acolhimento é realizada de forma online, por videochamada. Assim você pode participar de onde estiver, com total conforto e privacidade.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -259,15 +325,15 @@ export default function AcolhimentoLandingPage() {
       {/* Espaçador para o CTA fixo */}
       <div className="h-24"></div>
 
-      {/* Bloco 6: CTA Fixo */}
+      {/* Bloco 8: CTA Fixo */}
       <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
         <div className="max-w-3xl mx-auto">
           <Button
             onClick={handleWhatsAppClick}
             className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg font-semibold rounded-lg flex items-center justify-center gap-2"
           >
-            <MessageCircle className="h-5 w-5" />
-            Quero agendar minha Sessão de Acolhimento
+            <MessageCircle className="h-5 w-5 flex-shrink-0" />
+            <span className="text-sm sm:text-lg">Quero agendar minha Sessão de Acolhimento</span>
           </Button>
           
           <div className="mt-3 text-center space-y-1">
@@ -282,9 +348,10 @@ export default function AcolhimentoLandingPage() {
         </div>
       </div>
 
-      {/* Footer Minimalista */}
+      {/* Footer — Include CRP-PJ registration */}
       <footer className="bg-gray-900 text-white py-8 px-4 sm:px-6 lg:px-8 mt-32">
-        <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
+        <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm space-y-2">
+          <p>TerapiaConecta — Psicólogo Responsável Técnico: Denis Neves — CRP 06/XXXXX</p>
           <p>&copy; 2026 TerapiaConecta. Todos os direitos reservados.</p>
         </div>
       </footer>

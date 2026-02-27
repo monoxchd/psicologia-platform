@@ -7,6 +7,7 @@ import SchedulingPage from './pages/SchedulingPage.jsx'
 import ConfirmationPage from './pages/ConfirmationPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
+import DashboardPage from './pages/DashboardPage.jsx'
 import SimpleDashboardPage from './pages/SimpleDashboardPage.jsx'
 import BlogPage from './pages/BlogPage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
@@ -15,6 +16,11 @@ import ArticleEditorPage from './pages/ArticleEditorPage.jsx'
 import TherapistDashboardPage from './pages/TherapistDashboardPage.jsx'
 import TherapistProfileEditPage from './pages/TherapistProfileEditPage.jsx'
 import AcolhimentoLandingPage from './pages/AcolhimentoLandingPage.jsx'
+import CompanyLandingPage from './pages/CompanyLandingPage.jsx'
+import CompanyRegisterPage from './pages/CompanyRegisterPage.jsx'
+import QuestionnaireFormPage from './pages/QuestionnaireFormPage.jsx'
+import QuestionnaireResponsesPage from './pages/QuestionnaireResponsesPage.jsx'
+import QuestionnaireResponseDetailPage from './pages/QuestionnaireResponseDetailPage.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -22,8 +28,8 @@ export const router = createBrowserRouter([
     element: <LandingPage />
   },
   {
-    path: "/simple-dashboard",
-    element: <SimpleDashboardPage />
+    path: "/dashboard",
+    element: <DashboardPage />
   },
   {
     path: "/form",
@@ -84,5 +90,25 @@ export const router = createBrowserRouter([
   {
     path: "/acolhimento",
     element: <AcolhimentoLandingPage />
+  },
+  {
+    path: "/empresa/:slug",
+    element: <CompanyLandingPage />
+  },
+  {
+    path: "/empresa/:slug/cadastro",
+    element: <CompanyRegisterPage />
+  },
+  {
+    path: "/empresa/:slug/questionario/:questionnaire_slug",
+    element: <QuestionnaireFormPage />
+  },
+  {
+    path: "/therapist/questionarios/:slug/respostas",
+    element: <QuestionnaireResponsesPage />
+  },
+  {
+    path: "/therapist/respostas/:id",
+    element: <QuestionnaireResponseDetailPage />
   }
 ])
