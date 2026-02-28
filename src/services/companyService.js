@@ -4,6 +4,11 @@ const companyService = {
   async getCompanyBySlug(slug) {
     const response = await apiService.get(`/companies/${slug}`)
     return response.data
+  },
+
+  async getCompanyTherapists(slug) {
+    const response = await apiService.get(`/companies/${slug}/therapists`)
+    return response.data
   }
 }
 

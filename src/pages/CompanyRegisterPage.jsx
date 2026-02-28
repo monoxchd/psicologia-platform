@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Eye, EyeOff, CheckCircle2, Loader2, ClipboardList } from 'lucide-react'
+import { Eye, EyeOff, CheckCircle2, Loader2, ClipboardList, Users } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
 import { Input } from '@/components/ui/input.jsx'
@@ -166,6 +166,15 @@ export default function CompanyRegisterPage() {
                   >
                     <ClipboardList className="h-4 w-4" />
                     Preencher Questionário de Acolhimento
+                  </Button>
+                </Link>
+                <Link to={`/empresa/${slug}/psicologos`}>
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Conhecer Nossos Psicólogos
                   </Button>
                 </Link>
                 <Link to="/simple-dashboard">

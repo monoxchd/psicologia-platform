@@ -13,8 +13,10 @@ import {
   TrendingUp,
   Edit,
   LogOut,
-  ClipboardList
+  ClipboardList,
+  Clock
 } from 'lucide-react'
+import AvailabilityGrid from '../components/AvailabilityGrid'
 import authService from '../services/authService'
 import { blogService } from '../services/blogService'
 
@@ -367,6 +369,22 @@ const TherapistDashboardPage = () => {
                     Respostas Trabalho em Altura
                   </Button>
                 </Link>
+              </CardContent>
+            </Card>
+
+            {/* Disponibilidade Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Disponibilidade
+                </CardTitle>
+                <CardDescription>
+                  Configure seus horários de atendimento
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AvailabilityGrid />
               </CardContent>
             </Card>
 

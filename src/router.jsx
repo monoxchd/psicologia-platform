@@ -21,11 +21,17 @@ import CompanyRegisterPage from './pages/CompanyRegisterPage.jsx'
 import QuestionnaireFormPage from './pages/QuestionnaireFormPage.jsx'
 import QuestionnaireResponsesPage from './pages/QuestionnaireResponsesPage.jsx'
 import QuestionnaireResponseDetailPage from './pages/QuestionnaireResponseDetailPage.jsx'
+import CompanyMatchingPage from './pages/CompanyMatchingPage.jsx'
+import CompanySchedulingPage from './pages/CompanySchedulingPage.jsx'
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <LandingPage />
+  },
+  {
+    path: "/simple-dashboard",
+    element: <SimpleDashboardPage />
   },
   {
     path: "/dashboard",
@@ -98,6 +104,14 @@ export const router = createBrowserRouter([
   {
     path: "/empresa/:slug/cadastro",
     element: <CompanyRegisterPage />
+  },
+  {
+    path: "/empresa/:slug/psicologos",
+    element: <CompanyMatchingPage />
+  },
+  {
+    path: "/empresa/:slug/agendar/:therapistId",
+    element: <CompanySchedulingPage />
   },
   {
     path: "/empresa/:slug/questionario/:questionnaire_slug",
