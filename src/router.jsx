@@ -23,6 +23,7 @@ import QuestionnaireResponsesPage from './pages/QuestionnaireResponsesPage.jsx'
 import QuestionnaireResponseDetailPage from './pages/QuestionnaireResponseDetailPage.jsx'
 import CompanyMatchingPage from './pages/CompanyMatchingPage.jsx'
 import CompanySchedulingPage from './pages/CompanySchedulingPage.jsx'
+import HrDashboardPage from './pages/HrDashboardPage.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -112,6 +113,10 @@ export const router = createBrowserRouter([
   {
     path: "/empresa/:slug/agendar/:therapistId",
     element: <CompanySchedulingPage />
+  },
+  {
+    path: "/empresa/:slug/rh",
+    element: <HrDashboardPage />
   },
   {
     path: "/empresa/:slug/questionario/:questionnaire_slug",

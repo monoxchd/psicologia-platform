@@ -9,6 +9,16 @@ const companyService = {
   async getCompanyTherapists(slug) {
     const response = await apiService.get(`/companies/${slug}/therapists`)
     return response.data
+  },
+
+  async getHrDashboard(slug) {
+    const response = await apiService.get(`/companies/${slug}/hr_dashboard`)
+    return response.data
+  },
+
+  async getHrInsights(slug) {
+    const response = await apiService.get(`/companies/${slug}/hr_insights`)
+    return response.data
   }
 }
 

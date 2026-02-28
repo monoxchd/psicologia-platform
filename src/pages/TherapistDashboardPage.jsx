@@ -363,7 +363,7 @@ const TherapistDashboardPage = () => {
                     Respostas Acolhimento
                   </Button>
                 </Link>
-                <Link to="/therapist/questionarios/pre-treinamento-trabalho-altura/respostas">
+                <Link to="/therapist/questionarios/questionario-psicossocial-trabalho-altura/respostas">
                   <Button variant="outline" className="w-full justify-start" size="sm">
                     <ClipboardList className="h-4 w-4 mr-2" />
                     Respostas Trabalho em Altura
