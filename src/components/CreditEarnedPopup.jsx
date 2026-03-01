@@ -27,7 +27,7 @@ export default function CreditEarnedPopup({
 
   const handleBackToDashboard = () => {
     onClose()
-    navigate('/simple-dashboard')
+    navigate('/dashboard')
   }
 
   return (

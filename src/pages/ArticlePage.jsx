@@ -11,6 +11,7 @@ import creditsService from '../services/creditsService.js'
 import authService from '../services/authService.js'
 import CreditEarnedPopup from '../components/CreditEarnedPopup.jsx'
 import EditorJSRenderer from '../components/EditorJSRenderer'
+import activityService from '../services/activityService'
 
 // Feature flag for credits system - set to true to re-enable
 const CREDITS_ENABLED = false
@@ -24,6 +25,8 @@ const ArticlePage = () => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [showCreditPopup, setShowCreditPopup] = useState(false)
   const [userCredits, setUserCredits] = useState(0)
+  const [hasTrackedRead, setHasTrackedRead] = useState(false)
+  const [trackingRead, setTrackingRead] = useState(false)
 
   useEffect(() => {
     loadArticle()
@@ -85,8 +88,6 @@ const ArticlePage = () => {
     setIsProcessing(true)
 
     try {
-      console.log(`🔄 Earning credits for article: ${article.id}`)
-
       // Call the REAL backend to earn credits
       const result = await creditsService.earnCreditsForReading(article.id)
 
@@ -94,10 +95,8 @@ const ArticlePage = () => {
         setHasReadArticle(true)
         setUserCredits(result.data.new_balance)
         setShowCreditPopup(true)
-        console.log(`✅ Credits earned! New balance: ${result.data.new_balance}`)
       } else if (result.already_earned) {
         setHasReadArticle(true)
-        console.log('Credits already earned for this article')
       } else {
         console.error('Error earning credits:', result.error)
         alert('Erro ao ganhar créditos. Tente novamente.')
@@ -107,6 +106,23 @@ const ArticlePage = () => {
       alert('Erro ao processar leitura. Tente novamente.')
     } finally {
       setIsProcessing(false)
+    }
+  }
+
+  const handleTrackRead = async () => {
+    if (hasTrackedRead || trackingRead || !authService.isLoggedIn() || !article) return
+    setTrackingRead(true)
+    try {
+      await activityService.createEntry({
+        activity_slug: 'leituras',
+        answers: { article_id: String(article.id), article_title: article.title },
+        entry_date: new Date().toISOString().split('T')[0]
+      })
+      setHasTrackedRead(true)
+    } catch (error) {
+      console.error('Error tracking article read:', error)
+    } finally {
+      setTrackingRead(false)
     }
   }
 
@@ -262,6 +278,44 @@ const ArticlePage = () => {
                   className="prose-headings:text-gray-900 prose-a:text-blue-600"
                   showTherapistCTA={true}
                 />
+
+                {/* Read Tracking */}
+                {authService.isLoggedIn() && (
+                  <div className="mt-8 pt-6 border-t">
+                    {!hasTrackedRead ? (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 text-center">
+                        <p className="text-amber-800 text-sm mb-3">
+                          Gostou da leitura? Registre para acompanhar seu progresso.
+                        </p>
+                        <Button
+                          onClick={handleTrackRead}
+                          disabled={trackingRead}
+                          variant="outline"
+                          className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                        >
+                          {trackingRead ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Marcar como Lido
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-5 text-center">
+                        <p className="text-emerald-800 text-sm font-medium">
+                          <CheckCircle className="h-4 w-4 inline mr-1.5" />
+                          Leitura registrada!
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Credit Earning Section */}
                 {CREDITS_ENABLED && authService.isLoggedIn() && (

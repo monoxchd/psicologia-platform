@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
@@ -12,12 +12,18 @@ import {
   Calendar,
   TrendingUp,
   Edit,
-  LogOut
+  LogOut,
+  ClipboardList,
+  Clock,
+  Loader2
 } from 'lucide-react'
+import AvailabilityGrid from '../components/AvailabilityGrid'
 import authService from '../services/authService'
 import { blogService } from '../services/blogService'
+import horizontalLogo from '../assets/horizontal-logo.png'
 
 const TherapistDashboardPage = () => {
+  const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [articles, setArticles] = useState([])
   const [stats, setStats] = useState({
@@ -71,7 +77,7 @@ const TherapistDashboardPage = () => {
 
   const handleLogout = () => {
     authService.logout()
-    window.location.href = '/login'
+    navigate('/login')
   }
 
   const formatDate = (dateString) => {
@@ -84,9 +90,10 @@ const TherapistDashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center">Carregando...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <p className="text-sm text-gray-500 font-medium">Carregando...</p>
         </div>
       </div>
     )
@@ -96,7 +103,15 @@ const TherapistDashboardPage = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8">
+          <div className="mb-4">
+            <img
+              src={horizontalLogo}
+              alt="Terapia Conecta"
+              className="h-8 object-contain"
+            />
+          </div>
+          <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
               Bem-vindo, {user?.name?.split(' ')[0]}! 👋
@@ -109,6 +124,7 @@ const TherapistDashboardPage = () => {
             <LogOut className="h-4 w-4 mr-2" />
             Sair
           </Button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -319,8 +335,8 @@ const TherapistDashboardPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-center mb-4">
-                  <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <User className="h-10 w-10 text-blue-600" />
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <User className="h-10 w-10 text-primary" />
                   </div>
                   <h3 className="font-semibold text-lg">{user?.name}</h3>
                   <p className="text-sm text-gray-600">{user?.specialty}</p>
@@ -342,13 +358,56 @@ const TherapistDashboardPage = () => {
               </CardContent>
             </Card>
 
-            {/* Help Card */}
-            <Card className="bg-blue-50 border-blue-200">
+            {/* Triagem Card */}
+            <Card>
               <CardHeader>
-                <CardTitle className="text-blue-900">Precisa de Ajuda?</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5" />
+                  Triagem
+                </CardTitle>
+                <CardDescription>
+                  Respostas dos questionários
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Link to="/therapist/questionarios/questionario-de-acolhimento/respostas">
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <ClipboardList className="h-4 w-4 mr-2" />
+                    Respostas Acolhimento
+                  </Button>
+                </Link>
+                <Link to="/therapist/questionarios/questionario-psicossocial-trabalho-altura/respostas">
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <ClipboardList className="h-4 w-4 mr-2" />
+                    Respostas Trabalho em Altura
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* Disponibilidade Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Disponibilidade
+                </CardTitle>
+                <CardDescription>
+                  Configure seus horários de atendimento
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-blue-800 mb-4">
+                <AvailabilityGrid />
+              </CardContent>
+            </Card>
+
+            {/* Help Card */}
+            <Card className="bg-indigo-50 border-indigo-200">
+              <CardHeader>
+                <CardTitle className="text-indigo-900">Precisa de Ajuda?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-indigo-800 mb-4">
                   Confira nosso guia para terapeutas e aprenda a criar artigos impactantes.
                 </p>
                 <Link to="/blog">

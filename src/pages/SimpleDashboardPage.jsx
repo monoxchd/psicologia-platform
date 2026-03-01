@@ -97,7 +97,7 @@ export default function SimpleDashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     )
   }
@@ -107,7 +107,7 @@ export default function SimpleDashboardPage() {
   const progressToGoal = (userStats.weeklyProgress / userStats.weeklyGoal) * 100
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-green-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Header */}
@@ -115,7 +115,7 @@ export default function SimpleDashboardPage() {
           <div className="flex items-center space-x-4">
             <Avatar className="h-12 w-12">
               <AvatarImage src={user.profile_photo} />
-              <AvatarFallback className="text-lg font-semibold bg-blue-100 text-blue-600">
+              <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">
                 {user.first_name?.[0]}{user.last_name?.[0]}
               </AvatarFallback>
             </Avatar>
@@ -165,7 +165,7 @@ export default function SimpleDashboardPage() {
         )}
 
         {/* Credit Balance - Prominent Display */}
-        <Card className="mb-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <Card className="mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -174,19 +174,19 @@ export default function SimpleDashboardPage() {
                   <span className="text-lg font-medium">Seus Créditos</span>
                 </div>
                 <div className="text-4xl font-bold">{userStats.credits}</div>
-                <p className="text-blue-100 text-sm">
+                <p className="text-indigo-100 text-sm">
                   {userStats.credits >= 50
                     ? '🎉 Você pode agendar uma sessão!'
                     : `Faltam ${50 - userStats.credits} créditos para uma sessão`}
                 </p>
                 {creditBalance?.expires_at && (
-                  <p className="text-blue-200 text-xs mt-1">
+                  <p className="text-indigo-200 text-xs mt-1">
                     Expira em: {new Date(creditBalance.expires_at).toLocaleDateString('pt-BR')}
                   </p>
                 )}
               </div>
               <div className="text-right">
-                <div className="text-sm text-blue-100 mb-1">Meta Semanal</div>
+                <div className="text-sm text-indigo-100 mb-1">Meta Semanal</div>
                 <div className="text-2xl font-bold">{userStats.weeklyProgress}/{userStats.weeklyGoal}</div>
                 <Progress value={progressToGoal} className="w-24 mt-2" />
               </div>
@@ -218,13 +218,13 @@ export default function SimpleDashboardPage() {
           {/* Read Articles */}
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/blog')}>
             <CardHeader className="text-center">
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <BookOpen className="h-8 w-8 text-blue-600" />
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <BookOpen className="h-8 w-8 text-primary" />
               </div>
               <CardTitle>Ler Artigos</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
-              <div className="text-2xl font-bold text-blue-600 mb-2">+5 créditos</div>
+              <div className="text-2xl font-bold text-primary mb-2">+5 créditos</div>
               <p className="text-gray-600 text-sm mb-4">
                 Por artigo lido completo
               </p>
@@ -294,7 +294,7 @@ export default function SimpleDashboardPage() {
               </div>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">{userStats.sessionsCount}</div>
+                  <div className="text-2xl font-bold text-primary">{userStats.sessionsCount}</div>
                   <div className="text-sm text-gray-500">Sessões Feitas</div>
                 </div>
                 <div>

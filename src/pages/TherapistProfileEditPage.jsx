@@ -13,17 +13,22 @@ import {
   Globe,
   Briefcase,
   Award,
-  DollarSign
+  DollarSign,
+  Camera,
+  Trash2
 } from 'lucide-react'
 import authService from '../services/authService'
 import apiService from '../services/api'
+import therapistService from '../services/therapistService'
 import { toast } from 'sonner'
 
 const TherapistProfileEditPage = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [user, setUser] = useState(null)
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
     specialty: '',
@@ -31,8 +36,7 @@ const TherapistProfileEditPage = () => {
     bio: '',
     crp_number: '',
     credits_per_minute: '',
-    personal_site_url: '',
-    profile_image_url: ''
+    personal_site_url: ''
   })
 
   useEffect(() => {
@@ -51,6 +55,7 @@ const TherapistProfileEditPage = () => {
       }
 
       setUser(currentUser)
+      setProfilePhotoUrl(currentUser.profile_photo_url || null)
       setFormData({
         name: currentUser.name || '',
         specialty: currentUser.specialty || '',
@@ -58,8 +63,7 @@ const TherapistProfileEditPage = () => {
         bio: currentUser.bio || '',
         crp_number: currentUser.crp_number || '',
         credits_per_minute: currentUser.credits_per_minute || '',
-        personal_site_url: currentUser.personal_site_url || '',
-        profile_image_url: currentUser.profile_image_url || ''
+        personal_site_url: currentUser.personal_site_url || ''
       })
     } catch (error) {
       console.error('Error loading user:', error)
@@ -75,6 +79,45 @@ const TherapistProfileEditPage = () => {
       ...prev,
       [name]: value
     }))
+  }
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      toast.error('Tipo de arquivo inválido. Use JPEG, PNG ou WebP.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo 2MB.')
+      return
+    }
+
+    setUploadingPhoto(true)
+    try {
+      const result = await therapistService.uploadProfilePhoto(user.id, file)
+      setProfilePhotoUrl(result.profile_photo_url)
+      toast.success('Foto atualizada!')
+    } catch (error) {
+      toast.error(error.message || 'Erro ao fazer upload da foto')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
+  const handlePhotoDelete = async () => {
+    setUploadingPhoto(true)
+    try {
+      await therapistService.deleteProfilePhoto(user.id)
+      setProfilePhotoUrl(null)
+      toast.success('Foto removida')
+    } catch (error) {
+      toast.error(error.message || 'Erro ao remover foto')
+    } finally {
+      setUploadingPhoto(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -103,8 +146,7 @@ const TherapistProfileEditPage = () => {
           bio: formData.bio,
           crp_number: formData.crp_number,
           credits_per_minute: parseFloat(formData.credits_per_minute) || 0,
-          personal_site_url: formData.personal_site_url,
-          profile_image_url: formData.profile_image_url
+          personal_site_url: formData.personal_site_url
         }
       })
 
@@ -130,7 +172,7 @@ const TherapistProfileEditPage = () => {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2">Carregando...</span>
           </div>
         </div>
@@ -294,16 +336,66 @@ const TherapistProfileEditPage = () => {
                 </p>
               </div>
 
-              <div>
-                <Label htmlFor="profile_image_url">URL da Foto de Perfil</Label>
-                <Input
-                  id="profile_image_url"
-                  name="profile_image_url"
-                  type="url"
-                  value={formData.profile_image_url}
-                  onChange={handleChange}
-                  placeholder="https://exemplo.com/sua-foto.jpg"
-                />
+            </CardContent>
+          </Card>
+
+          {/* Profile Photo Card */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="h-5 w-5" />
+                Foto de Perfil
+              </CardTitle>
+              <CardDescription>
+                Sua foto será exibida nas páginas de agendamento
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-6">
+                {profilePhotoUrl ? (
+                  <img
+                    src={profilePhotoUrl}
+                    alt={formData.name}
+                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-12 w-12 text-primary" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploadingPhoto}
+                    />
+                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">
+                      {uploadingPhoto ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4" />
+                      )}
+                      {uploadingPhoto ? 'Enviando...' : 'Escolher foto'}
+                    </span>
+                  </label>
+                  {profilePhotoUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 justify-start"
+                      onClick={handlePhotoDelete}
+                      disabled={uploadingPhoto}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Remover foto
+                    </Button>
+                  )}
+                  <p className="text-xs text-gray-500">JPEG, PNG ou WebP. Máximo 2MB.</p>
+                </div>
               </div>
             </CardContent>
           </Card>

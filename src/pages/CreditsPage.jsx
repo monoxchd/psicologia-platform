@@ -24,9 +24,7 @@ export default function CreditsPage() {
     try {
       setLoading(true)
       const response = await creditsService.getPackages()
-      console.log('Packages response:', response) // Debug log
       if (response.success) {
-        console.log('Packages data:', response.data) // Debug log
         setPackages(response.data)
       } else {
         setError('Erro ao carregar pacotes')
@@ -48,7 +46,7 @@ export default function CreditsPage() {
 
       if (response.success) {
         // Show success and redirect to dashboard
-        navigate('/simple-dashboard', {
+        navigate('/dashboard', {
           state: {
             purchaseSuccess: true,
             creditsAdded: packageData.credits,
@@ -72,7 +70,7 @@ export default function CreditsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-green-50 py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Card className="shadow-xl">
           <CardHeader className="text-center">
@@ -96,23 +94,23 @@ export default function CreditsPage() {
             {loading ? (
               <div className="flex justify-center items-center py-12">
                 <div className="text-center">
-                  <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+                  <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
                   <p className="text-gray-600">Carregando pacotes...</p>
                 </div>
               </div>
             ) : (
               <div className="grid md:grid-cols-3 gap-6">
                 {packages.map((pkg) => (
-                <Card key={pkg.id} className={`relative cursor-pointer transition-all hover:scale-105 ${pkg.popular ? 'ring-2 ring-blue-500' : ''}`}>
+                <Card key={pkg.id} className={`relative cursor-pointer transition-all hover:scale-105 ${pkg.popular ? 'ring-2 ring-indigo-500' : ''}`}>
                   {pkg.popular && (
-                    <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600">
+                    <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary">
                       Recomendado
                     </Badge>
                   )}
                   <CardHeader className="text-center">
                     <CardTitle className="text-2xl">{pkg.credits || 0} Créditos</CardTitle>
                     <CardDescription>{pkg.description || 'Pacote de créditos'}</CardDescription>
-                    <div className="text-4xl font-bold text-blue-600">R${pkg.price || 0}</div>
+                    <div className="text-4xl font-bold text-primary">R${pkg.price || 0}</div>
                     <div className="text-sm text-gray-500">R${(pkg.price_per_credit || (pkg.price/pkg.credits) || 0).toFixed(2)} por crédito</div>
                   </CardHeader>
                   <CardContent>
@@ -172,19 +170,19 @@ export default function CreditsPage() {
               </div>
             )}
 
-            <div className="mt-12 bg-blue-50 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4">💡 Como funciona na prática:</h3>
+            <div className="mt-12 bg-indigo-50 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-indigo-900 mb-4">💡 Como funciona na prática:</h3>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                <div className="text-blue-800">
+                <div className="text-indigo-800">
                   <strong>Check-in rápido:</strong> 15 minutos = 15 créditos
                 </div>
-                <div className="text-blue-800">
+                <div className="text-indigo-800">
                   <strong>Sessão padrão:</strong> 50 minutos = 50 créditos
                 </div>
-                <div className="text-blue-800">
+                <div className="text-indigo-800">
                   <strong>Trabalho profundo:</strong> 90 minutos = 90 créditos
                 </div>
-                <div className="text-blue-800">
+                <div className="text-indigo-800">
                   <strong>Emergência:</strong> 10 minutos = 10 créditos
                 </div>
               </div>
