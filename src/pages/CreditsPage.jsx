@@ -24,9 +24,7 @@ export default function CreditsPage() {
     try {
       setLoading(true)
       const response = await creditsService.getPackages()
-      console.log('Packages response:', response) // Debug log
       if (response.success) {
-        console.log('Packages data:', response.data) // Debug log
         setPackages(response.data)
       } else {
         setError('Erro ao carregar pacotes')

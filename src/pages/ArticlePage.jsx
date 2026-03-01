@@ -88,8 +88,6 @@ const ArticlePage = () => {
     setIsProcessing(true)
 
     try {
-      console.log(`🔄 Earning credits for article: ${article.id}`)
-
       // Call the REAL backend to earn credits
       const result = await creditsService.earnCreditsForReading(article.id)
 
@@ -97,10 +95,8 @@ const ArticlePage = () => {
         setHasReadArticle(true)
         setUserCredits(result.data.new_balance)
         setShowCreditPopup(true)
-        console.log(`✅ Credits earned! New balance: ${result.data.new_balance}`)
       } else if (result.already_earned) {
         setHasReadArticle(true)
-        console.log('Credits already earned for this article')
       } else {
         console.error('Error earning credits:', result.error)
         alert('Erro ao ganhar créditos. Tente novamente.')

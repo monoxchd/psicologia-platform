@@ -107,6 +107,7 @@ export default function ActivityFormPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState(null)
   const [answers, setAnswers] = useState({})
   const [existingEntry, setExistingEntry] = useState(null)
 
@@ -164,6 +165,7 @@ export default function ActivityFormPage() {
     if (requiredMissing) return
 
     setSubmitting(true)
+    setError(null)
     try {
       await activityService.createEntry({
         activity_slug: slug,
@@ -173,6 +175,7 @@ export default function ActivityFormPage() {
       setSubmitted(true)
     } catch (error) {
       console.error('Error submitting entry:', error)
+      setError('Erro ao salvar atividade. Tente novamente.')
     } finally {
       setSubmitting(false)
     }
@@ -332,6 +335,12 @@ export default function ActivityFormPage() {
               })}
             </CardContent>
           </Card>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-center">
+              <p className="text-red-800 text-sm">{error}</p>
+            </div>
+          )}
 
           <Button
             type="submit"

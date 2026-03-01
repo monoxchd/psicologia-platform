@@ -43,14 +43,10 @@ export default function SimpleCreditsPage() {
     setPurchasing(pkg.id)
 
     try {
-      console.log(`🔄 Purchasing ${pkg.credits} credits for R$${pkg.price}...`)
-
       // Call the REAL backend API
       const response = await creditsService.purchaseCredits(pkg.id)
 
       if (response.success) {
-        console.log(`✅ Purchase successful! New balance: ${response.data.new_balance}`)
-
         // Redirect to dashboard with success message including real data
         navigate('/dashboard', {
           state: {
