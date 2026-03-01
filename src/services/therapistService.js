@@ -54,7 +54,7 @@ class TherapistService {
       available: therapist.next_available
         ? `${therapist.next_available} às ${therapist.next_available_time}`
         : 'Verificar disponibilidade',
-      image: therapist.profile_image_url || '👨‍⚕️',
+      image: therapist.profile_photo_url || '👨‍⚕️',
       bio: therapist.bio,
       crpNumber: therapist.crp_number,
       personalSiteUrl: therapist.personal_site_url,
@@ -64,6 +64,41 @@ class TherapistService {
 
   formatTherapistsForUI(therapists) {
     return therapists.map(therapist => this.formatTherapistForUI(therapist));
+  }
+
+  async uploadProfilePhoto(therapistId, imageFile) {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+    const token = localStorage.getItem('auth_token');
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    const response = await fetch(`${API_BASE_URL}/therapists/${therapistId}/upload_profile_photo`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro ao fazer upload da foto');
+    }
+    return response.json();
+  }
+
+  async deleteProfilePhoto(therapistId) {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+    const token = localStorage.getItem('auth_token');
+
+    const response = await fetch(`${API_BASE_URL}/therapists/${therapistId}/destroy_profile_photo`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro ao remover foto');
+    }
+    return response.json();
   }
 }
 

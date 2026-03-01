@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import RegisterForm from "@/components/auth/RegisterForm"
 import authService from "@/services/authService"
+import horizontalLogo from '../assets/horizontal-logo.png'
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -22,11 +23,11 @@ export default function RegisterPage() {
           : '/dashboard'
         navigate(redirectPath)
       } else {
-        setError(response.error || "Registration failed. Please try again.")
+        setError(response.error || "Falha no cadastro. Por favor, tente novamente.")
       }
     } catch (error) {
       console.error("Registration error:", error)
-      setError("Registration failed. Please try again.")
+      setError("Falha no cadastro. Por favor, tente novamente.")
     } finally {
       setIsLoading(false)
     }
@@ -35,6 +36,14 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
+        <div className="flex justify-center">
+          <img
+            src={horizontalLogo}
+            alt="Terapia Conecta"
+            className="h-10 object-contain"
+          />
+        </div>
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
@@ -45,12 +54,12 @@ export default function RegisterPage() {
 
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Already have an account?{" "}
+            Já tem uma conta?{" "}
             <Link
               to="/login"
               className="font-medium text-primary hover:underline"
             >
-              Sign in here
+              Entre aqui
             </Link>
           </p>
         </div>

@@ -47,8 +47,8 @@ export default function CompanyLandingPage() {
     )
   }
 
-  const primaryColor = company.primary_color || '#6366f1'
-  const secondaryColor = company.secondary_color || '#8b5cf6'
+  const primaryColor = company.primary_color || '#4f46e5'
+  const secondaryColor = company.secondary_color || '#6366f1'
 
   return (
     <div className="min-h-screen bg-white">
@@ -172,12 +172,20 @@ export default function CompanyLandingPage() {
               {therapists.map((therapist) => (
                 <Card key={therapist.id} className="border-0 shadow-sm">
                   <CardContent className="p-6 text-center">
-                    <div
-                      className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-2xl font-bold"
-                      style={{ backgroundColor: primaryColor }}
-                    >
-                      {therapist.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                    </div>
+                    {therapist.profile_photo_url ? (
+                      <img
+                        src={therapist.profile_photo_url}
+                        alt={therapist.name}
+                        className="w-20 h-20 rounded-full mx-auto mb-4 object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-2xl font-bold"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        {therapist.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </div>
+                    )}
                     <h3 className="text-lg font-semibold text-gray-900">{therapist.name}</h3>
                     <p className="text-sm text-gray-500 mb-2">{therapist.specialty}</p>
                     {therapist.rating && (

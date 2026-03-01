@@ -146,7 +146,7 @@ export default function CompanySchedulingPage() {
     )
   }
 
-  const primaryColor = company?.primary_color || '#6366f1'
+  const primaryColor = company?.primary_color || '#4f46e5'
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr + 'T00:00:00')
@@ -219,7 +219,7 @@ export default function CompanySchedulingPage() {
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-800">
+              <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 mb-6 text-sm text-indigo-800">
                 <strong>Próximos passos:</strong> Você receberá o link da sessão por email.
                 Caso precise cancelar, faça com pelo menos 24h de antecedência.
               </div>
@@ -281,12 +281,20 @@ export default function CompanySchedulingPage() {
 
         {/* Therapist info */}
         <div className="flex items-center gap-4 mb-8">
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
-            style={{ backgroundColor: primaryColor }}
-          >
-            {therapist?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-          </div>
+          {therapist?.profile_photo_url ? (
+            <img
+              src={therapist.profile_photo_url}
+              alt={therapist.name}
+              className="w-14 h-14 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+              style={{ backgroundColor: primaryColor }}
+            >
+              {therapist?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+            </div>
+          )}
           <div>
             <h2 className="text-xl font-bold text-gray-900">{therapist?.name}</h2>
             <p className="text-sm text-gray-500">{therapist?.specialty}</p>
@@ -445,12 +453,20 @@ export default function CompanySchedulingPage() {
               <CardContent className="p-6 space-y-4">
                 {/* Therapist */}
                 <div className="flex items-center gap-3 pb-4 border-b">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                    style={{ backgroundColor: primaryColor }}
-                  >
-                    {therapist?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                  </div>
+                  {therapist?.profile_photo_url ? (
+                    <img
+                      src={therapist.profile_photo_url}
+                      alt={therapist.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      {therapist?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                    </div>
+                  )}
                   <div>
                     <p className="font-medium text-gray-900">{therapist?.name}</p>
                     <p className="text-sm text-gray-500">{therapist?.specialty}</p>

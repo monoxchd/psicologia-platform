@@ -32,7 +32,7 @@ export default function LandingPageCredits() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-green-50">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -44,10 +44,10 @@ export default function LandingPageCredits() {
               />
             </div>
             <div className="hidden md:flex space-x-6 items-center">
-              <a href="#como-funciona" className="text-gray-600 hover:text-blue-600">Como Funciona</a>
-              <a href="#precos" className="text-gray-600 hover:text-blue-600">Preços</a>
-              <a href="#terapeutas" className="text-gray-600 hover:text-blue-600">Terapeutas</a>
-              <Link to="/blog" className="text-gray-600 hover:text-blue-600">Blog</Link>
+              <a href="#como-funciona" className="text-gray-600 hover:text-primary">Como Funciona</a>
+              <a href="#precos" className="text-gray-600 hover:text-primary">Preços</a>
+              <a href="#terapeutas" className="text-gray-600 hover:text-primary">Terapeutas</a>
+              <Link to="/blog" className="text-gray-600 hover:text-primary">Blog</Link>
               <Button
                 variant="outline"
                 size="sm"
@@ -67,7 +67,7 @@ export default function LandingPageCredits() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-bold text-gray-900 mb-6">
-                Terapia Online <span className="text-blue-600">Flexível</span> com Sistema de Créditos
+                Terapia Online <span className="text-primary">Flexível</span> com Sistema de Créditos
               </h1>
               <p className="text-xl text-gray-600 mb-8">
                 Pague apenas pelo tempo que usar. Sessões de 15 minutos ou 2 horas - você decide.
@@ -76,7 +76,7 @@ export default function LandingPageCredits() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   size="lg"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg"
+                  className="bg-primary hover:bg-indigo-700 text-white px-8 py-4 text-lg"
                   onClick={() => navigate('/login')}
                 >
                   Começar Agora
@@ -131,8 +131,8 @@ export default function LandingPageCredits() {
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="text-center p-6">
               <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                  <CreditCard className="h-8 w-8 text-blue-600" />
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <CreditCard className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle>1. Compre Créditos</CardTitle>
               </CardHeader>
@@ -186,16 +186,16 @@ export default function LandingPageCredits() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {creditPackages.map((pkg, index) => (
-              <Card key={index} className={`relative ${pkg.popular ? 'ring-2 ring-blue-500 scale-105' : ''}`}>
+              <Card key={index} className={`relative ${pkg.popular ? 'ring-2 ring-indigo-500 scale-105' : ''}`}>
                 {pkg.popular && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600">
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary">
                     Mais Popular
                   </Badge>
                 )}
                 <CardHeader className="text-center">
                   <CardTitle className="text-2xl">{pkg.credits} Créditos</CardTitle>
                   <CardDescription>{pkg.description}</CardDescription>
-                  <div className="text-4xl font-bold text-blue-600">R${pkg.price}</div>
+                  <div className="text-4xl font-bold text-primary">R${pkg.price}</div>
                   <div className="text-sm text-gray-500">R${(pkg.price/pkg.credits).toFixed(2)} por minuto</div>
                 </CardHeader>
                 <CardContent>
@@ -225,26 +225,26 @@ export default function LandingPageCredits() {
       </section>
 
       {/* How Credits Work */}
-      <section className="py-16 bg-blue-50">
+      <section className="py-16 bg-indigo-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">💡 Como funciona na prática:</h3>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
             <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-blue-600 font-bold text-lg">Check-in rápido:</div>
+              <div className="text-primary font-bold text-lg">Check-in rápido:</div>
               <div className="text-sm text-gray-600">15 minutos = 15 créditos</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-blue-600 font-bold text-lg">Sessão padrão:</div>
+              <div className="text-primary font-bold text-lg">Sessão padrão:</div>
               <div className="text-sm text-gray-600">50 minutos = 50 créditos</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-blue-600 font-bold text-lg">Trabalho profundo:</div>
+              <div className="text-primary font-bold text-lg">Trabalho profundo:</div>
               <div className="text-sm text-gray-600">90 minutos = 90 créditos</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-blue-600 font-bold text-lg">Emergência:</div>
+              <div className="text-primary font-bold text-lg">Emergência:</div>
               <div className="text-sm text-gray-600">10 minutos = 10 créditos</div>
             </div>
           </div>
@@ -261,7 +261,7 @@ export default function LandingPageCredits() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center mb-4">
-              <BookOpen className="h-8 w-8 text-blue-600 mr-3" />
+              <BookOpen className="h-8 w-8 text-primary mr-3" />
               <h2 className="text-4xl font-bold text-gray-900">Recursos e Conteúdo</h2>
             </div>
             <p className="text-xl text-gray-600">
@@ -304,7 +304,7 @@ export default function LandingPageCredits() {
                         </span>
                       )}
                     </div>
-                    <CardTitle className="text-xl hover:text-blue-600 transition-colors line-clamp-2">
+                    <CardTitle className="text-xl hover:text-primary transition-colors line-clamp-2">
                       {article.title}
                     </CardTitle>
                   </CardHeader>
@@ -338,18 +338,18 @@ export default function LandingPageCredits() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600">
+      <section className="py-20 bg-primary">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-white mb-6">
             Pronto para Começar sua Jornada de Bem-estar?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-indigo-100 mb-8">
             Junte-se a milhares de pessoas que já transformaram suas vidas com nossa plataforma flexível.
           </p>
           <Button
             size="lg"
             variant="secondary"
-            className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg"
+            className="bg-white text-primary hover:bg-gray-100 px-8 py-4 text-lg"
             onClick={() => navigate('/form')}
           >
             Começar Minha Avaliação Gratuita
@@ -364,7 +364,7 @@ export default function LandingPageCredits() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <Heart className="h-6 w-6 text-blue-400" />
+                <Heart className="h-6 w-6 text-indigo-400" />
                 <span className="text-xl font-bold">MenteCréditos</span>
               </div>
               <p className="text-gray-400">

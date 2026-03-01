@@ -17,8 +17,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Digite um endereço de email válido"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 })
 
 export default function LoginForm({ onSubmit, isLoading = false }) {
@@ -39,9 +39,9 @@ export default function LoginForm({ onSubmit, isLoading = false }) {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
+        <CardTitle className="text-2xl font-bold text-center">Entrar</CardTitle>
         <CardDescription className="text-center">
-          Enter your credentials to access your account
+          Insira suas credenciais para acessar sua conta
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -55,7 +55,7 @@ export default function LoginForm({ onSubmit, isLoading = false }) {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter your email"
+                      placeholder="Digite seu email"
                       type="email"
                       {...field}
                     />
@@ -70,11 +70,11 @@ export default function LoginForm({ onSubmit, isLoading = false }) {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Senha</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
-                        placeholder="Enter your password"
+                        placeholder="Digite sua senha"
                         type={showPassword ? "text" : "password"}
                         {...field}
                       />
@@ -103,7 +103,7 @@ export default function LoginForm({ onSubmit, isLoading = false }) {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
         </Form>

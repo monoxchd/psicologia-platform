@@ -34,7 +34,7 @@ function ScaleInput({ question, value, onChange }) {
 
   return (
     <div className="space-y-3">
-      <label className="block text-base font-semibold text-stone-800">
+      <label className="block text-base font-semibold text-gray-800">
         {question.text}
         {question.required && <span className="text-rose-400 ml-1">*</span>}
       </label>
@@ -51,13 +51,13 @@ function ScaleInput({ question, value, onChange }) {
               onClick={() => onChange(opt)}
               className={`flex-1 flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 transition-all ${
                 selected
-                  ? 'border-amber-400 bg-amber-50 shadow-sm scale-105'
-                  : 'border-stone-200 bg-white hover:border-amber-200 hover:bg-amber-50/30'
+                  ? 'border-indigo-400 bg-indigo-50 shadow-sm scale-105'
+                  : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/30'
               }`}
             >
               <span className="text-2xl">{emoji}</span>
               <span className={`text-[10px] sm:text-xs leading-tight text-center ${
-                selected ? 'text-amber-800 font-semibold' : 'text-stone-400'
+                selected ? 'text-indigo-800 font-semibold' : 'text-gray-400'
               }`}>
                 {label}
               </span>
@@ -75,7 +75,7 @@ function TextInput({ question, value, onChange }) {
 
   return (
     <div className="space-y-2">
-      <label className="block text-base font-semibold text-stone-800">
+      <label className="block text-base font-semibold text-gray-800">
         {question.text}
         {question.required && <span className="text-rose-400 ml-1">*</span>}
       </label>
@@ -85,7 +85,7 @@ function TextInput({ question, value, onChange }) {
           onChange={e => onChange(e.target.value)}
           placeholder={config.placeholder || ''}
           rows={4}
-          className="w-full rounded-xl border-2 border-stone-200 bg-white px-4 py-3 text-sm text-stone-700 placeholder:text-stone-300 focus:border-amber-400 focus:ring-0 focus:outline-none resize-none transition-colors"
+          className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 placeholder:text-gray-300 focus:border-indigo-400 focus:ring-0 focus:outline-none resize-none transition-colors"
         />
       ) : (
         <input
@@ -93,7 +93,7 @@ function TextInput({ question, value, onChange }) {
           value={value || ''}
           onChange={e => onChange(e.target.value)}
           placeholder={config.placeholder || ''}
-          className="w-full rounded-xl border-2 border-stone-200 bg-white px-4 py-3 text-sm text-stone-700 placeholder:text-stone-300 focus:border-amber-400 focus:ring-0 focus:outline-none transition-colors"
+          className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 placeholder:text-gray-300 focus:border-indigo-400 focus:ring-0 focus:outline-none transition-colors"
         />
       )}
     </div>
@@ -180,18 +180,18 @@ export default function ActivityFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-amber-50/80 via-orange-50/40 to-rose-50/30">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-600/70" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50/80 via-slate-50/40 to-white">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600/70" />
       </div>
     )
   }
 
   if (!activity) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-amber-50/80 to-stone-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50/80 to-gray-50">
         <div className="text-center">
-          <p className="text-stone-500 mb-4">Atividade não encontrada</p>
-          <Link to="/dashboard" className="text-amber-700 hover:text-amber-800 font-medium">
+          <p className="text-gray-500 mb-4">Atividade não encontrada</p>
+          <Link to="/dashboard" className="text-indigo-700 hover:text-indigo-800 font-medium">
             Voltar ao Dashboard
           </Link>
         </div>
@@ -206,7 +206,7 @@ export default function ActivityFormPage() {
   // Success state
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50/80 via-teal-50/40 to-stone-50">
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50/80 via-emerald-50/20 to-gray-50">
         <div className="max-w-lg mx-auto px-4 sm:px-6 pt-20 pb-16">
           <div className="text-center space-y-5">
             <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
@@ -216,8 +216,8 @@ export default function ActivityFormPage() {
               <div className="text-5xl">{MOOD_EMOJIS[moodAnswer]}</div>
             )}
             <div>
-              <h1 className="text-2xl font-bold text-stone-800">Registrado!</h1>
-              <p className="text-stone-500 mt-1">
+              <h1 className="text-2xl font-bold text-gray-800">Registrado!</h1>
+              <p className="text-gray-500 mt-1">
                 Sua atividade foi salva com sucesso
               </p>
             </div>
@@ -236,11 +236,11 @@ export default function ActivityFormPage() {
   // Already completed today - read-only view
   if (existingEntry) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-50/80 via-orange-50/40 to-stone-50">
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50/80 via-slate-50/40 to-white">
         <div className="max-w-lg mx-auto px-4 sm:px-6 pt-8 pb-16">
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-stone-700 mb-6"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 mb-6"
           >
             <ArrowLeft className="h-4 w-4" /> Voltar
           </Link>
@@ -250,7 +250,7 @@ export default function ActivityFormPage() {
               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-stone-800">{activity.title}</h1>
+              <h1 className="text-xl font-bold text-gray-800">{activity.title}</h1>
               <p className="text-xs text-emerald-600 font-medium">Concluído hoje</p>
             </div>
           </div>
@@ -263,15 +263,15 @@ export default function ActivityFormPage() {
 
                 return (
                   <div key={question.id}>
-                    <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1.5">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
                       {question.text}
                     </p>
                     {question.type === 'scale' ? (
                       <p className="text-2xl">
-                        {MOOD_EMOJIS[answer]} <span className="text-sm text-stone-600">{MOOD_LABELS[answer]}</span>
+                        {MOOD_EMOJIS[answer]} <span className="text-sm text-gray-600">{MOOD_LABELS[answer]}</span>
                       </p>
                     ) : (
-                      <p className="text-sm text-stone-700 whitespace-pre-wrap">{answer}</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{answer}</p>
                     )}
                   </div>
                 )
@@ -285,23 +285,23 @@ export default function ActivityFormPage() {
 
   // Form view
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50/80 via-orange-50/40 to-stone-50">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50/80 via-slate-50/40 to-white">
       <div className="max-w-lg mx-auto px-4 sm:px-6 pt-8 pb-16">
         <Link
           to="/dashboard"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-stone-700 mb-6"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 mb-6"
         >
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
 
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-            <Icon className="h-5 w-5 text-amber-700" />
+          <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+            <Icon className="h-5 w-5 text-indigo-700" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-stone-800">{activity.title}</h1>
+            <h1 className="text-xl font-bold text-gray-800">{activity.title}</h1>
             {activity.description && (
-              <p className="text-xs text-stone-400 mt-0.5">{activity.description}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{activity.description}</p>
             )}
           </div>
         </div>
@@ -336,7 +336,7 @@ export default function ActivityFormPage() {
           <Button
             type="submit"
             disabled={submitting}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl py-3 text-base font-semibold shadow-sm"
+            className="w-full bg-primary hover:bg-indigo-700 text-white rounded-xl py-3 text-base font-semibold shadow-sm"
           >
             {submitting ? (
               <>

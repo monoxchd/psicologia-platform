@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Button } from '@/components/ui/button.jsx'
@@ -117,8 +117,8 @@ export default function HrDashboardPage() {
   }
 
   const { company, metrics, concerns_distribution, risk_distribution, department_breakdown, monthly_sessions, nr1_compliance } = data
-  const primaryColor = company.primary_color || '#16a34a'
-  const secondaryColor = company.secondary_color || '#22c55e'
+  const primaryColor = company.primary_color || '#4f46e5'
+  const secondaryColor = company.secondary_color || '#6366f1'
 
   const concernsConfig = Object.fromEntries(
     (concerns_distribution || []).map((item, i) => [
@@ -155,11 +155,13 @@ export default function HrDashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <img
-                src={company.logo_url || horizontalLogo}
-                alt={company.logo_url ? `${company.name} Logo` : 'Terapia Conecta'}
-                className="h-7 object-contain"
-              />
+              <Link to={`/empresa/${slug}`}>
+                <img
+                  src={company.logo_url || horizontalLogo}
+                  alt={company.logo_url ? `${company.name} Logo` : 'Terapia Conecta'}
+                  className="h-7 object-contain"
+                />
+              </Link>
               <div
                 className="w-px h-6"
                 style={{ backgroundColor: `${primaryColor}30` }}

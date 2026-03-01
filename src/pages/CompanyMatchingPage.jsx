@@ -47,8 +47,8 @@ export default function CompanyMatchingPage() {
     )
   }
 
-  const primaryColor = company.primary_color || '#6366f1'
-  const secondaryColor = company.secondary_color || '#8b5cf6'
+  const primaryColor = company.primary_color || '#4f46e5'
+  const secondaryColor = company.secondary_color || '#6366f1'
 
   const formatNextAvailable = (therapist) => {
     if (!therapist.next_available_date) return null
@@ -128,12 +128,20 @@ export default function CompanyMatchingPage() {
                   <Card key={therapist.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-6">
                       <div className="text-center mb-4">
-                        <div
-                          className="w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center text-white text-2xl font-bold"
-                          style={{ backgroundColor: primaryColor }}
-                        >
-                          {therapist.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </div>
+                        {therapist.profile_photo_url ? (
+                          <img
+                            src={therapist.profile_photo_url}
+                            alt={therapist.name}
+                            className="w-20 h-20 rounded-full mx-auto mb-3 object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center text-white text-2xl font-bold"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            {therapist.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          </div>
+                        )}
                         <h3 className="text-lg font-semibold text-gray-900">{therapist.name}</h3>
                         <p className="text-sm text-gray-500">{therapist.specialty}</p>
                       </div>

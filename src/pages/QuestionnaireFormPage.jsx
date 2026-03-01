@@ -363,7 +363,7 @@ export default function QuestionnaireFormPage() {
     )
   }
 
-  const primaryColor = company?.primary_color || '#6366f1'
+  const primaryColor = company?.primary_color || '#4f46e5'
 
   if (submitted) {
     return (
