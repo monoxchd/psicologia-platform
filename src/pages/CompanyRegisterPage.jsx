@@ -177,7 +177,7 @@ export default function CompanyRegisterPage() {
                     Conhecer Nossos Psicólogos
                   </Button>
                 </Link>
-                <Link to="/simple-dashboard">
+                <Link to="/dashboard">
                   <Button
                     variant="outline"
                     className="w-full"

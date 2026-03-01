@@ -1,0 +1,505 @@
+import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
+import { Button } from '@/components/ui/button.jsx'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.jsx'
+import { Badge } from '@/components/ui/badge.jsx'
+import {
+  LogOut, Calendar, Clock, Video, MapPin, ArrowRight,
+  BookOpen, Lightbulb, BookMarked, CheckCircle2, Flame,
+  Loader2, Sparkles, ChevronRight, Sun
+} from 'lucide-react'
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer
+} from 'recharts'
+import authService from '../services/authService'
+import appointmentService from '../services/appointmentService'
+import activityService from '../services/activityService'
+import { blogService } from '../services/blogService'
+
+const MOOD_EMOJIS = ['', '😞', '😕', '😐', '🙂', '😄']
+const MOOD_COLORS = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981']
+
+function getActivityIcon(type) {
+  switch (type) {
+    case 'journal': return BookOpen
+    case 'reflection': return Lightbulb
+    case 'reading': return BookMarked
+    default: return BookOpen
+  }
+}
+
+function formatRelativeDate(dateStr) {
+  const date = new Date(dateStr + 'T12:00:00')
+  const today = new Date()
+  today.setHours(12, 0, 0, 0)
+  const diffDays = Math.round((today - date) / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return 'Hoje'
+  if (diffDays === 1) return 'Ontem'
+  if (diffDays < 7) return `${diffDays} dias atrás`
+  return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })
+}
+
+function CustomTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const d = payload[0].payload
+  return (
+    <div className="rounded-xl border border-amber-200/60 bg-white/95 backdrop-blur-sm px-3.5 py-2.5 shadow-lg">
+      <p className="text-[11px] font-medium text-stone-400 mb-0.5">
+        {new Date(d.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
+      </p>
+      <p className="text-lg leading-none">
+        {MOOD_EMOJIS[Math.round(d.mood_score)]} <span className="text-sm font-semibold text-stone-700">{d.mood_score.toFixed(1)}</span>
+      </p>
+    </div>
+  )
+}
+
+export default function ClientDashboardPage() {
+  const navigate = useNavigate()
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [nextAppointment, setNextAppointment] = useState(null)
+  const [stats, setStats] = useState(null)
+  const [recentEntries, setRecentEntries] = useState([])
+  const [activities, setActivities] = useState([])
+  const [articles, setArticles] = useState([])
+  const [todayEntries, setTodayEntries] = useState([])
+
+  useEffect(() => {
+    if (!authService.isLoggedIn()) {
+      navigate('/login')
+      return
+    }
+
+    async function loadDashboard() {
+      try {
+        const [currentUser, appointmentsRes, statsRes, entriesRes, activitiesRes, articlesRes] =
+          await Promise.allSettled([
+            authService.getCurrentUser(),
+            appointmentService.getUpcoming(),
+            activityService.getStats(),
+            activityService.getEntries({ limit: 5 }),
+            activityService.getActivities(),
+            blogService.getArticles({ limit: 3 })
+          ])
+
+        if (currentUser.status === 'fulfilled' && currentUser.value) {
+          setUser(currentUser.value)
+        } else {
+          navigate('/login')
+          return
+        }
+
+        if (appointmentsRes.status === 'fulfilled') {
+          const appts = appointmentsRes.value?.data?.appointments ||
+                        appointmentsRes.value?.appointments || []
+          if (appts.length > 0) setNextAppointment(appts[0])
+        }
+
+        if (statsRes.status === 'fulfilled') {
+          setStats(statsRes.value)
+        }
+
+        if (entriesRes.status === 'fulfilled') {
+          const entries = entriesRes.value?.entries || []
+          setRecentEntries(entries)
+          const today = new Date().toISOString().split('T')[0]
+          setTodayEntries(entries.filter(e => e.entry_date === today))
+        }
+
+        if (activitiesRes.status === 'fulfilled') {
+          setActivities(activitiesRes.value?.activities || [])
+        }
+
+        if (articlesRes.status === 'fulfilled') {
+          setArticles(articlesRes.value?.articles || [])
+        }
+      } catch (error) {
+        console.error('Error loading dashboard:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDashboard()
+  }, [navigate])
+
+  const handleLogout = () => {
+    authService.logout()
+    navigate('/login')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-amber-50/80 via-orange-50/40 to-rose-50/30">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-600/70" />
+          <p className="text-sm text-stone-400 font-medium tracking-wide">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) return null
+
+  const firstName = user.first_name || user.name?.split(' ')[0] || 'Você'
+  const initials = user.first_name && user.last_name
+    ? `${user.first_name[0]}${user.last_name[0]}`
+    : user.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2) : 'U'
+
+  const todayFormatted = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  })
+
+  const streak = stats?.current_streak || 0
+  const moodTrend = stats?.mood_trend || []
+  const dailyActivities = activities.filter(a => a.frequency === 'daily')
+
+  const isActivityDoneToday = (slug) =>
+    todayEntries.some(e => e.activity_slug === slug)
+
+  const getTodayMoodEntry = () =>
+    todayEntries.find(e => e.activity_slug === 'diario-de-humor')
+
+  const getGreetingTime = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Bom dia'
+    if (hour < 18) return 'Boa tarde'
+    return 'Boa noite'
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-amber-50/80 via-orange-50/40 to-stone-50">
+      {/* Warm header */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-100/90 via-orange-100/50 to-rose-100/60" />
+        <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-amber-200/40 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-rose-200/30 to-transparent rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
+
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-8 pb-10">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-14 w-14 ring-2 ring-white/80 shadow-md">
+                <AvatarImage src={user.profile_photo} />
+                <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white text-lg font-bold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium text-amber-800/70">{getGreetingTime()}</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-stone-800 tracking-tight">
+                  {firstName}
+                </h1>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-stone-500 hover:text-stone-700 hover:bg-white/50 mt-1"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1.5">Sair</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 -mt-2 pb-16 space-y-6">
+        {/* Next Appointment */}
+        {nextAppointment ? (
+          <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="h-4 w-4 text-teal-600" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-teal-700">Próxima sessão</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="font-semibold text-stone-800">
+                    {nextAppointment.therapist?.name}
+                  </p>
+                  <div className="flex items-center gap-3 text-sm text-stone-500">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {nextAppointment.formatted_date || new Date(nextAppointment.date + 'T12:00:00').toLocaleDateString('pt-BR', {
+                        weekday: 'short', day: 'numeric', month: 'short'
+                      })}{' '}
+                      {nextAppointment.formatted_time || nextAppointment.time}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      {nextAppointment.mode === 'online'
+                        ? <><Video className="h-3.5 w-3.5" /> Online</>
+                        : <><MapPin className="h-3.5 w-3.5" /> Presencial</>
+                      }
+                    </span>
+                    {nextAppointment.duration && (
+                      <span>{nextAppointment.duration} min</span>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-teal-600 hover:bg-teal-700 text-white rounded-lg"
+                  onClick={() => navigate('/dashboard-old', { state: { tab: 'appointments' } })}
+                >
+                  Ver Detalhes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-0 shadow-md bg-gradient-to-r from-teal-50 to-cyan-50/50">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-stone-700">Nenhuma sessão agendada</p>
+                  <p className="text-sm text-stone-500 mt-0.5">Encontre o terapeuta ideal para você</p>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-teal-600 hover:bg-teal-700 text-white rounded-lg"
+                  onClick={() => navigate('/matching')}
+                >
+                  Agendar Sessão
+                  <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Today's Activities */}
+        <div>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div>
+              <h2 className="text-lg font-bold text-stone-800 flex items-center gap-2">
+                <Sun className="h-5 w-5 text-amber-500" />
+                Hoje
+              </h2>
+              <p className="text-xs text-stone-400 capitalize mt-0.5">{todayFormatted}</p>
+            </div>
+            {streak > 0 && (
+              <Badge className="bg-amber-100 text-amber-800 border-amber-200/80 hover:bg-amber-100 gap-1 py-1 px-2.5 text-xs font-semibold">
+                <Flame className="h-3.5 w-3.5" />
+                {streak} {streak === 1 ? 'dia' : 'dias'} seguidos
+              </Badge>
+            )}
+          </div>
+
+          <div className="grid gap-3">
+            {dailyActivities.map(activity => {
+              const done = isActivityDoneToday(activity.slug)
+              const Icon = getActivityIcon(activity.activity_type)
+              const moodEntry = activity.slug === 'diario-de-humor' ? getTodayMoodEntry() : null
+
+              return (
+                <Card
+                  key={activity.slug}
+                  className={`border-0 shadow-sm transition-all cursor-pointer ${
+                    done
+                      ? 'bg-emerald-50/80 ring-1 ring-emerald-200/60'
+                      : 'bg-white/90 hover:shadow-md hover:ring-1 hover:ring-amber-200/60 active:scale-[0.99]'
+                  }`}
+                  onClick={() => !done && navigate(`/atividades/${activity.slug}`)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        done
+                          ? 'bg-emerald-200/60'
+                          : 'bg-amber-100/80'
+                      }`}>
+                        {done
+                          ? <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                          : <Icon className="h-5 w-5 text-amber-700" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-semibold text-sm ${done ? 'text-emerald-800' : 'text-stone-800'}`}>
+                          {activity.title}
+                        </p>
+                        {done && moodEntry?.mood_score ? (
+                          <p className="text-xs text-emerald-600 mt-0.5">
+                            Humor: {MOOD_EMOJIS[moodEntry.mood_score]} {['', 'Muito mal', 'Mal', 'Neutro', 'Bem', 'Muito bem'][moodEntry.mood_score]}
+                          </p>
+                        ) : !done ? (
+                          <p className="text-xs text-stone-400 mt-0.5">{activity.description}</p>
+                        ) : (
+                          <p className="text-xs text-emerald-600 mt-0.5">Concluído</p>
+                        )}
+                      </div>
+                      {!done && (
+                        <ChevronRight className="h-4 w-4 text-stone-300 shrink-0" />
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+
+            {dailyActivities.length === 0 && (
+              <Card className="border-0 shadow-sm bg-white/90">
+                <CardContent className="p-6 text-center">
+                  <Sparkles className="h-8 w-8 text-amber-300 mx-auto mb-2" />
+                  <p className="text-sm text-stone-500">Atividades diárias aparecerão aqui</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* Mood Chart */}
+        <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-bold text-stone-800">Seu Humor</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {moodTrend.length >= 3 ? (
+              <div className="h-48 -mx-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={moodTrend} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.35} />
+                        <stop offset="50%" stopColor="#fb923c" stopOpacity={0.15} />
+                        <stop offset="100%" stopColor="#fbbf24" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f5f0eb" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 11, fill: '#a8a29e' }}
+                      tickFormatter={v => {
+                        const d = new Date(v + 'T12:00:00')
+                        return `${d.getDate()}/${d.getMonth() + 1}`
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      domain={[1, 5]}
+                      ticks={[1, 2, 3, 4, 5]}
+                      tick={{ fontSize: 11, fill: '#a8a29e' }}
+                      tickFormatter={v => MOOD_EMOJIS[v] || v}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="mood_score"
+                      stroke="#f59e0b"
+                      strokeWidth={2.5}
+                      fill="url(#moodGradient)"
+                      dot={{ r: 3.5, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
+                      activeDot={{ r: 5, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="py-10 text-center">
+                <div className="text-3xl mb-2">📊</div>
+                <p className="text-sm text-stone-400">
+                  Continue registrando seu humor para ver tendências
+                </p>
+                <p className="text-xs text-stone-300 mt-1">Mínimo de 3 registros</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recommended Readings */}
+        {articles.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h2 className="text-lg font-bold text-stone-800">Leituras Recomendadas</h2>
+              <Link to="/blog" className="text-xs font-semibold text-amber-700 hover:text-amber-800 flex items-center gap-0.5">
+                Ver Mais <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid gap-3">
+              {articles.slice(0, 3).map(article => (
+                <Link
+                  key={article.id || article.slug}
+                  to={`/blog/${article.slug}`}
+                  className="block"
+                >
+                  <Card className="border-0 shadow-sm bg-white/90 hover:shadow-md transition-all active:scale-[0.99] overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="flex gap-0">
+                        {article.featured_image_url && (
+                          <div className="w-24 sm:w-32 shrink-0">
+                            <img
+                              src={article.featured_image_url}
+                              alt=""
+                              className="w-full h-full object-cover min-h-[80px]"
+                            />
+                          </div>
+                        )}
+                        <div className="p-3.5 flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm text-stone-800 line-clamp-2 leading-snug">
+                            {article.title}
+                          </h3>
+                          {article.excerpt && (
+                            <p className="text-xs text-stone-400 mt-1.5 line-clamp-2">{article.excerpt}</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Activity Feed */}
+        {recentEntries.length > 0 && (
+          <div>
+            <h2 className="text-lg font-bold text-stone-800 mb-3 px-1">Atividades Recentes</h2>
+            <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm">
+              <CardContent className="p-2">
+                <div className="divide-y divide-stone-100">
+                  {recentEntries.map(entry => {
+                    const Icon = getActivityIcon(entry.activity_type)
+                    const isMood = entry.activity_type === 'journal' && entry.mood_score
+
+                    return (
+                      <div key={entry.id} className="flex items-center gap-3 px-3 py-3">
+                        <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4 text-stone-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-stone-700 truncate">
+                            {entry.activity_title}
+                          </p>
+                          <p className="text-xs text-stone-400">{formatRelativeDate(entry.entry_date)}</p>
+                        </div>
+                        {isMood && (
+                          <span className="text-lg shrink-0">{MOOD_EMOJIS[entry.mood_score]}</span>
+                        )}
+                        {!isMood && entry.answers && (
+                          <p className="text-xs text-stone-400 max-w-[120px] truncate shrink-0">
+                            {typeof entry.answers === 'object'
+                              ? Object.values(entry.answers).find(v => typeof v === 'string' && v.length > 0) || ''
+                              : ''
+                            }
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

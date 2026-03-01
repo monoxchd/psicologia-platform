@@ -48,7 +48,7 @@ export default function CreditsPage() {
 
       if (response.success) {
         // Show success and redirect to dashboard
-        navigate('/simple-dashboard', {
+        navigate('/dashboard', {
           state: {
             purchaseSuccess: true,
             creditsAdded: packageData.credits,

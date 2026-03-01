@@ -19,7 +19,7 @@ export default function RegisterPage() {
         // Redirect based on user type
         const redirectPath = response.user.user_type === 'therapist'
           ? '/therapist/dashboard'
-          : '/simple-dashboard'
+          : '/dashboard'
         navigate(redirectPath)
       } else {
         setError(response.error || "Registration failed. Please try again.")

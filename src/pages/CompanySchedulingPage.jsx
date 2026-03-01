@@ -225,7 +225,7 @@ export default function CompanySchedulingPage() {
               </div>
 
               <div className="space-y-3">
-                <Link to="/simple-dashboard">
+                <Link to="/dashboard">
                   <Button
                     className="w-full text-white"
                     style={{ backgroundColor: primaryColor }}

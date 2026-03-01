@@ -52,7 +52,7 @@ export default function SimpleCreditsPage() {
         console.log(`✅ Purchase successful! New balance: ${response.data.new_balance}`)
 
         // Redirect to dashboard with success message including real data
-        navigate('/simple-dashboard', {
+        navigate('/dashboard', {
           state: {
             purchaseSuccess: true,
             creditsAdded: pkg.credits,

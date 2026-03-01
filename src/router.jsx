@@ -9,6 +9,8 @@ import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import SimpleDashboardPage from './pages/SimpleDashboardPage.jsx'
+import ClientDashboardPage from './pages/ClientDashboardPage.jsx'
+import ActivityFormPage from './pages/ActivityFormPage.jsx'
 import BlogPage from './pages/BlogPage.jsx'
 import ArticlePage from './pages/ArticlePage.jsx'
 import BlogAdminPage from './pages/BlogAdminPage.jsx'
@@ -36,7 +38,15 @@ export const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
+    element: <ClientDashboardPage />
+  },
+  {
+    path: "/dashboard-old",
     element: <DashboardPage />
+  },
+  {
+    path: "/atividades/:slug",
+    element: <ActivityFormPage />
   },
   {
     path: "/form",
