@@ -385,22 +385,6 @@ const TherapistDashboardPage = () => {
               </CardContent>
             </Card>
 
-            {/* Disponibilidade Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Disponibilidade
-                </CardTitle>
-                <CardDescription>
-                  Configure seus horários de atendimento
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AvailabilityGrid />
-              </CardContent>
-            </Card>
-
             {/* Help Card */}
             <Card className="bg-indigo-50 border-indigo-200">
               <CardHeader>
@@ -419,6 +403,22 @@ const TherapistDashboardPage = () => {
             </Card>
           </div>
         </div>
+
+        {/* Disponibilidade — Full Width */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Disponibilidade
+            </CardTitle>
+            <CardDescription>
+              Configure seus horários de atendimento — clique ou arraste para selecionar
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AvailabilityGrid />
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
