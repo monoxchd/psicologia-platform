@@ -31,6 +31,31 @@ class AdminService {
     return api.delete(`/admin/companies/${companyId}/therapists/${therapistId}`)
   }
 
+  async uploadCompanyLogo(companyId, imageFile) {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
+    const token = localStorage.getItem('auth_token')
+    const formData = new FormData()
+    formData.append('logo', imageFile)
+
+    const response = await fetch(`${API_BASE_URL}/admin/companies/${companyId}/upload_logo`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData,
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+      const error = new Error(data.error || 'Erro ao enviar logo')
+      error.errors = data.errors
+      throw error
+    }
+    return data
+  }
+
+  async destroyCompanyLogo(companyId) {
+    return api.delete(`/admin/companies/${companyId}/destroy_logo`)
+  }
+
   // Therapists
   async getTherapists(q = '') {
     const params = q ? { q } : {}

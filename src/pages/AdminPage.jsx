@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Building2, Users, UserCog, Plus, Search, Edit, Power, Loader2,
-  Shield, X, UserPlus
+  Shield, X, UserPlus, Upload, Trash2
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
@@ -141,19 +141,22 @@ function CompaniesTab() {
 
   const handleSave = async (formData) => {
     try {
+      let result
       if (editing) {
-        const updated = await adminService.updateCompany(editing.id, formData)
-        setCompanies(prev => prev.map(c => c.id === updated.id ? updated : c))
+        result = await adminService.updateCompany(editing.id, formData)
+        setCompanies(prev => prev.map(c => c.id === result.id ? result : c))
         toast.success('Empresa atualizada')
       } else {
-        const created = await adminService.createCompany(formData)
-        setCompanies(prev => [created, ...prev])
+        result = await adminService.createCompany(formData)
+        setCompanies(prev => [result, ...prev])
         toast.success('Empresa criada')
       }
       setDialogOpen(false)
       setEditing(null)
+      return result
     } catch (e) {
       toast.error(e.errors ? e.errors.join(', ') : 'Erro ao salvar empresa')
+      return null
     }
   }
 
@@ -629,11 +632,17 @@ function ToggleActiveDialog({ open, onOpenChange, name, active, onConfirm }) {
 function CompanyFormDialog({ open, onOpenChange, company, onSave }) {
   const [form, setForm] = useState({})
   const [saving, setSaving] = useState(false)
+  const [logoFile, setLogoFile] = useState(null)
+  const [logoPreview, setLogoPreview] = useState(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   useEffect(() => {
     if (open) {
+      setLogoFile(null)
+      setLogoPreview(company?.logo_url || null)
       setForm(company ? {
         name: company.name || '',
+        slug: company.slug || '',
         description: company.description || '',
         contact_email: company.contact_email || '',
         contact_phone: company.contact_phone || '',
@@ -641,7 +650,7 @@ function CompanyFormDialog({ open, onOpenChange, company, onSave }) {
         secondary_color: company.secondary_color || '#8b5cf6',
         employee_count: company.employee_count || '',
       } : {
-        name: '', description: '', contact_email: '', contact_phone: '',
+        name: '', slug: '', description: '', contact_email: '', contact_phone: '',
         primary_color: '#6366f1', secondary_color: '#8b5cf6', employee_count: '',
       })
     }
@@ -651,6 +660,22 @@ function CompanyFormDialog({ open, onOpenChange, company, onSave }) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  const handleLogoSelect = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      toast.error('Tipo inválido. Use JPEG, PNG, SVG ou WebP.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo 2MB.')
+      return
+    }
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name?.trim()) { toast.error('Nome é obrigatório'); return }
@@ -658,13 +683,28 @@ function CompanyFormDialog({ open, onOpenChange, company, onSave }) {
     const data = { ...form }
     if (data.employee_count) data.employee_count = parseInt(data.employee_count)
     else delete data.employee_count
-    await onSave(data)
+    if (!data.slug?.trim()) delete data.slug
+
+    const result = await onSave(data)
+
+    // Upload logo after create/update if a file was selected
+    if (result && logoFile) {
+      setUploadingLogo(true)
+      try {
+        await adminService.uploadCompanyLogo(result.id, logoFile)
+        toast.success('Logo enviado')
+      } catch (err) {
+        toast.error('Empresa salva, mas erro ao enviar logo')
+      } finally {
+        setUploadingLogo(false)
+      }
+    }
     setSaving(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{company ? 'Editar Empresa' : 'Nova Empresa'}</DialogTitle>
           <DialogDescription>
@@ -672,14 +712,48 @@ function CompanyFormDialog({ open, onOpenChange, company, onSave }) {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="company-name">Nome *</Label>
-            <Input id="company-name" name="name" value={form.name || ''} onChange={handleChange} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="company-name">Nome *</Label>
+              <Input id="company-name" name="name" value={form.name || ''} onChange={handleChange} />
+            </div>
+            <div>
+              <Label htmlFor="company-slug">Slug</Label>
+              <Input id="company-slug" name="slug" value={form.slug || ''} onChange={handleChange} placeholder="Auto-gerado se vazio" />
+            </div>
           </div>
           <div>
             <Label htmlFor="company-description">Descrição</Label>
             <Textarea id="company-description" name="description" value={form.description || ''} onChange={handleChange} rows={2} />
           </div>
+
+          {/* Logo upload */}
+          <div>
+            <Label>Logo</Label>
+            <div className="flex items-center gap-4 mt-1">
+              {logoPreview ? (
+                <img src={logoPreview} alt="Logo" className="h-12 w-12 rounded object-contain border" />
+              ) : (
+                <div className="h-12 w-12 rounded border bg-gray-100 flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-gray-400" />
+                </div>
+              )}
+              <label className="cursor-pointer">
+                <input type="file" accept="image/jpeg,image/png,image/svg+xml,image/webp" onChange={handleLogoSelect} className="hidden" />
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border rounded text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">
+                  <Upload className="h-4 w-4" />
+                  {logoFile ? logoFile.name : 'Escolher logo'}
+                </span>
+              </label>
+              {logoPreview && (
+                <Button type="button" variant="ghost" size="sm" className="text-red-600" onClick={() => { setLogoFile(null); setLogoPreview(null) }}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">JPEG, PNG, SVG ou WebP. Máximo 2MB.</p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="company-email">Email de contato</Label>
@@ -711,8 +785,8 @@ function CompanyFormDialog({ open, onOpenChange, company, onSave }) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            <Button type="submit" disabled={saving || uploadingLogo}>
+              {(saving || uploadingLogo) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               {company ? 'Salvar' : 'Criar'}
             </Button>
           </DialogFooter>
