@@ -7,8 +7,13 @@ import { Badge } from '@/components/ui/badge.jsx'
 import {
   LogOut, Calendar, Clock, Video, MapPin, ArrowRight,
   BookOpen, Lightbulb, BookMarked, CheckCircle2, Flame,
-  Loader2, Sparkles, ChevronRight, Sun
+  Loader2, Sparkles, ChevronRight, Sun, X, MessageCircle
 } from 'lucide-react'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from '@/components/ui/alert-dialog.jsx'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
@@ -129,6 +134,21 @@ export default function ClientDashboardPage() {
     loadDashboard()
   }, [navigate])
 
+  const [cancelling, setCancelling] = useState(false)
+
+  const handleCancel = async () => {
+    if (!nextAppointment?.id) return
+    setCancelling(true)
+    try {
+      await appointmentService.cancel(nextAppointment.id)
+      setNextAppointment(null)
+    } catch (err) {
+      console.error('Error cancelling:', err)
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   const handleLogout = () => {
     authService.logout()
     navigate('/login')
@@ -225,38 +245,115 @@ export default function ClientDashboardPage() {
               <div className="flex items-center gap-2 mb-3">
                 <Calendar className="h-4 w-4 text-indigo-600" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-indigo-700">Próxima sessão</span>
+                {nextAppointment.starting_soon && (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] py-0 px-1.5">
+                    Em breve
+                  </Badge>
+                )}
               </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
+
+              <div className="flex items-center gap-3 mb-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={nextAppointment.therapist?.photo} />
+                  <AvatarFallback className="bg-indigo-100 text-indigo-700 text-sm font-bold">
+                    {nextAppointment.therapist?.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800">
                     {nextAppointment.therapist?.name}
                   </p>
-                  <div className="flex items-center gap-3 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      {nextAppointment.formatted_date || new Date(nextAppointment.date + 'T12:00:00').toLocaleDateString('pt-BR', {
-                        weekday: 'short', day: 'numeric', month: 'short'
-                      })}{' '}
-                      {nextAppointment.formatted_time || nextAppointment.time}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      {nextAppointment.mode === 'online'
-                        ? <><Video className="h-3.5 w-3.5" /> Online</>
-                        : <><MapPin className="h-3.5 w-3.5" /> Presencial</>
-                      }
-                    </span>
-                    {nextAppointment.duration && (
-                      <span>{nextAppointment.duration} min</span>
-                    )}
-                  </div>
+                  <p className="text-xs text-gray-400">{nextAppointment.therapist?.specialization}</p>
                 </div>
-                <Button
-                  size="sm"
-                  className="bg-primary hover:bg-indigo-700 text-white rounded-lg"
-                  onClick={() => navigate('/dashboard')}
-                >
-                  Ver Detalhes
-                </Button>
+              </div>
+
+              <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {nextAppointment.formatted_date || new Date(nextAppointment.date + 'T12:00:00').toLocaleDateString('pt-BR', {
+                    weekday: 'short', day: 'numeric', month: 'short'
+                  })}{' '}
+                  {nextAppointment.formatted_time || nextAppointment.time}
+                </span>
+                <span className="flex items-center gap-1">
+                  {nextAppointment.mode === 'online'
+                    ? <><Video className="h-3.5 w-3.5" /> Online</>
+                    : <><MapPin className="h-3.5 w-3.5" /> Presencial</>
+                  }
+                </span>
+                {nextAppointment.duration && (
+                  <span>{nextAppointment.duration} min</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {nextAppointment.meeting_link && nextAppointment.starting_soon && (
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                    onClick={() => window.open(nextAppointment.meeting_link, '_blank')}
+                  >
+                    <Video className="h-3.5 w-3.5 mr-1" />
+                    Entrar na Sessão
+                  </Button>
+                )}
+
+                {nextAppointment.can_cancel && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-lg text-gray-500 hover:text-indigo-700 border-gray-200"
+                      onClick={() => {
+                        const message = encodeURIComponent(
+                          `Olá! Gostaria de reagendar minha sessão do dia ${nextAppointment.formatted_date || nextAppointment.date} às ${nextAppointment.formatted_time || nextAppointment.time}. Meu nome é ${firstName}.`
+                        )
+                        window.open(`https://wa.me/5511914214449?text=${message}`, '_blank')
+                      }}
+                    >
+                      <MessageCircle className="h-3.5 w-3.5 mr-1" />
+                      Reagendar
+                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancelar sessão?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Sua sessão com {nextAppointment.therapist?.name} em{' '}
+                            {nextAppointment.formatted_date || nextAppointment.date} às{' '}
+                            {nextAppointment.formatted_time || nextAppointment.time} será cancelada.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Voltar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleCancel}
+                            disabled={cancelling}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            {cancelling ? 'Cancelando...' : 'Cancelar sessão'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
+
+                {!nextAppointment.can_cancel && (
+                  <p className="text-xs text-gray-400">
+                    Cancelamento indisponível (menos de 24h)
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
