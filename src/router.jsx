@@ -27,6 +27,7 @@ import CompanyMatchingPage from './pages/CompanyMatchingPage.jsx'
 import CompanySchedulingPage from './pages/CompanySchedulingPage.jsx'
 import HrDashboardPage from './pages/HrDashboardPage.jsx'
 import EnigmaQuizPage from './pages/EnigmaQuizPage.jsx'
+import AdminPage from './pages/AdminPage.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -144,5 +145,9 @@ export const router = createBrowserRouter([
   {
     path: "/enigma",
     element: <EnigmaQuizPage />
+  },
+  {
+    path: "/admin",
+    element: <AdminPage />
   }
 ])
