@@ -99,13 +99,13 @@ export default function EnigmaQuizInline() {
     setLoading(true)
 
     try {
-      await api.post('/enigma-leads', {
-        enigma_lead: {
+      await api.post('/leads', {
+        lead: {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          quiz_answer: quizAnswer.trim(),
-          correct: true,
+          source: 'enigma_inline',
+          notes: `Resposta do enigma: ${quizAnswer.trim()} (correta)`,
         }
       })
     } catch (err) {
