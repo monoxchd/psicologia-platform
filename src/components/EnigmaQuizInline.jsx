@@ -2,12 +2,11 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/components/ui/input.jsx'
 import { Label } from '@/components/ui/label.jsx'
-import { MessageCircle, ArrowRight, Lock, Eye, Gift, Sparkles } from 'lucide-react'
+import { MessageCircle, ArrowRight, Lock, Eye, Heart, Sparkles } from 'lucide-react'
 import api from '../services/api'
 
 const CORRECT_ANSWER = '33'
 const WHATSAPP_NUMBER = '5511914214449'
-const COUPON_CODE = 'ENIGMA30'
 
 const fonts = {
   serif: "'EB Garamond', Georgia, serif",
@@ -107,7 +106,6 @@ export default function EnigmaQuizInline() {
           phone: formData.phone,
           quiz_answer: quizAnswer.trim(),
           correct: true,
-          coupon_code: COUPON_CODE,
         }
       })
     } catch (err) {
@@ -120,7 +118,7 @@ export default function EnigmaQuizInline() {
 
   const handleWhatsAppClick = () => {
     const message = encodeURIComponent(
-      `Oi! Descobri o enigma do artigo e ganhei o cupom ${COUPON_CODE}. Gostaria de agendar minha sessão!`
+      `Oi! Descobri o enigma escondido no artigo sobre luto no trabalho. O texto me tocou e gostaria de conversar com um psicólogo.`
     )
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank')
   }
@@ -195,33 +193,12 @@ export default function EnigmaQuizInline() {
           style={{ background: `linear-gradient(135deg, ${colors.white}, #f0e6dc)` }}
         >
           <div className="flex items-center gap-3 mb-6">
-            <Gift className="h-5 w-5" style={{ color: colors.accent }} />
+            <Heart className="h-5 w-5" style={{ color: colors.accent }} />
             <p
               className="text-xs font-medium tracking-[0.18em] uppercase"
               style={{ fontFamily: fonts.sans, color: colors.accent }}
             >
-              Seu presente
-            </p>
-          </div>
-
-          <div
-            className="p-6 text-center mb-6"
-            style={{ background: colors.white, border: `2px dashed ${colors.accentLight}` }}
-          >
-            <p
-              className="text-xs uppercase tracking-[0.2em] mb-2"
-              style={{ fontFamily: fonts.sans, color: colors.inkSoft }}
-            >
-              Cupom de desconto
-            </p>
-            <p
-              className="text-3xl tracking-[0.08em] mb-1"
-              style={{ fontFamily: fonts.serif, color: colors.accent, fontWeight: 500 }}
-            >
-              {COUPON_CODE}
-            </p>
-            <p className="text-base font-medium" style={{ fontFamily: fonts.sans, color: colors.ink }}>
-              R$ 30 de desconto na sua sessão
+              Um convite
             </p>
           </div>
 
@@ -231,6 +208,7 @@ export default function EnigmaQuizInline() {
           >
             Você olhou com cuidado para algo que a maioria deixa passar.
             Esse mesmo olhar atento é o que a terapia ajuda a cultivar — para dentro.
+            Se o texto tocou você de alguma forma, saiba que esse é um bom sinal.
           </p>
 
           <button
@@ -239,7 +217,7 @@ export default function EnigmaQuizInline() {
             style={{ background: colors.accent, fontFamily: fonts.sans }}
           >
             <MessageCircle className="h-5 w-5" />
-            Agendar com desconto pelo WhatsApp
+            Conversar com um psicólogo
           </button>
 
           <p
@@ -300,7 +278,7 @@ export default function EnigmaQuizInline() {
           Trechos do artigo
         </p>
         <ExcerptCard before="estava mais irrit" marker=".:" after="da, dormindo mal" fullWord="irritada" delay={0} />
-        <ExcerptCard before="A s" marker=".:" after="ud.:de" fullWord="saudade" delay={0.1} />
+        <ExcerptCard before="A s" marker=".:" after={<>ud<GlowingMarker>.:</GlowingMarker>de</>} fullWord="saudade" delay={0.1} />
         <ExcerptCard before="reconhecer que você é hum" marker=".:" after="no" fullWord="humano" delay={0.15} />
         <ExcerptCard before="a potência do " marker=".:" after="colhimento" fullWord="acolhimento" delay={0.2} />
       </div>
@@ -405,7 +383,7 @@ export default function EnigmaQuizInline() {
                 Você tem um olhar atento
               </h3>
               <p className="text-sm" style={{ fontFamily: fonts.sans, color: colors.inkMid }}>
-                Nos conte quem você é para revelar o significado do enigma e receber um presente especial.
+                Nos conte quem você é para revelar o significado por trás do enigma.
               </p>
             </div>
 
@@ -478,7 +456,7 @@ export default function EnigmaQuizInline() {
                 className="w-full text-white py-4 text-sm font-medium tracking-[0.06em] uppercase transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                 style={{ background: colors.accent, fontFamily: fonts.sans }}
               >
-                {loading ? 'Revelando...' : 'Revelar o enigma e ganhar meu presente'}
+                {loading ? 'Revelando...' : 'Revelar o significado do enigma'}
               </button>
 
               <p
