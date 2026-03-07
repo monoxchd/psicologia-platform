@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Star, CheckCircle, Calendar, MessageCircle, ExternalLink, Brain } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import therapistService from '../services/therapistService'
+import ClientBottomNav from '../components/ClientBottomNav'
 
 export default function MatchingPage() {
   const location = useLocation()
@@ -33,7 +34,7 @@ export default function MatchingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12 pb-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <Card className="shadow-xl">
           <CardHeader className="text-center">
@@ -139,6 +140,8 @@ export default function MatchingPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ClientBottomNav />
     </div>
   )
 }

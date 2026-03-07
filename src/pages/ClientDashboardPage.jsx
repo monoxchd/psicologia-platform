@@ -18,6 +18,7 @@ import appointmentService from '../services/appointmentService'
 import activityService from '../services/activityService'
 import { blogService } from '../services/blogService'
 import horizontalLogo from '../assets/horizontal-logo.png'
+import ClientBottomNav from '../components/ClientBottomNav'
 
 const MOOD_EMOJIS = ['', '😞', '😕', '😐', '🙂', '😄']
 const MOOD_COLORS = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981']
@@ -216,7 +217,7 @@ export default function ClientDashboardPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 -mt-2 pb-16 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 -mt-2 pb-24 space-y-6">
         {/* Next Appointment */}
         {nextAppointment ? (
           <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm">
@@ -508,6 +509,8 @@ export default function ClientDashboardPage() {
           </div>
         )}
       </div>
+
+      <ClientBottomNav />
     </div>
   )
 }

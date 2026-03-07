@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge.jsx'
 import { CheckCircle, CreditCard, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import creditsService from '@/services/creditsService.js'
+import ClientBottomNav from '../components/ClientBottomNav'
 
 export default function SimpleCreditsPage() {
   const navigate = useNavigate()
@@ -69,7 +70,7 @@ export default function SimpleCreditsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12 pb-24">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Card className="shadow-xl">
           <CardHeader className="text-center">
@@ -156,6 +157,8 @@ export default function SimpleCreditsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ClientBottomNav />
     </div>
   )
 }

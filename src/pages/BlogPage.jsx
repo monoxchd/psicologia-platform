@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader } from '../components/ui/card'
 import { Search, Calendar, Clock, Eye, Brain, ArrowLeft } from 'lucide-react'
 import { blogService } from '../services/blogService'
 import SEOHead from '../components/SEOHead'
+import authService from '../services/authService'
+import ClientBottomNav from '../components/ClientBottomNav'
 
 const BlogPage = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -92,8 +94,10 @@ const BlogPage = () => {
     )
   }
 
+  const isClient = authService.isLoggedIn() && authService.isClient()
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 ${isClient ? 'pb-20' : ''}`}>
       <SEOHead
         title="Blog de Saúde Mental - MindCredits"
         description="Artigos especializados sobre saúde mental escritos por terapeutas licenciados. Encontre insights e orientações profissionais."
@@ -259,6 +263,8 @@ const BlogPage = () => {
           </div>
         )}
       </div>
+
+      {isClient && <ClientBottomNav />}
     </div>
   )
 }
