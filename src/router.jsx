@@ -6,7 +6,7 @@ import MatchingPage from './pages/MatchingPage.jsx'
 import SchedulingPage from './pages/SchedulingPage.jsx'
 import ConfirmationPage from './pages/ConfirmationPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
-import RegisterPage from './pages/RegisterPage.jsx'
+
 import DashboardPage from './pages/DashboardPage.jsx'
 import SimpleDashboardPage from './pages/SimpleDashboardPage.jsx'
 import ClientDashboardPage from './pages/ClientDashboardPage.jsx'
@@ -74,11 +74,7 @@ export const router = createBrowserRouter([
     path: "/login",
     element: <LoginPage />
   },
-  {
-    path: "/register",
-    element: <RegisterPage />
-  },
-  {
+{
     path: "/blog",
     element: <BlogPage />
   },

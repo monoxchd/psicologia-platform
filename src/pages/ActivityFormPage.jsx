@@ -3,10 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import {
-  ArrowLeft, Loader2, CheckCircle2, BookOpen, Lightbulb, BookMarked
+  ArrowLeft, Loader2, CheckCircle2, BookOpen, Lightbulb, BookMarked,
+  ChevronDown, ChevronUp
 } from 'lucide-react'
 import activityService from '../services/activityService'
 import authService from '../services/authService'
+import ClientBottomNav from '../components/ClientBottomNav'
 
 const MOOD_EMOJIS = ['', '😞', '😕', '😐', '🙂', '😄']
 const MOOD_LABELS = ['', 'Muito mal', 'Mal', 'Neutro', 'Bem', 'Muito bem']
@@ -110,6 +112,9 @@ export default function ActivityFormPage() {
   const [error, setError] = useState(null)
   const [answers, setAnswers] = useState({})
   const [existingEntry, setExistingEntry] = useState(null)
+  const [pastEntries, setPastEntries] = useState([])
+  const [showHistory, setShowHistory] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
 
   useEffect(() => {
     if (!authService.isLoggedIn()) {
@@ -149,6 +154,32 @@ export default function ActivityFormPage() {
 
     load()
   }, [slug, navigate])
+
+  const loadHistory = async () => {
+    if (pastEntries.length > 0) {
+      setShowHistory(!showHistory)
+      return
+    }
+    setLoadingHistory(true)
+    setShowHistory(true)
+    try {
+      const res = await activityService.getEntries({ activity_slug: slug, limit: 20 })
+      const entries = res?.entries || []
+      const today = new Date().toISOString().split('T')[0]
+      setPastEntries(entries.filter(e => e.entry_date !== today))
+    } catch (err) {
+      console.error('Error loading history:', err)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  const formatEntryDate = (dateStr) => {
+    const date = new Date(dateStr + 'T12:00:00')
+    return date.toLocaleDateString('pt-BR', {
+      weekday: 'long', day: 'numeric', month: 'long'
+    })
+  }
 
   const setAnswer = (questionId, value) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }))
@@ -206,6 +237,63 @@ export default function ActivityFormPage() {
   const visibleQuestions = (activity.questions || []).filter(q => q.type !== 'hidden')
   const moodAnswer = answers['mood']
 
+  const historySection = (
+    <div className="mt-6">
+      <button
+        type="button"
+        onClick={loadHistory}
+        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 py-3 transition-colors"
+      >
+        {loadingHistory ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : showHistory ? (
+          <ChevronUp className="h-4 w-4" />
+        ) : (
+          <ChevronDown className="h-4 w-4" />
+        )}
+        {showHistory ? 'Ocultar registros anteriores' : 'Ver registros anteriores'}
+      </button>
+
+      {showHistory && !loadingHistory && (
+        <div className="space-y-3 mt-2">
+          {pastEntries.length === 0 ? (
+            <p className="text-center text-sm text-gray-400 py-4">Nenhum registro anterior</p>
+          ) : (
+            pastEntries.map(entry => (
+              <Card key={entry.id} className="border-0 shadow-sm bg-white/80">
+                <CardContent className="p-4">
+                  <p className="text-xs font-semibold text-indigo-500 capitalize mb-3">
+                    {formatEntryDate(entry.entry_date)}
+                  </p>
+                  <div className="space-y-3">
+                    {visibleQuestions.map(question => {
+                      const answer = entry.answers?.[question.id]
+                      if (!answer && answer !== 0) return null
+                      return (
+                        <div key={question.id}>
+                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+                            {question.text}
+                          </p>
+                          {question.type === 'scale' ? (
+                            <p className="text-lg">
+                              {MOOD_EMOJIS[answer]} <span className="text-xs text-gray-500">{MOOD_LABELS[answer]}</span>
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{answer}</p>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+
   // Success state
   if (submitted) {
     return (
@@ -240,7 +328,7 @@ export default function ActivityFormPage() {
   if (existingEntry) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-indigo-50/80 via-slate-50/40 to-white">
-        <div className="max-w-lg mx-auto px-4 sm:px-6 pt-8 pb-16">
+        <div className="max-w-lg mx-auto px-4 sm:px-6 pt-8 pb-24">
           <Link
             to="/dashboard"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 mb-6"
@@ -281,6 +369,8 @@ export default function ActivityFormPage() {
               })}
             </CardContent>
           </Card>
+
+          {historySection}
         </div>
       </div>
     )
@@ -289,7 +379,7 @@ export default function ActivityFormPage() {
   // Form view
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50/80 via-slate-50/40 to-white">
-      <div className="max-w-lg mx-auto px-4 sm:px-6 pt-8 pb-16">
+      <div className="max-w-lg mx-auto px-4 sm:px-6 pt-8 pb-24">
         <Link
           to="/dashboard"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 mb-6"
@@ -357,7 +447,11 @@ export default function ActivityFormPage() {
             )}
           </Button>
         </form>
+
+        {historySection}
       </div>
+
+      <ClientBottomNav />
     </div>
   )
 }

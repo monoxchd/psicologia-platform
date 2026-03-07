@@ -1,24 +1,28 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Home, Search, BookOpen, CreditCard } from 'lucide-react'
+import { Home, Search, BookOpen, Sparkles } from 'lucide-react'
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Início', icon: Home },
   { path: '/matching', label: 'Psicólogos', icon: Search },
   { path: '/blog', label: 'Artigos', icon: BookOpen },
-  { path: '/credits', label: 'Créditos', icon: CreditCard },
+  { path: '/atividades/diario-de-humor', label: 'Atividades', icon: Sparkles, matchPrefix: '/atividades' },
 ]
 
 export default function ClientBottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const isActive = (path) => location.pathname === path
+  const isActive = (item) =>
+    item.matchPrefix
+      ? location.pathname.startsWith(item.matchPrefix)
+      : location.pathname === item.path
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200/60 pb-[env(safe-area-inset-bottom)]">
       <div className="max-w-3xl mx-auto flex items-center justify-around px-2 py-1.5">
-        {NAV_ITEMS.map(({ path, label, icon: Icon }) => {
-          const active = isActive(path)
+        {NAV_ITEMS.map((item) => {
+          const { path, label, icon: Icon } = item
+          const active = isActive(item)
           return (
             <button
               key={path}

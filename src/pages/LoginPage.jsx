@@ -52,17 +52,6 @@ export default function LoginPage() {
 
         <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
 
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Não tem uma conta?{" "}
-            <Link
-              to="/register"
-              className="font-medium text-primary hover:underline"
-            >
-              Cadastre-se aqui
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   )
