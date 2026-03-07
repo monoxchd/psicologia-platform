@@ -99,6 +99,24 @@ class AdminService {
   async toggleClientActive(id) {
     return api.request(`/admin/clients/${id}/toggle_active`, { method: 'PATCH' })
   }
+
+  // Leads (B2C)
+  async getLeads(params = {}) {
+    return api.get('/admin/leads', params)
+  }
+
+  async updateLead(id, data) {
+    return api.put(`/admin/leads/${id}`, { lead: data })
+  }
+
+  // DNF Leads (B2B)
+  async getDnfLeads(params = {}) {
+    return api.get('/admin/dnf_leads', params)
+  }
+
+  async updateDnfLead(id, data) {
+    return api.put(`/admin/dnf_leads/${id}`, { dnf_lead: data })
+  }
 }
 
 export default new AdminService()

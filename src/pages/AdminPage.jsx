@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Building2, Users, UserCog, Plus, Search, Edit, Power, Loader2,
-  Shield, X, UserPlus, Upload, Trash2
+  Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
@@ -89,6 +89,10 @@ export default function AdminPage() {
               <Users className="h-4 w-4" />
               Clientes
             </TabsTrigger>
+            <TabsTrigger value="leads" className="gap-1.5">
+              <Mail className="h-4 w-4" />
+              Leads
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies">
@@ -99,6 +103,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="clients">
             <ClientsTab />
+          </TabsContent>
+          <TabsContent value="leads">
+            <LeadsTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -1149,6 +1156,379 @@ function ClientFormDialog({ open, onOpenChange, client, companies, onSave }) {
             </Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── Leads Tab ──────────────────────────────────────────────
+
+const STATUS_LABELS = {
+  new: 'Novo',
+  contacted: 'Contatado',
+  converted: 'Convertido',
+  archived: 'Arquivado',
+}
+
+const STATUS_COLORS = {
+  new: 'bg-blue-100 text-blue-800',
+  contacted: 'bg-yellow-100 text-yellow-800',
+  converted: 'bg-green-100 text-green-800',
+  archived: 'bg-gray-100 text-gray-600',
+}
+
+const SOURCE_LABELS = {
+  landing: 'Landing Page',
+  enigma: 'Enigma',
+}
+
+const INTEREST_LABELS = {
+  aep: 'AEP',
+  suporte: 'Suporte',
+  treinamento: 'Treinamento',
+  completo: 'Completo',
+  outro: 'Outro',
+}
+
+function LeadsTab() {
+  const [view, setView] = useState('b2c')
+  const [leads, setLeads] = useState([])
+  const [dnfLeads, setDnfLeads] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [detailLead, setDetailLead] = useState(null)
+  const [detailType, setDetailType] = useState(null)
+
+  const fetchLeads = async () => {
+    setLoading(true)
+    try {
+      const [b2c, b2b] = await Promise.all([
+        adminService.getLeads(),
+        adminService.getDnfLeads(),
+      ])
+      setLeads(b2c)
+      setDnfLeads(b2b)
+    } catch {
+      toast.error('Erro ao carregar leads')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchLeads() }, [])
+
+  const filteredLeads = useMemo(() => {
+    const q = search.toLowerCase()
+    if (!q) return leads
+    return leads.filter(l =>
+      l.name?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q)
+    )
+  }, [leads, search])
+
+  const filteredDnfLeads = useMemo(() => {
+    const q = search.toLowerCase()
+    if (!q) return dnfLeads
+    return dnfLeads.filter(l =>
+      l.name?.toLowerCase().includes(q) || l.company?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q)
+    )
+  }, [dnfLeads, search])
+
+  const handleStatusChange = async (lead, type, newStatus) => {
+    try {
+      if (type === 'b2c') {
+        await adminService.updateLead(lead.id, { status: newStatus })
+        setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: newStatus } : l))
+      } else {
+        await adminService.updateDnfLead(lead.id, { status: newStatus })
+        setDnfLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: newStatus } : l))
+      }
+      toast.success('Status atualizado')
+    } catch {
+      toast.error('Erro ao atualizar status')
+    }
+  }
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleDateString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    })
+  }
+
+  const formatPhone = (phone) => {
+    if (!phone) return '—'
+    const d = phone.replace(/\D/g, '')
+    if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+    if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+    return phone
+  }
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <CardTitle className="text-lg">Leads</CardTitle>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex rounded-md border overflow-hidden">
+              <button
+                onClick={() => setView('b2c')}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                  view === 'b2c' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                B2C ({leads.length})
+              </button>
+              <button
+                onClick={() => setView('b2b')}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                  view === 'b2b' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                B2B ({dnfLeads.length})
+              </button>
+            </div>
+            <div className="relative flex-1 sm:flex-initial">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 w-full sm:w-64"
+              />
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        ) : view === 'b2c' ? (
+          <B2CLeadsTable
+            leads={filteredLeads}
+            formatDate={formatDate}
+            formatPhone={formatPhone}
+            onStatusChange={(lead, status) => handleStatusChange(lead, 'b2c', status)}
+            onViewDetail={(lead) => { setDetailLead(lead); setDetailType('b2c') }}
+          />
+        ) : (
+          <B2BLeadsTable
+            leads={filteredDnfLeads}
+            formatDate={formatDate}
+            formatPhone={formatPhone}
+            onStatusChange={(lead, status) => handleStatusChange(lead, 'b2b', status)}
+            onViewDetail={(lead) => { setDetailLead(lead); setDetailType('b2b') }}
+          />
+        )}
+      </CardContent>
+
+      <LeadDetailDialog
+        lead={detailLead}
+        type={detailType}
+        open={!!detailLead}
+        onClose={() => setDetailLead(null)}
+        formatDate={formatDate}
+        formatPhone={formatPhone}
+      />
+    </Card>
+  )
+}
+
+function B2CLeadsTable({ leads, formatDate, formatPhone, onStatusChange, onViewDetail }) {
+  if (leads.length === 0) {
+    return <p className="text-center text-gray-500 py-8">Nenhum lead B2C encontrado.</p>
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nome</TableHead>
+          <TableHead>Email</TableHead>
+          <TableHead>Telefone</TableHead>
+          <TableHead>Origem</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Data</TableHead>
+          <TableHead className="w-[80px]"></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {leads.map((lead) => (
+          <TableRow key={lead.id}>
+            <TableCell className="font-medium">{lead.name}</TableCell>
+            <TableCell>{lead.email}</TableCell>
+            <TableCell>{formatPhone(lead.phone)}</TableCell>
+            <TableCell>
+              <Badge variant="outline" className="text-xs">
+                {SOURCE_LABELS[lead.source] || lead.source || 'Landing Page'}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <Select value={lead.status} onValueChange={(v) => onStatusChange(lead, v)}>
+                <SelectTrigger className="w-[130px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell className="text-sm text-gray-500">{formatDate(lead.created_at)}</TableCell>
+            <TableCell>
+              <Button variant="ghost" size="sm" onClick={() => onViewDetail(lead)}>
+                <Eye className="h-4 w-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+function B2BLeadsTable({ leads, formatDate, formatPhone, onStatusChange, onViewDetail }) {
+  if (leads.length === 0) {
+    return <p className="text-center text-gray-500 py-8">Nenhum lead B2B encontrado.</p>
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nome</TableHead>
+          <TableHead>Empresa</TableHead>
+          <TableHead>Email</TableHead>
+          <TableHead>Interesse</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Data</TableHead>
+          <TableHead className="w-[80px]"></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {leads.map((lead) => (
+          <TableRow key={lead.id}>
+            <TableCell className="font-medium">{lead.name}</TableCell>
+            <TableCell>{lead.company}</TableCell>
+            <TableCell>{lead.email}</TableCell>
+            <TableCell>
+              <Badge variant="outline" className="text-xs">
+                {INTEREST_LABELS[lead.interest] || lead.interest}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <Select value={lead.status} onValueChange={(v) => onStatusChange(lead, v)}>
+                <SelectTrigger className="w-[130px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell className="text-sm text-gray-500">{formatDate(lead.created_at)}</TableCell>
+            <TableCell>
+              <Button variant="ghost" size="sm" onClick={() => onViewDetail(lead)}>
+                <Eye className="h-4 w-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+function LeadDetailDialog({ lead, type, open, onClose, formatDate, formatPhone }) {
+  if (!lead) return null
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{lead.name}</DialogTitle>
+          <DialogDescription>
+            {type === 'b2c' ? 'Lead B2C' : 'Lead B2B'} — {formatDate(lead.created_at)}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <div className="grid grid-cols-[100px_1fr] gap-2">
+            <span className="text-gray-500">Email:</span>
+            <span>{lead.email}</span>
+
+            <span className="text-gray-500">Telefone:</span>
+            <span>{formatPhone(lead.phone)}</span>
+
+            <span className="text-gray-500">Status:</span>
+            <Badge className={`w-fit ${STATUS_COLORS[lead.status] || ''}`}>
+              {STATUS_LABELS[lead.status] || lead.status}
+            </Badge>
+
+            {type === 'b2c' && (
+              <>
+                <span className="text-gray-500">Origem:</span>
+                <span>{SOURCE_LABELS[lead.source] || lead.source || 'Landing Page'}</span>
+
+                {lead.age_range && (
+                  <>
+                    <span className="text-gray-500">Faixa etária:</span>
+                    <span>{lead.age_range}</span>
+                  </>
+                )}
+                {lead.urgency && (
+                  <>
+                    <span className="text-gray-500">Urgência:</span>
+                    <span>{lead.urgency}</span>
+                  </>
+                )}
+                {lead.therapy_experience && (
+                  <>
+                    <span className="text-gray-500">Experiência:</span>
+                    <span>{lead.therapy_experience}</span>
+                  </>
+                )}
+              </>
+            )}
+
+            {type === 'b2b' && (
+              <>
+                <span className="text-gray-500">Empresa:</span>
+                <span>{lead.company}</span>
+
+                <span className="text-gray-500">Funcionários:</span>
+                <span>{lead.employees}</span>
+
+                <span className="text-gray-500">Interesse:</span>
+                <span>{INTEREST_LABELS[lead.interest] || lead.interest}</span>
+              </>
+            )}
+
+            {lead.contacted_at && (
+              <>
+                <span className="text-gray-500">Contatado em:</span>
+                <span>{formatDate(lead.contacted_at)}</span>
+              </>
+            )}
+          </div>
+
+          {(lead.concerns || lead.message) && (
+            <div className="pt-2 border-t">
+              <p className="text-gray-500 mb-1">{type === 'b2c' ? 'Preocupações:' : 'Mensagem:'}</p>
+              <p className="text-gray-700 whitespace-pre-wrap">{lead.concerns || lead.message}</p>
+            </div>
+          )}
+
+          {lead.notes && (
+            <div className="pt-2 border-t">
+              <p className="text-gray-500 mb-1">Notas:</p>
+              <p className="text-gray-700 whitespace-pre-wrap">{lead.notes}</p>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )

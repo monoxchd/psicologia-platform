@@ -5,8 +5,23 @@ import { Card, CardContent } from '@/components/ui/card.jsx'
 import { Input } from '@/components/ui/input.jsx'
 import { Label } from '@/components/ui/label.jsx'
 import { MessageCircle, ArrowRight, Lock, Eye, Heart, Sparkles } from 'lucide-react'
-import api from '../services/api'
+import leadService from '../services/leadService'
 import horizontalLogo from '../assets/horizontal-logo.png'
+
+function formatPhone(value) {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+}
+
+function isValidPhone(value) {
+  return value.replace(/\D/g, '').length === 11
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
 
 const CORRECT_ANSWER = '33'
 const WHATSAPP_NUMBER = '5511914214449'
@@ -76,13 +91,16 @@ export default function EnigmaQuizPage() {
   const [submitted, setSubmitted] = useState(false)
   const [isWrong, setIsWrong] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState({})
   const quizRef = useRef(null)
   const formRef = useRef(null)
 
   const isCorrectAnswer = quizAnswer.trim().toLowerCase() === CORRECT_ANSWER
 
   const handleInputChange = (field, value) => {
+    if (field === 'phone') value = formatPhone(value)
     setFormData(prev => ({ ...prev, [field]: value }))
+    setErrors(prev => ({ ...prev, [field]: undefined }))
   }
 
   const handleQuizSubmit = () => {
@@ -99,20 +117,28 @@ export default function EnigmaQuizPage() {
     e.preventDefault()
     if (!isCorrectAnswer) return
 
+    const newErrors = {}
+    if (!formData.name.trim()) newErrors.name = 'Informe seu nome'
+    if (!isValidEmail(formData.email)) newErrors.email = 'Email inválido'
+    if (!isValidPhone(formData.phone)) newErrors.phone = 'Número inválido (DDD + 9 dígitos)'
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+
     setLoading(true)
 
     try {
-      await api.post('/enigma-leads', {
-        enigma_lead: {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          quiz_answer: quizAnswer.trim(),
-          correct: true,
-        }
+      await leadService.createLead({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone.replace(/\D/g, ''),
+        source: 'enigma',
+        notes: `Resposta do enigma: ${quizAnswer.trim()} (correta)`,
       })
     } catch (err) {
-      console.error('Failed to save enigma lead:', err)
+      console.error('Failed to save lead:', err)
     }
 
     setSubmitted(true)
@@ -585,8 +611,9 @@ export default function EnigmaQuizPage() {
                       placeholder="Seu nome"
                       required
                       className="mt-1.5 h-11 rounded-none bg-white"
-                      style={{ borderColor: 'rgba(0,0,0,0.12)', fontFamily: fonts.sans }}
+                      style={{ borderColor: errors.name ? '#dc2626' : 'rgba(0,0,0,0.12)', fontFamily: fonts.sans }}
                     />
+                    {errors.name && <p className="text-xs mt-1" style={{ color: '#dc2626' }}>{errors.name}</p>}
                   </div>
 
                   <div>
@@ -605,8 +632,9 @@ export default function EnigmaQuizPage() {
                       placeholder="seu@email.com"
                       required
                       className="mt-1.5 h-11 rounded-none bg-white"
-                      style={{ borderColor: 'rgba(0,0,0,0.12)', fontFamily: fonts.sans }}
+                      style={{ borderColor: errors.email ? '#dc2626' : 'rgba(0,0,0,0.12)', fontFamily: fonts.sans }}
                     />
+                    {errors.email && <p className="text-xs mt-1" style={{ color: '#dc2626' }}>{errors.email}</p>}
                   </div>
 
                   <div>
@@ -619,13 +647,15 @@ export default function EnigmaQuizPage() {
                     </Label>
                     <Input
                       id="enigma-phone"
+                      type="tel"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                       placeholder="(11) 99999-9999"
                       required
                       className="mt-1.5 h-11 rounded-none bg-white"
-                      style={{ borderColor: 'rgba(0,0,0,0.12)', fontFamily: fonts.sans }}
+                      style={{ borderColor: errors.phone ? '#dc2626' : 'rgba(0,0,0,0.12)', fontFamily: fonts.sans }}
                     />
+                    {errors.phone && <p className="text-xs mt-1" style={{ color: '#dc2626' }}>{errors.phone}</p>}
                   </div>
 
                   <button
