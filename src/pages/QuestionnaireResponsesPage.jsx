@@ -17,7 +17,9 @@ import questionnaireService from '@/services/questionnaireService'
 
 function flagCount(flags) {
   if (!flags || typeof flags !== 'object') return 0
-  return Object.values(flags).filter(Boolean).length
+  return Object.entries(flags).filter(([k, v]) =>
+    v === true && !k.endsWith('_risk_level') && !k.endsWith('_risk_score') && k !== 'risk_classification'
+  ).length
 }
 
 export default function QuestionnaireResponsesPage() {
@@ -132,6 +134,7 @@ export default function QuestionnaireResponsesPage() {
                     <TableHead>Colaborador</TableHead>
                     <TableHead>Departamento</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Classificação</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead className="text-right">Score</TableHead>
                     <TableHead className="text-right">Alertas</TableHead>
@@ -158,6 +161,27 @@ export default function QuestionnaireResponsesPage() {
                           >
                             {response.status === 'completed' ? 'Completo' : 'Pendente'}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {response.flags?.risk_classification ? (
+                            <Badge
+                              className={
+                                { baixo: 'bg-green-100 text-green-700',
+                                  sem_risco: 'bg-green-100 text-green-700',
+                                  moderado: 'bg-amber-100 text-amber-700',
+                                  com_risco_identificado: 'bg-red-100 text-red-700',
+                                  alto: 'bg-red-100 text-red-700',
+                                  critico: 'bg-red-200 text-red-900'
+                                }[response.flags.risk_classification] || 'bg-gray-100 text-gray-600'
+                              }
+                            >
+                              {{ baixo: 'Baixo', sem_risco: 'Sem Risco', moderado: 'Moderado',
+                                 com_risco_identificado: 'Com Risco', alto: 'Alto', critico: 'Critico'
+                              }[response.flags.risk_classification] || response.flags.risk_classification}
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {response.completed_at

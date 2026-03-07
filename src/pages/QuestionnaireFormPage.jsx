@@ -43,10 +43,24 @@ function buildZodSchema(questions) {
           ? z.string().min(1, 'Este campo é obrigatório')
           : z.string().optional()
         break
-      case 'scale':
+      case 'scale': {
+        const scaleMin = q.config?.min ?? 1
         shape[q.id] = q.required
-          ? z.number({ required_error: 'Selecione um valor' }).min(1)
+          ? z.number({ required_error: 'Selecione um valor' }).min(scaleMin)
           : z.number().optional()
+        break
+      }
+      case 'symptom_matrix':
+        // Object mapping symptom name -> frequency string
+        if (q.required) {
+          const symptoms = q.config?.symptoms || []
+          shape[q.id] = z.record(z.string(), z.string()).refine(
+            (val) => symptoms.every((s) => val[s] && val[s].length > 0),
+            { message: 'Responda todas as opções' }
+          )
+        } else {
+          shape[q.id] = z.record(z.string(), z.string()).optional()
+        }
         break
       default:
         shape[q.id] = z.any().optional()
@@ -62,6 +76,9 @@ function getDefaultValues(questions) {
       case 'multi_select':
         defaults[q.id] = []
         break
+      case 'symptom_matrix':
+        defaults[q.id] = {}
+        break
       case 'text':
         defaults[q.id] = ''
         break
@@ -76,8 +93,8 @@ function getDefaultValues(questions) {
 }
 
 function ScaleInput({ value, onChange, config }) {
-  const min = config?.min || 1
-  const max = config?.max || 5
+  const min = config?.min ?? 1
+  const max = config?.max ?? 5
   const labels = config?.labels || {}
   const numbers = Array.from({ length: max - min + 1 }, (_, i) => min + i)
 
@@ -247,6 +264,66 @@ function QuestionRenderer({ question, control }) {
         />
       )
 
+    case 'symptom_matrix':
+      return (
+        <FormField
+          control={control}
+          name={question.id}
+          render={({ field }) => {
+            const symptoms = question.config?.symptoms || []
+            const frequencies = question.options || []
+            const value = field.value || {}
+
+            return (
+              <FormItem>
+                <FormLabel className="text-base font-medium">
+                  {question.text}
+                  {question.required && <span className="text-red-500 ml-1">*</span>}
+                </FormLabel>
+                <div className="mt-3 space-y-1">
+                  {/* Header row - only on desktop */}
+                  <div className="hidden md:grid md:gap-2 py-2 border-b border-gray-200" style={{ gridTemplateColumns: `1.5fr repeat(${frequencies.length}, 1fr)` }}>
+                    <div />
+                    {frequencies.map((freq) => (
+                      <span key={freq} className="text-xs font-medium text-gray-500 text-center">{freq}</span>
+                    ))}
+                  </div>
+                  {/* Symptom rows */}
+                  {symptoms.map((symptom) => (
+                    <div key={symptom} className="py-3 border-b border-gray-100 last:border-0">
+                      <p className="text-sm font-medium text-gray-700 mb-2 md:hidden">{symptom}</p>
+                      <div className="md:grid md:gap-2 md:items-center" style={{ gridTemplateColumns: `1.5fr repeat(${frequencies.length}, 1fr)` }}>
+                        <span className="text-sm text-gray-700 hidden md:block">{symptom}</span>
+                        <RadioGroup
+                          value={value[symptom] || ''}
+                          onValueChange={(v) => field.onChange({ ...value, [symptom]: v })}
+                          className="flex flex-wrap gap-2 md:contents"
+                        >
+                          {frequencies.map((freq) => (
+                            <label
+                              key={freq}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer transition-all text-xs md:justify-center
+                                ${value[symptom] === freq
+                                  ? 'border-primary bg-primary/5 shadow-sm'
+                                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                }`}
+                            >
+                              <RadioGroupItem value={freq} className="sr-only md:not-sr-only" />
+                              <span className="md:hidden">{freq}</span>
+                            </label>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )
+          }}
+        />
+      )
+
     default:
       return null
   }
@@ -272,7 +349,11 @@ export default function QuestionnaireFormPage() {
       }
       sectionMap.get(section).push(q)
     }
-    return Array.from(sectionMap.entries()).map(([name, questions]) => ({ name, questions }))
+    return Array.from(sectionMap.entries()).map(([name, questions]) => ({
+      name,
+      questions,
+      description: questions[0]?.config?.section_description || null
+    }))
   }, [questionnaire])
 
   const schema = useMemo(() => {
@@ -457,9 +538,11 @@ export default function QuestionnaireFormPage() {
               <CardHeader>
                 <CardTitle className="text-lg">{currentSection?.name}</CardTitle>
                 <CardDescription>
-                  {currentSection?.questions.length === 1
-                    ? '1 pergunta'
-                    : `${currentSection?.questions.length} perguntas`}
+                  {currentSection?.description || (
+                    currentSection?.questions.length === 1
+                      ? '1 pergunta'
+                      : `${currentSection?.questions.length} perguntas`
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">

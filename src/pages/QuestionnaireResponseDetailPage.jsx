@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge.jsx'
 import questionnaireService from '@/services/questionnaireService'
 
 function ScaleDisplay({ value, config }) {
-  const min = config?.min || 1
-  const max = config?.max || 5
+  const min = config?.min ?? 1
+  const max = config?.max ?? 5
   const labels = config?.labels || {}
   const numbers = Array.from({ length: max - min + 1 }, (_, i) => min + i)
 
@@ -81,6 +81,31 @@ function AnswerDisplay({ question, answer }) {
     case 'scale':
       return <ScaleDisplay value={answer} config={question.config} />
 
+    case 'symptom_matrix':
+      if (!answer || typeof answer !== 'object') {
+        return <p className="text-gray-400 italic">Não respondida</p>
+      }
+      return (
+        <div className="space-y-2">
+          {Object.entries(answer).map(([symptom, frequency]) => {
+            const isHigh = frequency === 'Frequentemente' || frequency === 'Sempre'
+            return (
+              <div
+                key={symptom}
+                className={`flex justify-between items-center px-3 py-2 rounded text-sm ${
+                  isHigh ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'
+                }`}
+              >
+                <span className="text-gray-700">{symptom}</span>
+                <Badge variant={isHigh ? 'destructive' : 'secondary'} className="text-xs">
+                  {frequency}
+                </Badge>
+              </div>
+            )
+          })}
+        </div>
+      )
+
     default:
       return <p className="text-gray-700">{String(answer)}</p>
   }
@@ -142,7 +167,110 @@ export default function QuestionnaireResponseDetailPage() {
   }
 
   const { response, client, questionnaire } = data
-  const flagCount = response.flags ? Object.values(response.flags).filter(Boolean).length : 0
+  const flags = response.flags || {}
+  const riskClassification = flags.risk_classification
+
+  // DASS-21 results
+  const dass21 = ['depression', 'anxiety', 'stress']
+    .filter(s => flags[`dass21_${s}_severity`])
+    .map(s => ({
+      subscale: s,
+      rawScore: flags[`dass21_${s}_raw`],
+      severity: flags[`dass21_${s}_severity`]
+    }))
+
+  // COPSOQ dimensions
+  const copsoqDimensions = Object.entries(flags)
+    .filter(([k]) => k.startsWith('copsoq_') && k.endsWith('_risk'))
+    .map(([k, v]) => {
+      const dimension = k.replace('copsoq_', '').replace('_risk', '')
+      return { dimension, risk: v, score: flags[`copsoq_${dimension}`] }
+    })
+
+  // Generic domain risks (for non-clinical questionnaires)
+  const domainRisks = Object.entries(flags)
+    .filter(([k]) => k.endsWith('_risk_level') && !k.startsWith('copsoq_') && !k.startsWith('dass21_'))
+    .map(([k, v]) => ({
+      domain: k.replace('_risk_level', ''),
+      level: v,
+      score: flags[k.replace('_risk_level', '_risk_score')]
+    }))
+
+  const hasClinical = dass21.length > 0 || copsoqDimensions.length > 0
+
+  const flagCount = Object.keys(flags).filter(k =>
+    (flags[k] === true) &&
+    !k.endsWith('_risk_level') && !k.endsWith('_risk_score') && !k.endsWith('_risk') &&
+    k !== 'risk_classification' && !k.startsWith('dass21_') && !k.startsWith('copsoq_')
+  ).length
+
+  const domainLabels = {
+    sobrecarga: 'Sobrecarga de Trabalho',
+    falta_autonomia: 'Falta de Autonomia',
+    conflitos: 'Conflitos Interpessoais',
+    assedio: 'Assédio e Violência',
+    inseguranca: 'Insegurança no Emprego',
+    desequilibrio: 'Desequilíbrio Esforço-Recompensa',
+    saude_geral: 'Saúde e Bem-Estar',
+    contexto_operacional: 'Contexto Operacional'
+  }
+
+  const copsoqLabels = {
+    demandas_quantitativas: 'Demandas Quantitativas',
+    ritmo_trabalho: 'Ritmo de Trabalho',
+    significado: 'Significado do Trabalho',
+    comprometimento: 'Comprometimento',
+    previsibilidade: 'Previsibilidade',
+    recompensas: 'Recompensas',
+    conflitos_papel: 'Conflitos de Papel',
+    lideranca: 'Qualidade da Liderança'
+  }
+
+  const dass21Labels = {
+    depression: 'Depressão',
+    anxiety: 'Ansiedade',
+    stress: 'Estresse'
+  }
+
+  const severityLabels = {
+    normal: 'Normal',
+    leve: 'Leve',
+    moderado: 'Moderado',
+    severo: 'Severo',
+    extremamente_severo: 'Extremamente Severo'
+  }
+
+  const levelColors = {
+    baixo: 'bg-green-100 text-green-700',
+    moderado: 'bg-amber-100 text-amber-700',
+    alto: 'bg-red-100 text-red-700'
+  }
+
+  const severityColors = {
+    normal: 'bg-green-100 text-green-700',
+    leve: 'bg-blue-100 text-blue-700',
+    moderado: 'bg-amber-100 text-amber-700',
+    severo: 'bg-red-100 text-red-700',
+    extremamente_severo: 'bg-red-200 text-red-900'
+  }
+
+  const classificationLabels = {
+    baixo: 'Baixo',
+    moderado: 'Moderado',
+    alto: 'Alto',
+    critico: 'Critico',
+    sem_risco: 'Sem Risco',
+    com_risco_identificado: 'Com Risco Identificado'
+  }
+
+  const classificationColors = {
+    baixo: 'bg-green-100 text-green-700',
+    sem_risco: 'bg-green-100 text-green-700',
+    moderado: 'bg-amber-100 text-amber-700',
+    com_risco_identificado: 'bg-red-100 text-red-700',
+    alto: 'bg-red-100 text-red-700',
+    critico: 'bg-red-200 text-red-900'
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -159,6 +287,83 @@ export default function QuestionnaireResponseDetailPage() {
             <p className="text-gray-600">Resposta de {client.name}</p>
           </div>
         </div>
+
+        {/* Risk Classification */}
+        {riskClassification && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Classificação de Risco — NR-1</CardTitle>
+              <CardDescription>Diagnóstico de riscos psicossociais conforme Portaria 1.419/2024</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3 mb-6">
+                <Badge className={`text-sm px-3 py-1 ${classificationColors[riskClassification] || 'bg-gray-100 text-gray-600'}`}>
+                  {classificationLabels[riskClassification] || riskClassification}
+                </Badge>
+                {response.score != null && (
+                  <span className="text-sm text-gray-500">
+                    Score geral: {Number(response.score).toFixed(1)} / 5.0
+                  </span>
+                )}
+              </div>
+
+              {/* DASS-21 Results */}
+              {dass21.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">DASS-21 — Triagem de Saúde Mental</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {dass21.map(({ subscale, rawScore, severity }) => (
+                      <div key={subscale} className="p-3 rounded-lg bg-gray-50 text-center">
+                        <p className="text-xs text-gray-500 mb-1">{dass21Labels[subscale]}</p>
+                        <p className="text-lg font-bold text-gray-900 mb-1">{rawScore}</p>
+                        <Badge className={`text-xs ${severityColors[severity] || 'bg-gray-100 text-gray-600'}`}>
+                          {severityLabels[severity] || severity}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* COPSOQ Results */}
+              {copsoqDimensions.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">COPSOQ — Fatores Psicossociais no Trabalho</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {copsoqDimensions.map(({ dimension, risk, score }) => (
+                      <div key={dimension} className="flex justify-between items-center px-3 py-2 rounded bg-gray-50">
+                        <span className="text-sm text-gray-700">{copsoqLabels[dimension] || dimension}</span>
+                        <div className="flex items-center gap-2">
+                          {score != null && <span className="text-xs text-gray-400">{Number(score).toFixed(0)}</span>}
+                          <Badge className={`text-xs ${levelColors[risk] || 'bg-gray-100 text-gray-600'}`}>
+                            {risk === 'baixo' ? 'Baixo' : risk === 'moderado' ? 'Moderado' : 'Alto'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Generic Domain Risks (non-clinical) */}
+              {!hasClinical && domainRisks.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {domainRisks.map(({ domain, level, score }) => (
+                    <div key={domain} className="flex justify-between items-center px-3 py-2 rounded bg-gray-50">
+                      <span className="text-sm text-gray-700">{domainLabels[domain] || domain}</span>
+                      <div className="flex items-center gap-2">
+                        {score && <span className="text-xs text-gray-400">{score}</span>}
+                        <Badge className={`text-xs ${levelColors[level] || 'bg-gray-100 text-gray-600'}`}>
+                          {level === 'baixo' ? 'Baixo' : level === 'moderado' ? 'Moderado' : 'Alto'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Client Info Card */}
         <Card className="mb-6">
