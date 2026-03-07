@@ -445,6 +445,10 @@ export default function QuestionnaireFormPage() {
   }
 
   const primaryColor = company?.primary_color || '#4f46e5'
+  const secondaryColor = company?.secondary_color || null
+  // Use secondary for buttons/text when primary is too light (e.g. yellow)
+  const accentColor = secondaryColor || primaryColor
+  const highlightColor = primaryColor
 
   if (submitted) {
     return (
@@ -460,7 +464,7 @@ export default function QuestionnaireFormPage() {
               {company?.name && (
                 <span
                   className="text-sm font-medium px-3 py-1 rounded-full"
-                  style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                  style={{ backgroundColor: `${highlightColor}20`, color: accentColor }}
                 >
                   {company.name}
                 </span>
@@ -474,9 +478,9 @@ export default function QuestionnaireFormPage() {
             <CardContent className="p-8">
               <div
                 className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center"
-                style={{ backgroundColor: `${primaryColor}15` }}
+                style={{ backgroundColor: `${highlightColor}20` }}
               >
-                <CheckCircle2 className="h-8 w-8" style={{ color: primaryColor }} />
+                <CheckCircle2 className="h-8 w-8" style={{ color: accentColor }} />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Respostas enviadas!</h2>
               <p className="text-gray-600 mb-6">
@@ -507,7 +511,7 @@ export default function QuestionnaireFormPage() {
             {company?.name && (
               <span
                 className="text-sm font-medium px-3 py-1 rounded-full"
-                style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                style={{ backgroundColor: `${highlightColor}20`, color: accentColor }}
               >
                 {company.name}
               </span>
@@ -580,7 +584,7 @@ export default function QuestionnaireFormPage() {
                   type="submit"
                   disabled={isSubmitting}
                   className="gap-2 text-white"
-                  style={{ backgroundColor: primaryColor }}
+                  style={{ backgroundColor: accentColor }}
                 >
                   {isSubmitting ? (
                     <>
@@ -599,7 +603,7 @@ export default function QuestionnaireFormPage() {
                   type="button"
                   onClick={handleNext}
                   className="gap-2 text-white"
-                  style={{ backgroundColor: primaryColor }}
+                  style={{ backgroundColor: accentColor }}
                 >
                   Próximo
                   <ChevronRight className="h-4 w-4" />
