@@ -161,11 +161,14 @@ const BlogPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {articles.map((article) => (
             <Card key={article.id} className="hover:shadow-lg transition-shadow">
-              {article.featured_image_url && (
+              {(article.featured_image || article.featured_image_url) && (
                 <div className="aspect-video overflow-hidden rounded-t-lg">
                   <img
-                    src={article.featured_image_url}
+                    src={article.featured_image?.preview_medium || article.featured_image_url}
+                    srcSet={article.featured_image ? `${article.featured_image.preview_small} 250w, ${article.featured_image.preview_medium} 500w, ${article.featured_image.preview_large} 800w` : undefined}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     alt={article.title}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                   />
                 </div>

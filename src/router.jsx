@@ -26,6 +26,7 @@ import QuestionnaireResponseDetailPage from './pages/QuestionnaireResponseDetail
 import CompanyMatchingPage from './pages/CompanyMatchingPage.jsx'
 import CompanySchedulingPage from './pages/CompanySchedulingPage.jsx'
 import HrDashboardPage from './pages/HrDashboardPage.jsx'
+import EnigmaQuizPage from './pages/EnigmaQuizPage.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -139,5 +140,9 @@ export const router = createBrowserRouter([
   {
     path: "/therapist/respostas/:id",
     element: <QuestionnaireResponseDetailPage />
+  },
+  {
+    path: "/enigma",
+    element: <EnigmaQuizPage />
   }
 ])

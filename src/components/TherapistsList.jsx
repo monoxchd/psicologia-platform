@@ -65,9 +65,17 @@ function TherapistsList() {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                    <Brain className="h-7 w-7 text-purple-600" />
-                  </div>
+                  {therapist.image && therapist.image !== '👨‍⚕️' ? (
+                    <img
+                      src={therapist.image}
+                      alt={therapist.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Brain className="h-7 w-7 text-purple-600" />
+                    </div>
+                  )}
                   <div>
                     <CardTitle className="text-lg">{therapist.name}</CardTitle>
                     <CardDescription>{therapist.specialty}</CardDescription>

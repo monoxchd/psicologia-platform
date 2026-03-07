@@ -11,7 +11,10 @@ import creditsService from '../services/creditsService.js'
 import authService from '../services/authService.js'
 import CreditEarnedPopup from '../components/CreditEarnedPopup.jsx'
 import EditorJSRenderer from '../components/EditorJSRenderer'
+import EnigmaQuizInline from '../components/EnigmaQuizInline'
 import activityService from '../services/activityService'
+
+const ENIGMA_SLUG = 'quando-a-cadeira-ao-lado-fica-vazia'
 
 // Feature flag for credits system - set to true to re-enable
 const CREDITS_ENABLED = false
@@ -205,11 +208,14 @@ const ArticlePage = () => {
           <div className="lg:col-span-3">
             <article className="bg-white rounded-lg shadow-lg overflow-hidden">
               {/* Featured Image */}
-              {article.featured_image_url && (
+              {(article.featured_image || article.featured_image_url) && (
                 <div className="aspect-video overflow-hidden">
                   <img
-                    src={article.featured_image_url}
+                    src={article.featured_image?.full_width || article.featured_image_url}
+                    srcSet={article.featured_image ? `${article.featured_image.preview_medium} 500w, ${article.featured_image.preview_large} 800w, ${article.featured_image.full_width} 1200w` : undefined}
+                    sizes="(max-width: 1024px) 100vw, 75vw"
                     alt={article.title}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -256,9 +262,17 @@ const ArticlePage = () => {
 
                 {/* Author Info */}
                 <div className="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                    <Brain className="h-7 w-7 text-purple-600" />
-                  </div>
+                  {article.author.profile_photo_url ? (
+                    <img
+                      src={article.author.profile_photo_url}
+                      alt={article.author.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Brain className="h-7 w-7 text-purple-600" />
+                    </div>
+                  )}
                   <div>
                     <p className="font-semibold">{article.author.name}</p>
                     <p className="text-gray-600">{article.author.specialty}</p>
@@ -278,6 +292,9 @@ const ArticlePage = () => {
                   className="prose-headings:text-gray-900 prose-a:text-blue-600"
                   showTherapistCTA={true}
                 />
+
+                {/* Enigma Quiz — only on the grief article */}
+                {slug === ENIGMA_SLUG && <EnigmaQuizInline />}
 
                 {/* Read Tracking */}
                 {authService.isLoggedIn() && (

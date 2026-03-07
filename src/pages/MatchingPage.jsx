@@ -61,9 +61,17 @@ export default function MatchingPage() {
                 {therapists.map((therapist) => (
                 <Card key={therapist.id} className="relative">
                   <CardHeader className="text-center">
-                    <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
-                      <Brain className="h-9 w-9 text-purple-600" />
-                    </div>
+                    {therapist.image && therapist.image !== '👨‍⚕️' ? (
+                      <img
+                        src={therapist.image}
+                        alt={therapist.name}
+                        className="w-16 h-16 rounded-full object-cover mx-auto mb-4"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
+                        <Brain className="h-9 w-9 text-purple-600" />
+                      </div>
+                    )}
                     <CardTitle className="text-xl">{therapist.name}</CardTitle>
                     <CardDescription>{therapist.specialty}</CardDescription>
                     <div className="flex items-center justify-center space-x-1 mt-2">

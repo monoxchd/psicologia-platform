@@ -167,9 +167,17 @@ export default function SchedulingSystem({
             </Button>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <Brain className="h-7 w-7 text-purple-600" />
-            </div>
+            {therapist.profile_photo_url ? (
+              <img
+                src={therapist.profile_photo_url}
+                alt={therapist.name}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <Brain className="h-7 w-7 text-purple-600" />
+              </div>
+            )}
             <div>
               <CardTitle className="text-2xl">{therapist.name}</CardTitle>
               <CardDescription className="text-lg">{therapist.specialty}</CardDescription>
@@ -346,9 +354,17 @@ export default function SchedulingSystem({
           <div className="space-y-6">
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Brain className="h-7 w-7 text-purple-600" />
-                </div>
+                {therapist.profile_photo_url ? (
+                  <img
+                    src={therapist.profile_photo_url}
+                    alt={therapist.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Brain className="h-7 w-7 text-purple-600" />
+                  </div>
+                )}
                 <div>
                   <h3 className="text-xl font-semibold">{therapist.name}</h3>
                   <p className="text-gray-600">{therapist.specialty}</p>
