@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label.jsx'
 import { MessageCircle, ArrowRight, Lock, Eye, Gift, Sparkles } from 'lucide-react'
 import api from '../services/api'
 
-const CORRECT_ANSWER = 'a'
+const CORRECT_ANSWER = '33'
 const WHATSAPP_NUMBER = '5511914214449'
 const COUPON_CODE = 'ENIGMA30'
 
@@ -120,7 +120,7 @@ export default function EnigmaQuizInline() {
 
   const handleWhatsAppClick = () => {
     const message = encodeURIComponent(
-      `Oi! Descobri o enigma do artigo e ganhei o cupom ${COUPON_CODE}. Gostaria de agendar minha sessao!`
+      `Oi! Descobri o enigma do artigo e ganhei o cupom ${COUPON_CODE}. Gostaria de agendar minha sessão!`
     )
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank')
   }
@@ -148,10 +148,10 @@ export default function EnigmaQuizInline() {
             className="text-2xl sm:text-3xl font-normal mb-3"
             style={{ fontFamily: fonts.serif, color: colors.ink }}
           >
-            Voce desvendou o enigm<GlowingMarker>.:&thinsp;</GlowingMarker>
+            Você desvendou o enigm<GlowingMarker>.:&thinsp;</GlowingMarker>
           </h3>
           <p className="text-base leading-relaxed" style={{ fontFamily: fonts.sans, color: colors.inkMid }}>
-            A letr<GlowingMarker>.:&thinsp;</GlowingMarker>que desaparece e a letra <strong>"a"</strong>.
+            A letr<GlowingMarker>.:&thinsp;</GlowingMarker>que desaparece é a letra <strong>"a"</strong>.
           </p>
         </div>
 
@@ -167,25 +167,25 @@ export default function EnigmaQuizInline() {
           </p>
           <div className="space-y-4 leading-[1.85]" style={{ fontFamily: fonts.sans, color: colors.inkMid, fontSize: '0.95rem' }}>
             <p>
-              Este artigo carrega um segredo: a letra <strong style={{ color: colors.ink }}>"a"</strong> vai
-              desaparecendo do texto, substituida pelo simbolo <GlowingMarker>.:</GlowingMarker> — uma marca visual
-              da ausencia.
+              São 33 marcas de <GlowingMarker>.:</GlowingMarker> espalhadas pelo texto: 33 ausências.
+              Cada uma ocupa o lugar onde a letra <strong style={{ color: colors.ink }}>"a"</strong> deveria estar.
             </p>
             <p>
-              No inicio, o texto esta intacto. Mas conforme avanca, mais e mais letras se perdem.
-              O texto em si <em>entra em luto</em> — perde uma parte de si mesmo, assim como perdemos algo quando
-              alguem que fazia parte do nosso dia a dia se vai.
+              No início do artigo, o texto está intacto. Tudo parece normal. Mas aos poucos, uma a uma,
+              as letras começam a desaparecer. Devagar no começo, como quem ainda resiste. Nos últimos
+              parágrafos, quase todas se foram. O texto em si <em>entra em luto</em>. Ele perde uma parte
+              de si mesmo, da mesma forma que perdemos algo quando alguém que fazia parte do nosso dia a dia se vai.
             </p>
             <p>
-              E a palavra mais afetada? <strong style={{ color: colors.ink }}>S.:ud.:de</strong> — duplamente quebrada.
-              A palavra que nomeia a dor da ausencia e, ela mesma, a que mais sofre com essa ausencia.
+              E a palavra mais afetada? <strong style={{ color: colors.ink }}>S.:ud.:de</strong>... duplamente quebrada.
+              A palavra que nomeia a dor da ausência é, ela mesma, a que mais sofre com essa ausência.
             </p>
             <p
               className="italic pl-5 mt-4"
               style={{ borderLeft: `2px solid ${colors.accent}`, color: colors.inkSoft }}
             >
-              O <GlowingMarker>.:</GlowingMarker> nao e um erro. E uma presenca que se foi,
-              deixando apenas a marca de onde esteve.
+              O <GlowingMarker>.:</GlowingMarker> não é um erro. É a ausência tornada visível...
+              a marca de quem esteve ali e agora só existe na falta que deixou.
             </p>
           </div>
         </div>
@@ -221,7 +221,7 @@ export default function EnigmaQuizInline() {
               {COUPON_CODE}
             </p>
             <p className="text-base font-medium" style={{ fontFamily: fonts.sans, color: colors.ink }}>
-              R$ 30 de desconto na sua sessao
+              R$ 30 de desconto na sua sessão
             </p>
           </div>
 
@@ -229,8 +229,8 @@ export default function EnigmaQuizInline() {
             className="text-center mb-6 text-sm leading-relaxed"
             style={{ fontFamily: fonts.sans, color: colors.inkMid }}
           >
-            Voce olhou com cuidado para algo que a maioria deixa passar.
-            Esse mesmo olhar atento e o que a terapia ajuda a cultivar — para dentro.
+            Você olhou com cuidado para algo que a maioria deixa passar.
+            Esse mesmo olhar atento é o que a terapia ajuda a cultivar — para dentro.
           </p>
 
           <button
@@ -247,7 +247,7 @@ export default function EnigmaQuizInline() {
             style={{ fontFamily: fonts.sans, color: colors.inkSoft }}
           >
             <Lock className="h-3 w-3" />
-            Suas informacoes sao 100% confidenciais.
+            Suas informações são 100% confidenciais.
           </p>
         </div>
       </motion.div>
@@ -276,7 +276,7 @@ export default function EnigmaQuizInline() {
             className="text-xs font-medium tracking-[0.12em] uppercase"
             style={{ fontFamily: fonts.sans, color: colors.accent }}
           >
-            Voce reparou?
+            Você reparou?
           </span>
         </div>
 
@@ -287,7 +287,7 @@ export default function EnigmaQuizInline() {
           Existe um enigm<GlowingMarker>.:&thinsp;</GlowingMarker> escondido neste texto
         </h3>
         <p className="text-sm" style={{ fontFamily: fonts.sans, color: colors.inkSoft }}>
-          Algo no artigo que voce acabou de ler nao esta exatamente como deveria.
+          Algo no artigo que você acabou de ler não está exatamente como deveria.
         </p>
       </motion.div>
 
@@ -301,8 +301,8 @@ export default function EnigmaQuizInline() {
         </p>
         <ExcerptCard before="estava mais irrit" marker=".:" after="da, dormindo mal" fullWord="irritada" delay={0} />
         <ExcerptCard before="A s" marker=".:" after="ud.:de" fullWord="saudade" delay={0.1} />
-        <ExcerptCard before="reconhecer que voce e hum" marker=".:" after="no" fullWord="humano" delay={0.15} />
-        <ExcerptCard before="a potencia do " marker=".:" after="colhimento" fullWord="acolhimento" delay={0.2} />
+        <ExcerptCard before="reconhecer que você é hum" marker=".:" after="no" fullWord="humano" delay={0.15} />
+        <ExcerptCard before="a potência do " marker=".:" after="colhimento" fullWord="acolhimento" delay={0.2} />
       </div>
 
       {/* Quiz */}
@@ -324,10 +324,10 @@ export default function EnigmaQuizInline() {
           className="text-xl sm:text-2xl mb-3"
           style={{ fontFamily: fonts.serif, color: colors.ink }}
         >
-          Qual letra esta desaparecendo do texto?
+          Quantas vezes o símbolo <GlowingMarker>.:</GlowingMarker> aparece no texto?
         </p>
         <p className="text-sm mb-8" style={{ fontFamily: fonts.sans, color: colors.inkSoft }}>
-          O simbolo <GlowingMarker>.:</GlowingMarker> esta substituindo algo ao longo de todo o artigo.
+          Volte ao artigo, conte com atenção e descubra.
         </p>
 
         <div className="flex gap-3 max-w-xs mx-auto">
@@ -339,6 +339,7 @@ export default function EnigmaQuizInline() {
             }}
             placeholder="..."
             maxLength={3}
+            type="number"
             className="text-center text-2xl font-medium h-14 rounded-none bg-white"
             style={{
               fontFamily: fonts.serif,
@@ -367,7 +368,7 @@ export default function EnigmaQuizInline() {
               className="mt-5 text-sm italic"
               style={{ fontFamily: fonts.serif, color: colors.accent }}
             >
-              Olhe com mais atencao para o simbolo <GlowingMarker>.:</GlowingMarker> — o que deveria estar ali?
+              Não é esse o número. Volte ao artigo e conte cada <GlowingMarker>.:</GlowingMarker> com calma.
             </motion.p>
           )}
         </AnimatePresence>
@@ -401,10 +402,10 @@ export default function EnigmaQuizInline() {
                 className="text-2xl font-normal mb-2"
                 style={{ fontFamily: fonts.serif, color: colors.ink }}
               >
-                Voce tem um olhar atento
+                Você tem um olhar atento
               </h3>
               <p className="text-sm" style={{ fontFamily: fonts.sans, color: colors.inkMid }}>
-                Nos conte quem voce e para revelar o significado do enigma e receber um presente especial.
+                Nos conte quem você é para revelar o significado do enigma e receber um presente especial.
               </p>
             </div>
 
@@ -485,7 +486,7 @@ export default function EnigmaQuizInline() {
                 style={{ fontFamily: fonts.sans, color: colors.inkSoft }}
               >
                 <Lock className="h-3 w-3" />
-                Suas informacoes sao 100% confidenciais.
+                Suas informações são 100% confidenciais.
               </p>
             </form>
           </motion.div>

@@ -8,7 +8,7 @@ import { MessageCircle, ArrowRight, Lock, Eye, Gift, Sparkles } from 'lucide-rea
 import api from '../services/api'
 import horizontalLogo from '../assets/horizontal-logo.png'
 
-const CORRECT_ANSWER = 'a'
+const CORRECT_ANSWER = '33'
 const WHATSAPP_NUMBER = '5511914214449'
 const COUPON_CODE = 'ENIGMA30'
 
@@ -124,7 +124,7 @@ export default function EnigmaQuizPage() {
 
   const handleWhatsAppClick = () => {
     const message = encodeURIComponent(
-      `Oi! Descobri o enigma do artigo e ganhei o cupom ${COUPON_CODE}. Gostaria de agendar minha sessao!`
+      `Oi! Descobri o enigma do artigo e ganhei o cupom ${COUPON_CODE}. Gostaria de agendar minha sessão!`
     )
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank')
   }
@@ -170,10 +170,10 @@ export default function EnigmaQuizPage() {
               className="text-3xl sm:text-4xl font-normal mb-4"
               style={{ fontFamily: fonts.serif, color: colors.ink }}
             >
-              Voce desvendou o enigm<GlowingMarker>.:&thinsp;</GlowingMarker>
+              Você desvendou o enigm<GlowingMarker>.:&thinsp;</GlowingMarker>
             </h1>
             <p className="text-lg leading-relaxed" style={{ fontFamily: fonts.sans, color: colors.inkMid }}>
-              A letr<GlowingMarker>.:&thinsp;</GlowingMarker>que desaparece e a letra <strong>"a"</strong>.
+              A letr<GlowingMarker>.:&thinsp;</GlowingMarker>que desaparece é a letra <strong>"a"</strong>.
             </p>
           </motion.div>
 
@@ -192,25 +192,25 @@ export default function EnigmaQuizPage() {
             </p>
             <div className="space-y-5 leading-[1.85]" style={{ fontFamily: fonts.sans, color: colors.inkMid, fontSize: '0.95rem' }}>
               <p>
-                O artigo sobre luto no trabalho carrega um segredo: a letra <strong style={{ color: colors.ink }}>"a"</strong> vai
-                desaparecendo do texto, substituida pelo simbolo <GlowingMarker>.:</GlowingMarker> — uma marca visual
-                da ausencia.
+                São 33 marcas de <GlowingMarker>.:</GlowingMarker> espalhadas pelo texto: 33 ausências.
+                Cada uma ocupa o lugar onde a letra <strong style={{ color: colors.ink }}>"a"</strong> deveria estar.
               </p>
               <p>
-                No inicio, o texto esta intacto. Mas conforme avanca, mais e mais letras se perdem.
-                O texto em si <em>entra em luto</em> — perde uma parte de si mesmo, assim como perdemos algo quando
-                alguem que fazia parte do nosso dia a dia se vai.
+                No início do artigo, o texto está intacto. Tudo parece normal. Mas aos poucos, uma a uma,
+                as letras começam a desaparecer. Devagar no começo, como quem ainda resiste. Nos últimos
+                parágrafos, quase todas se foram. O texto em si <em>entra em luto</em>. Ele perde uma parte
+                de si mesmo, da mesma forma que perdemos algo quando alguém que fazia parte do nosso dia a dia se vai.
               </p>
               <p>
-                E a palavra mais afetada? <strong style={{ color: colors.ink }}>S.:ud.:de</strong> — duplamente quebrada.
-                A palavra que nomeia a dor da ausencia e, ela mesma, a que mais sofre com essa ausencia.
+                E a palavra mais afetada? <strong style={{ color: colors.ink }}>S.:ud.:de</strong>... duplamente quebrada.
+                A palavra que nomeia a dor da ausência e, ela mesma, a que mais sofre com essa ausência.
               </p>
               <p
                 className="italic mt-6 pl-5"
                 style={{ borderLeft: `2px solid ${colors.accent}`, color: colors.inkSoft }}
               >
-                O <GlowingMarker>.:</GlowingMarker> nao e um erro. E uma presenca que se foi,
-                deixando apenas a marca de onde esteve.
+                O <GlowingMarker>.:</GlowingMarker> não é um erro. É a ausência tornada visível...
+                a marca de quem esteve ali e agora só existe na falta que deixou.
               </p>
             </div>
           </motion.div>
@@ -258,7 +258,7 @@ export default function EnigmaQuizPage() {
                     className="text-base font-medium"
                     style={{ fontFamily: fonts.sans, color: colors.ink }}
                   >
-                    R$ 30 de desconto na sua sessao
+                    R$ 30 de desconto na sua sessão
                   </p>
                 </div>
 
@@ -266,8 +266,8 @@ export default function EnigmaQuizPage() {
                   className="text-center mb-8 text-sm leading-relaxed"
                   style={{ fontFamily: fonts.sans, color: colors.inkMid }}
                 >
-                  Voce olhou com cuidado para algo que a maioria deixa passar.
-                  Esse mesmo olhar atento e o que a terapia ajuda a cultivar — para dentro.
+                  Você olhou com cuidado para algo que a maioria deixa passar.
+                  Esse mesmo olhar atento é o que a terapia ajuda a cultivar — para dentro.
                 </p>
 
                 <Button
@@ -284,7 +284,7 @@ export default function EnigmaQuizPage() {
                   style={{ fontFamily: fonts.sans, color: colors.inkSoft }}
                 >
                   <Lock className="h-3 w-3" />
-                  Suas informacoes sao 100% confidenciais.
+                  Suas informações são 100% confidenciais.
                 </p>
               </CardContent>
             </Card>
@@ -293,7 +293,7 @@ export default function EnigmaQuizPage() {
 
         <footer style={{ background: colors.ink }} className="text-white py-8 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto text-center text-sm space-y-2" style={{ color: colors.inkSoft }}>
-            <p>TerapiaConecta — Psicologo Responsavel Tecnico: Denis Neves — CRP 06/XXXXX</p>
+            <p>TerapiaConecta — Psicólogo Responsável Técnico: Denis Neves — CRP 06/XXXXX</p>
             <p>&copy; 2026 TerapiaConecta. Todos os direitos reservados.</p>
           </div>
         </footer>
@@ -349,7 +349,7 @@ export default function EnigmaQuizPage() {
               className="text-xs font-medium tracking-[0.12em] uppercase"
               style={{ fontFamily: fonts.sans, color: colors.accent }}
             >
-              Voce reparou?
+              Você reparou?
             </span>
           </motion.div>
 
@@ -370,8 +370,8 @@ export default function EnigmaQuizPage() {
             className="text-base sm:text-lg mb-12 leading-[1.8] max-w-lg mx-auto"
             style={{ fontFamily: fonts.sans, color: colors.inkMid }}
           >
-            Se voce leu o artigo sobre luto no trabalho, talvez tenha percebido que algo
-            no texto nao esta exatamente como deveria.
+            Se você leu o artigo sobre luto no trabalho, talvez tenha percebido que algo
+            no texto não está exatamente como deveria.
           </motion.p>
 
           <motion.div
@@ -415,10 +415,10 @@ export default function EnigmaQuizPage() {
               className="text-2xl sm:text-3xl font-normal mb-4"
               style={{ fontFamily: fonts.serif, color: colors.ink }}
             >
-              Olhe com atencao
+              Olhe com atenção
             </h2>
             <p className="text-sm" style={{ fontFamily: fonts.sans, color: colors.inkSoft }}>
-              O que estes trechos tem em comum?
+              O que estes trechos têm em comum?
             </p>
           </motion.div>
 
@@ -438,14 +438,14 @@ export default function EnigmaQuizPage() {
               delay={0.1}
             />
             <ExcerptCard
-              before="reconhecer que voce e hum"
+              before="reconhecer que você é hum"
               marker=".:"
               after="no"
               fullWord="humano"
               delay={0.2}
             />
             <ExcerptCard
-              before="a potencia do "
+              before="a potência do "
               marker=".:"
               after="colhimento"
               fullWord="acolhimento"
@@ -461,7 +461,7 @@ export default function EnigmaQuizPage() {
             className="text-center mt-12 italic text-sm"
             style={{ fontFamily: fonts.serif, color: colors.inkSoft }}
           >
-            Percebeu o padrao? Algo esta faltando...
+            Percebeu o padrão? Algo está faltando...
           </motion.p>
         </div>
       </section>
@@ -488,7 +488,7 @@ export default function EnigmaQuizPage() {
             O enigma
           </h2>
           <p className="text-sm mb-12" style={{ fontFamily: fonts.sans, color: colors.inkSoft }}>
-            O simbolo <GlowingMarker>.:</GlowingMarker> esta substituindo algo ao longo de todo o texto.
+            O símbolo <GlowingMarker>.:</GlowingMarker> aparece várias vezes ao longo de todo o texto.
           </p>
 
           <div
@@ -496,10 +496,13 @@ export default function EnigmaQuizPage() {
             style={{ background: colors.white, border: '1px solid rgba(0,0,0,0.06)' }}
           >
             <p
-              className="text-xl sm:text-2xl mb-10"
+              className="text-xl sm:text-2xl mb-4"
               style={{ fontFamily: fonts.serif, color: colors.ink }}
             >
-              Qual letra esta desaparecendo do texto?
+              Quantas vezes o símbolo <GlowingMarker>.:</GlowingMarker> aparece no texto?
+            </p>
+            <p className="text-sm mb-10" style={{ fontFamily: fonts.sans, color: colors.inkSoft }}>
+              Volte ao artigo, conte com atenção e descubra.
             </p>
 
             <div className="flex gap-3 max-w-xs mx-auto">
@@ -511,6 +514,7 @@ export default function EnigmaQuizPage() {
                 }}
                 placeholder="..."
                 maxLength={3}
+                type="number"
                 className="text-center text-2xl font-medium h-14 rounded-none bg-white"
                 style={{
                   fontFamily: fonts.serif,
@@ -539,7 +543,7 @@ export default function EnigmaQuizPage() {
                   className="mt-6 text-sm italic"
                   style={{ fontFamily: fonts.serif, color: colors.accent }}
                 >
-                  Olhe com mais atencao para o simbolo <GlowingMarker>.:</GlowingMarker> — o que deveria estar ali?
+                  Não é esse o número. Volte ao artigo e conte cada <GlowingMarker>.:</GlowingMarker> com calma.
                 </motion.p>
               )}
             </AnimatePresence>
@@ -582,10 +586,10 @@ export default function EnigmaQuizPage() {
                     className="text-2xl sm:text-3xl font-normal mb-3"
                     style={{ fontFamily: fonts.serif, color: colors.ink }}
                   >
-                    Voce tem um olhar atento
+                    Você tem um olhar atento
                   </h2>
                   <p className="text-sm leading-relaxed" style={{ fontFamily: fonts.sans, color: colors.inkMid }}>
-                    Nos conte quem voce e para revelar o significado do enigma
+                    Nos conte quem você é para revelar o significado do enigma
                     e receber um presente especial.
                   </p>
                 </div>
@@ -667,7 +671,7 @@ export default function EnigmaQuizPage() {
                     style={{ fontFamily: fonts.sans, color: colors.inkSoft }}
                   >
                     <Lock className="h-3 w-3" />
-                    Suas informacoes sao 100% confidenciais.
+                    Suas informações são 100% confidenciais.
                   </p>
                 </form>
               </motion.div>
@@ -679,7 +683,7 @@ export default function EnigmaQuizPage() {
       {/* Footer */}
       <footer style={{ background: colors.ink }} className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center text-sm space-y-2" style={{ color: colors.inkSoft }}>
-          <p>TerapiaConecta — Psicologo Responsavel Tecnico: Denis Neves — CRP 06/XXXXX</p>
+          <p>TerapiaConecta — Psicólogo Responsável Técnico: Denis Neves — CRP 06/XXXXX</p>
           <p>&copy; 2026 TerapiaConecta. Todos os direitos reservados.</p>
         </div>
       </footer>
