@@ -107,6 +107,10 @@ export const router = createBrowserRouter([
     element: <AcolhimentoLandingPage />
   },
   {
+    path: "/acolhimento/:slug",
+    element: <AcolhimentoLandingPage />
+  },
+  {
     path: "/empresa/:slug",
     element: <CompanyLandingPage />
   },

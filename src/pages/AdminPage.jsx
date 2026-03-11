@@ -384,6 +384,7 @@ function TherapistsTab() {
                   <TableHead>Especialidade</TableHead>
                   <TableHead>CRP</TableHead>
                   <TableHead className="text-center">Empresas</TableHead>
+                  <TableHead className="text-center">Acolhimento</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -396,6 +397,9 @@ function TherapistsTab() {
                     <TableCell className="text-sm">{therapist.specialty || '—'}</TableCell>
                     <TableCell className="text-sm">{therapist.crp_number || '—'}</TableCell>
                     <TableCell className="text-center">{therapist.companies_count}</TableCell>
+                    <TableCell className="text-center text-sm">
+                      {therapist.acolhimento_price ? `R$${parseFloat(therapist.acolhimento_price).toFixed(2)}` : '—'}
+                    </TableCell>
                     <TableCell>
                       <ActiveBadge active={therapist.active} />
                     </TableCell>
@@ -922,11 +926,14 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
         credits_per_minute: therapist.credits_per_minute || '',
         personal_site_url: therapist.personal_site_url || '',
         calendly_url: therapist.calendly_url || '',
+        acolhimento_price: therapist.acolhimento_price || '',
+        acolhimento_quote: therapist.acolhimento_quote || '',
         password: '',
         password_confirmation: '',
       } : {
         email: '', name: '', specialty: '', experience_years: '', bio: '',
         crp_number: '', credits_per_minute: '', personal_site_url: '', calendly_url: '',
+        acolhimento_price: '', acolhimento_quote: '',
         password: '', password_confirmation: '',
       })
     }
@@ -949,6 +956,8 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
     const data = { ...form }
     if (data.experience_years) data.experience_years = parseInt(data.experience_years)
     if (data.credits_per_minute) data.credits_per_minute = parseFloat(data.credits_per_minute)
+    if (data.acolhimento_price) data.acolhimento_price = parseFloat(data.acolhimento_price)
+    if (!data.acolhimento_price) delete data.acolhimento_price
     if (!data.password) { delete data.password; delete data.password_confirmation }
     await onSave(data)
     setSaving(false)
@@ -997,6 +1006,23 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
           <div>
             <Label htmlFor="therapist-bio">Biografia</Label>
             <Textarea id="therapist-bio" name="bio" value={form.bio || ''} onChange={handleChange} rows={2} />
+          </div>
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium mb-2">Acolhimento</p>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <Label htmlFor="therapist-acolhimento-price">Preço Acolhimento (R$)</Label>
+                <Input id="therapist-acolhimento-price" name="acolhimento_price" type="number" min="0" step="0.01" value={form.acolhimento_price || ''} onChange={handleChange} placeholder="Ex: 89.90" />
+              </div>
+              <div>
+                <Label htmlFor="therapist-slug">Slug</Label>
+                <Input id="therapist-slug" value={therapist?.slug || 'Auto-gerado'} disabled className="bg-gray-50" />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="therapist-acolhimento-quote">Frase de Acolhimento</Label>
+              <Textarea id="therapist-acolhimento-quote" name="acolhimento_quote" value={form.acolhimento_quote || ''} onChange={handleChange} rows={2} placeholder="Frase que aparece na página de acolhimento" />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

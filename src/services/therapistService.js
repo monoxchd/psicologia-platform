@@ -21,6 +21,16 @@ class TherapistService {
     }
   }
 
+  async getTherapistBySlug(slug) {
+    try {
+      const therapist = await api.get(`/therapists/slug/${slug}`);
+      return therapist;
+    } catch (error) {
+      console.error(`Failed to fetch therapist with slug ${slug}:`, error);
+      throw error;
+    }
+  }
+
   async getTherapistAvailability(id, startDate, endDate) {
     try {
       const params = {};

@@ -15,7 +15,8 @@ import {
   Award,
   DollarSign,
   Camera,
-  Trash2
+  Trash2,
+  Heart
 } from 'lucide-react'
 import authService from '../services/authService'
 import apiService from '../services/api'
@@ -36,7 +37,8 @@ const TherapistProfileEditPage = () => {
     bio: '',
     crp_number: '',
     credits_per_minute: '',
-    personal_site_url: ''
+    personal_site_url: '',
+    acolhimento_quote: ''
   })
 
   useEffect(() => {
@@ -63,7 +65,8 @@ const TherapistProfileEditPage = () => {
         bio: currentUser.bio || '',
         crp_number: currentUser.crp_number || '',
         credits_per_minute: currentUser.credits_per_minute || '',
-        personal_site_url: currentUser.personal_site_url || ''
+        personal_site_url: currentUser.personal_site_url || '',
+        acolhimento_quote: currentUser.acolhimento_quote || ''
       })
     } catch (error) {
       console.error('Error loading user:', error)
@@ -146,7 +149,8 @@ const TherapistProfileEditPage = () => {
           bio: formData.bio,
           crp_number: formData.crp_number,
           credits_per_minute: parseFloat(formData.credits_per_minute) || 0,
-          personal_site_url: formData.personal_site_url
+          personal_site_url: formData.personal_site_url,
+          acolhimento_quote: formData.acolhimento_quote
         }
       })
 
@@ -304,6 +308,35 @@ const TherapistProfileEditPage = () => {
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   Valor cobrado por sessão de atendimento
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Acolhimento Card */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5" />
+                Acolhimento
+              </CardTitle>
+              <CardDescription>
+                Sua frase para a página de Sessão de Acolhimento
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="acolhimento_quote">Frase / Citação</Label>
+                <Textarea
+                  id="acolhimento_quote"
+                  name="acolhimento_quote"
+                  value={formData.acolhimento_quote}
+                  onChange={handleChange}
+                  placeholder="Ex: Acredito que todo mundo merece ser ouvido, especialmente quando não sabe nem o que dizer."
+                  rows={3}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Esta frase aparece na sua página individual de acolhimento.
                 </p>
               </div>
             </CardContent>
