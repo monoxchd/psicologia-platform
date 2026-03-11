@@ -5,6 +5,7 @@ import { Ear, Lightbulb, Signpost, CheckCircle2, XCircle, Lock, MessageCircle, A
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import therapistService from '../services/therapistService'
+import SEOHead from '../components/SEOHead'
 import horizontalLogo from '../assets/horizontal-logo.png'
 
 export default function AcolhimentoLandingPage() {
@@ -91,8 +92,21 @@ export default function AcolhimentoLandingPage() {
     return parseFloat(price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
 
+  const seoTitle = isDynamic
+    ? `Sessão de Acolhimento com ${therapistName} | Terapia Conecta`
+    : 'Sessão de Acolhimento | Terapia Conecta'
+  const seoDescription = isDynamic && therapistPrice
+    ? `Sessão de Acolhimento com ${therapistName.split(' ')[0]} — ${formatPrice(therapistPrice)}. 30 minutos de escuta profissional para você dar o primeiro passo.`
+    : 'Sessão de Acolhimento — 30 minutos de escuta profissional para você dar o primeiro passo. Sem compromisso.'
+
   return (
     <div className="min-h-screen bg-white">
+      <SEOHead
+        title={seoTitle}
+        description={seoDescription}
+        image={therapistPhoto}
+        url={window.location.href}
+      />
       {/* Header Minimalista */}
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
