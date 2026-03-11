@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion.jsx'
-import { Ear, Lightbulb, Signpost, CheckCircle2, XCircle, Lock, MessageCircle, ArrowRight, Loader2, ExternalLink, User } from 'lucide-react'
+import { Ear, Lightbulb, Signpost, CheckCircle2, XCircle, Lock, MessageCircle, ArrowRight, Loader2, ExternalLink, User, Info, ChevronDown, ChevronUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import therapistService from '../services/therapistService'
@@ -14,6 +14,7 @@ export default function AcolhimentoLandingPage() {
   const [therapist, setTherapist] = useState(null)
   const [loading, setLoading] = useState(!!slug)
   const [notFound, setNotFound] = useState(false)
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -119,6 +120,33 @@ export default function AcolhimentoLandingPage() {
           </div>
         </div>
       </header>
+
+      {/* Disclaimer banner */}
+      {isDynamic && therapistPrice && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <button
+              onClick={() => setDisclaimerOpen(!disclaimerOpen)}
+              className="w-full flex items-center justify-between py-3 text-left"
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-amber-800">
+                <Info className="h-4 w-4 flex-shrink-0" />
+                Aviso importante sobre valores
+              </span>
+              {disclaimerOpen ? (
+                <ChevronUp className="h-4 w-4 text-amber-600 flex-shrink-0" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-amber-600 flex-shrink-0" />
+              )}
+            </button>
+            {disclaimerOpen && (
+              <p className="text-sm text-amber-700 pb-3 leading-relaxed">
+                Os valores apresentados nesta página são exclusivos da plataforma TerapiaConecta e podem diferir dos valores praticados pelo profissional em atendimento particular. A Sessão de Acolhimento é um produto da plataforma, com condições próprias.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Bloco 1: Hero — Emotional hook, no price */}
       <section className="bg-gradient-to-br from-slate-50 to-slate-100 py-16 px-4 sm:px-6 lg:px-8">
@@ -462,17 +490,6 @@ export default function AcolhimentoLandingPage() {
           </div>
         </div>
       </div>
-
-      {/* Disclaimer for dynamic pages */}
-      {isDynamic && therapistPrice && (
-        <div className="bg-gray-100 py-4 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto">
-            <p className="text-xs text-gray-500 text-center">
-              Os valores apresentados são exclusivos da plataforma TerapiaConecta e podem diferir dos valores praticados pelo profissional em atendimento particular.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8 px-4 sm:px-6 lg:px-8 mt-32">
