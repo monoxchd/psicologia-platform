@@ -1208,12 +1208,10 @@ const SOURCE_LABELS = {
   enigma: 'Enigma',
 }
 
-const INTEREST_LABELS = {
-  aep: 'AEP',
-  suporte: 'Suporte',
-  treinamento: 'Treinamento',
-  completo: 'Completo',
-  outro: 'Outro',
+const CONTACT_PREF_LABELS = {
+  whatsapp: 'WhatsApp',
+  email: 'E-mail',
+  phone: 'Ligação',
 }
 
 function LeadsTab() {
@@ -1255,7 +1253,7 @@ function LeadsTab() {
     const q = search.toLowerCase()
     if (!q) return dnfLeads
     return dnfLeads.filter(l =>
-      l.name?.toLowerCase().includes(q) || l.company?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q)
+      l.name?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q) || l.utm_source?.toLowerCase().includes(q) || l.utm_campaign?.toLowerCase().includes(q)
     )
   }, [dnfLeads, search])
 
@@ -1425,9 +1423,9 @@ function B2BLeadsTable({ leads, formatDate, formatPhone, onStatusChange, onViewD
       <TableHeader>
         <TableRow>
           <TableHead>Nome</TableHead>
-          <TableHead>Empresa</TableHead>
           <TableHead>Email</TableHead>
-          <TableHead>Interesse</TableHead>
+          <TableHead>Contato</TableHead>
+          <TableHead>Origem</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Data</TableHead>
           <TableHead className="w-[80px]"></TableHead>
@@ -1437,12 +1435,14 @@ function B2BLeadsTable({ leads, formatDate, formatPhone, onStatusChange, onViewD
         {leads.map((lead) => (
           <TableRow key={lead.id}>
             <TableCell className="font-medium">{lead.name}</TableCell>
-            <TableCell>{lead.company}</TableCell>
             <TableCell>{lead.email}</TableCell>
             <TableCell>
               <Badge variant="outline" className="text-xs">
-                {INTEREST_LABELS[lead.interest] || lead.interest}
+                {CONTACT_PREF_LABELS[lead.contact_preference] || 'WhatsApp'}
               </Badge>
+            </TableCell>
+            <TableCell className="text-xs text-gray-500">
+              {lead.utm_source ? `${lead.utm_source}${lead.utm_campaign ? ' / ' + lead.utm_campaign : ''}` : 'Direto'}
             </TableCell>
             <TableCell>
               <Select value={lead.status} onValueChange={(v) => onStatusChange(lead, v)}>
@@ -1522,14 +1522,27 @@ function LeadDetailDialog({ lead, type, open, onClose, formatDate, formatPhone }
 
             {type === 'b2b' && (
               <>
-                <span className="text-gray-500">Empresa:</span>
-                <span>{lead.company}</span>
+                <span className="text-gray-500">Contato via:</span>
+                <span>{CONTACT_PREF_LABELS[lead.contact_preference] || 'WhatsApp'}</span>
 
-                <span className="text-gray-500">Funcionários:</span>
-                <span>{lead.employees}</span>
-
-                <span className="text-gray-500">Interesse:</span>
-                <span>{INTEREST_LABELS[lead.interest] || lead.interest}</span>
+                {lead.utm_source && (
+                  <>
+                    <span className="text-gray-500">Origem:</span>
+                    <span>{lead.utm_source} / {lead.utm_medium || '—'}</span>
+                  </>
+                )}
+                {lead.utm_campaign && (
+                  <>
+                    <span className="text-gray-500">Campanha:</span>
+                    <span>{lead.utm_campaign}</span>
+                  </>
+                )}
+                {lead.utm_term && (
+                  <>
+                    <span className="text-gray-500">Palavra-chave:</span>
+                    <span>{lead.utm_term}</span>
+                  </>
+                )}
               </>
             )}
 
@@ -1543,7 +1556,7 @@ function LeadDetailDialog({ lead, type, open, onClose, formatDate, formatPhone }
 
           {(lead.concerns || lead.message) && (
             <div className="pt-2 border-t">
-              <p className="text-gray-500 mb-1">{type === 'b2c' ? 'Preocupações:' : 'Mensagem:'}</p>
+              <p className="text-gray-500 mb-1">Preocupações:</p>
               <p className="text-gray-700 whitespace-pre-wrap">{lead.concerns || lead.message}</p>
             </div>
           )}
