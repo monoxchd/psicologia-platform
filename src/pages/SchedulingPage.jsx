@@ -4,21 +4,20 @@ import { useNavigate, useLocation } from 'react-router-dom'
 export default function SchedulingPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { formData, selectedCredits, selectedTherapist } = location.state || {}
+  const { formData, selectedTherapist } = location.state || {}
 
   const handleScheduleComplete = (appointment) => {
-    navigate('/confirmation', { 
-      state: { 
-        formData, 
-        selectedCredits, 
+    navigate('/confirmation', {
+      state: {
+        formData,
         selectedTherapist,
-        scheduledAppointment: appointment 
-      } 
+        scheduledAppointment: appointment
+      }
     })
   }
 
   const handleBack = () => {
-    navigate('/matching', { state: { formData, selectedCredits } })
+    navigate(-1)
   }
 
   return (
@@ -26,7 +25,6 @@ export default function SchedulingPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <SchedulingSystem
           selectedTherapist={selectedTherapist}
-          userCredits={selectedCredits}
           onBack={handleBack}
           onScheduleComplete={handleScheduleComplete}
         />
