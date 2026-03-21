@@ -49,6 +49,7 @@ src/
 - `questionnaireService.js` — questionnaires and responses
 - `activityService.js` — wellness activities
 - `leadService.js` — lead capture forms
+- `adminService.js` — admin CRUD (companies, therapists, clients, services, leads)
 - `gamificationService.js` — gamification features
 
 ## Auth Pattern
@@ -74,12 +75,13 @@ No route guards — pages check auth internally and redirect if needed.
 - `/blog`, `/blog/:slug` — Blog
 - `/acolhimento` — Welcome/intake landing
 - `/enigma` — Assessment quiz
-- `/form` — Intake form
+- `/form` — Lead capture funnel (new users land here from "Agendar Sessão" → success screen → admin contacts via WhatsApp)
+- `/admin` — Admin panel (companies, therapists, clients, services, leads)
 
 ### Client (auth required)
 - `/dashboard` — ClientDashboardPage (main)
-- `/matching` — Find therapist
-- `/scheduling` — Book appointment
+- `/matching` — Find therapist (login-gated, redirects to /login if not authenticated)
+- `/scheduling` — Book appointment (auth gate: shows registration prompt if not logged in)
 - `/confirmation` — Post-booking
 - `/credits` — Purchase credits
 - `/atividades/:slug` — Wellness activities
