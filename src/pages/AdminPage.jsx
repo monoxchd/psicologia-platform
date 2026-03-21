@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Building2, Users, UserCog, Plus, Search, Edit, Power, Loader2,
-  Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye
+  Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye, Briefcase
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
@@ -71,7 +71,7 @@ export default function AdminPage() {
           <Shield className="h-7 w-7 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Painel Administrativo</h1>
-            <p className="text-gray-600 text-sm">Gerenciar empresas, terapeutas e clientes</p>
+            <p className="text-gray-600 text-sm">Gerenciar empresas, terapeutas, clientes e serviços</p>
           </div>
         </div>
 
@@ -93,6 +93,10 @@ export default function AdminPage() {
               <Mail className="h-4 w-4" />
               Leads
             </TabsTrigger>
+            <TabsTrigger value="services" className="gap-1.5">
+              <Briefcase className="h-4 w-4" />
+              Serviços
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies">
@@ -106,6 +110,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="leads">
             <LeadsTab />
+          </TabsContent>
+          <TabsContent value="services">
+            <ServicesTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -1565,6 +1572,416 @@ function LeadDetailDialog({ lead, type, open, onClose, formatDate, formatPhone }
             <div className="pt-2 border-t">
               <p className="text-gray-500 mb-1">Notas:</p>
               <p className="text-gray-700 whitespace-pre-wrap">{lead.notes}</p>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── Services Tab ───────────────────────────────────────────
+
+function ServicesTab() {
+  const [services, setServices] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [detail, setDetail] = useState(null)
+  const [toggleTarget, setToggleTarget] = useState(null)
+
+  const loadServices = async () => {
+    try {
+      const data = await adminService.getServices()
+      setServices(data)
+    } catch (e) {
+      toast.error('Erro ao carregar serviços')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadServices() }, [])
+
+  const filtered = useMemo(() => {
+    if (!search) return services
+    const q = search.toLowerCase()
+    return services.filter(s =>
+      s.name.toLowerCase().includes(q) || s.slug?.toLowerCase().includes(q)
+    )
+  }, [services, search])
+
+  const handleSave = async (formData) => {
+    try {
+      let result
+      if (editing) {
+        result = await adminService.updateService(editing.id, formData)
+        setServices(prev => prev.map(s => s.id === result.id ? result : s))
+        toast.success('Serviço atualizado')
+      } else {
+        result = await adminService.createService(formData)
+        setServices(prev => [...prev, result])
+        toast.success('Serviço criado')
+      }
+      setDialogOpen(false)
+      setEditing(null)
+      return result
+    } catch (e) {
+      toast.error(e.errors ? e.errors.join(', ') : 'Erro ao salvar serviço')
+      return null
+    }
+  }
+
+  const handleToggleActive = async () => {
+    if (!toggleTarget) return
+    try {
+      const updated = await adminService.toggleServiceActive(toggleTarget.id)
+      setServices(prev => prev.map(s => s.id === updated.id ? updated : s))
+      toast.success(updated.active ? 'Serviço ativado' : 'Serviço desativado')
+    } catch (e) {
+      toast.error('Erro ao alterar status')
+    } finally {
+      setToggleTarget(null)
+    }
+  }
+
+  const openDetail = async (service) => {
+    try {
+      const data = await adminService.getService(service.id)
+      setDetail(data)
+      setDetailOpen(true)
+    } catch (e) {
+      toast.error('Erro ao carregar detalhes')
+    }
+  }
+
+  if (loading) return <LoadingState />
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-4 mt-4 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Buscar serviços..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button onClick={() => { setEditing(null); setDialogOpen(true) }}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Serviço
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          {filtered.length === 0 ? (
+            <EmptyState message="Nenhum serviço encontrado" />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead className="text-center">Duração</TableHead>
+                  <TableHead className="text-right">Preço Padrão</TableHead>
+                  <TableHead className="text-center">Login</TableHead>
+                  <TableHead className="text-center">Terapeutas</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map(service => (
+                  <TableRow key={service.id}>
+                    <TableCell
+                      className="font-medium cursor-pointer hover:underline"
+                      onClick={() => openDetail(service)}
+                    >
+                      {service.name}
+                    </TableCell>
+                    <TableCell className="text-gray-500 text-sm">{service.slug}</TableCell>
+                    <TableCell className="text-center">{service.duration} min</TableCell>
+                    <TableCell className="text-right">R$ {parseFloat(service.default_price).toFixed(2)}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={service.requires_login ? 'default' : 'secondary'}>
+                        {service.requires_login ? 'Sim' : 'Não'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">{service.therapists_count}</TableCell>
+                    <TableCell>
+                      <ActiveBadge active={service.active} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => { setEditing(service); setDialogOpen(true) }}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setToggleTarget(service)}>
+                          <Power className={`h-4 w-4 ${service.active ? 'text-red-500' : 'text-green-500'}`} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <ServiceFormDialog
+        open={dialogOpen}
+        onOpenChange={open => { if (!open) { setDialogOpen(false); setEditing(null) } }}
+        service={editing}
+        onSave={handleSave}
+      />
+
+      <ToggleActiveDialog
+        open={!!toggleTarget}
+        onOpenChange={open => { if (!open) setToggleTarget(null) }}
+        name={toggleTarget?.name}
+        active={toggleTarget?.active}
+        onConfirm={handleToggleActive}
+      />
+
+      <ServiceDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        service={detail}
+        onUpdate={(updated) => {
+          setDetail(updated)
+          setServices(prev => prev.map(s => s.id === updated.id ? { ...s, therapists_count: updated.therapists?.length || 0 } : s))
+        }}
+      />
+    </>
+  )
+}
+
+// ─── Service Form Dialog ────────────────────────────────────
+
+function ServiceFormDialog({ open, onOpenChange, service, onSave }) {
+  const [form, setForm] = useState({})
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setForm(service ? {
+        name: service.name || '',
+        slug: service.slug || '',
+        description: service.description || '',
+        default_price: service.default_price || '',
+        duration: service.duration || '',
+        requires_login: service.requires_login !== undefined ? String(service.requires_login) : 'true',
+        position: service.position || 0,
+      } : {
+        name: '', slug: '', description: '', default_price: '', duration: '',
+        requires_login: 'true', position: 0,
+      })
+    }
+  }, [open, service])
+
+  const handleChange = (e) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!form.name?.trim()) { toast.error('Nome é obrigatório'); return }
+    if (!form.default_price) { toast.error('Preço é obrigatório'); return }
+    if (!form.duration) { toast.error('Duração é obrigatória'); return }
+
+    setSaving(true)
+    const data = {
+      ...form,
+      default_price: parseFloat(form.default_price),
+      duration: parseInt(form.duration),
+      requires_login: form.requires_login === 'true',
+      position: parseInt(form.position) || 0,
+    }
+    if (!data.slug?.trim()) delete data.slug
+
+    await onSave(data)
+    setSaving(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{service ? 'Editar Serviço' : 'Novo Serviço'}</DialogTitle>
+          <DialogDescription>
+            {service ? 'Atualize os dados do serviço' : 'Preencha os dados para criar um serviço'}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="service-name">Nome *</Label>
+              <Input id="service-name" name="name" value={form.name || ''} onChange={handleChange} />
+            </div>
+            <div>
+              <Label htmlFor="service-slug">Slug</Label>
+              <Input id="service-slug" name="slug" value={form.slug || ''} onChange={handleChange} placeholder="Auto-gerado se vazio" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="service-description">Descrição</Label>
+            <Textarea id="service-description" name="description" value={form.description || ''} onChange={handleChange} rows={3} />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="service-price">Preço Padrão (R$) *</Label>
+              <Input id="service-price" name="default_price" type="number" step="0.01" min="0.01" value={form.default_price || ''} onChange={handleChange} />
+            </div>
+            <div>
+              <Label htmlFor="service-duration">Duração (min) *</Label>
+              <Input id="service-duration" name="duration" type="number" min="1" max="180" value={form.duration || ''} onChange={handleChange} />
+            </div>
+            <div>
+              <Label htmlFor="service-position">Posição</Label>
+              <Input id="service-position" name="position" type="number" min="0" value={form.position ?? 0} onChange={handleChange} />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="service-requires-login">Requer Login</Label>
+            <Select value={form.requires_login || 'true'} onValueChange={val => setForm(prev => ({ ...prev, requires_login: val }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Sim — apenas clientes logados</SelectItem>
+                <SelectItem value="false">Não — público (WhatsApp)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {service ? 'Salvar' : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── Service Detail Dialog (therapist assignments) ──────────
+
+function ServiceDetailDialog({ open, onOpenChange, service, onUpdate }) {
+  const [allTherapists, setAllTherapists] = useState([])
+  const [addingId, setAddingId] = useState('')
+  const [customPrice, setCustomPrice] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      adminService.getTherapists().then(setAllTherapists).catch(() => {})
+      setCustomPrice('')
+      setAddingId('')
+    }
+  }, [open])
+
+  if (!service) return null
+
+  const assignedIds = new Set((service.therapists || []).map(t => t.id))
+  const available = allTherapists.filter(t => !assignedIds.has(t.id) && t.active)
+
+  const handleAdd = async () => {
+    if (!addingId) return
+    setSaving(true)
+    try {
+      const priceVal = customPrice ? parseFloat(customPrice) : null
+      const added = await adminService.addTherapistToService(service.id, parseInt(addingId), priceVal)
+      const updated = { ...service, therapists: [...(service.therapists || []), added] }
+      onUpdate(updated)
+      setAddingId('')
+      setCustomPrice('')
+      toast.success('Terapeuta adicionado')
+    } catch (e) {
+      toast.error(e.errors ? e.errors.join(', ') : 'Erro ao adicionar terapeuta')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleRemove = async (therapistId) => {
+    try {
+      await adminService.removeTherapistFromService(service.id, therapistId)
+      const updated = { ...service, therapists: service.therapists.filter(t => t.id !== therapistId) }
+      onUpdate(updated)
+      toast.success('Terapeuta removido')
+    } catch (e) {
+      toast.error('Erro ao remover terapeuta')
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{service.name} — Terapeutas</DialogTitle>
+          <DialogDescription>
+            Gerencie os terapeutas que oferecem este serviço. Preço padrão: R$ {parseFloat(service.default_price).toFixed(2)} | {service.duration} min
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <Select value={addingId} onValueChange={setAddingId}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Selecionar terapeuta..." />
+              </SelectTrigger>
+              <SelectContent>
+                {available.length === 0 ? (
+                  <SelectItem value="_none" disabled>Nenhum disponível</SelectItem>
+                ) : (
+                  available.map(t => (
+                    <SelectItem key={t.id} value={String(t.id)}>
+                      {t.name} — {t.specialty || 'Sem especialidade'}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <Input
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="Preço (R$)"
+              value={customPrice}
+              onChange={e => setCustomPrice(e.target.value)}
+              className="w-28"
+            />
+            <Button onClick={handleAdd} disabled={!addingId || saving} size="icon">
+              <UserPlus className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500">Deixe o preço em branco para usar o preço padrão do serviço.</p>
+
+          {(service.therapists || []).length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-4">Nenhum terapeuta vinculado</p>
+          ) : (
+            <div className="space-y-2">
+              {service.therapists.map(t => (
+                <div key={t.id} className="flex items-center justify-between p-2 rounded border">
+                  <div>
+                    <p className="font-medium text-sm">{t.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {t.specialty || 'Sem especialidade'} — R$ {parseFloat(t.effective_price).toFixed(2)}
+                      {t.custom_price ? ` (personalizado)` : ` (padrão)`}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => handleRemove(t.id)}>
+                    <X className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
         </div>
