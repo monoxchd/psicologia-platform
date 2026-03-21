@@ -12,7 +12,7 @@ const formatPrice = (price) => {
 }
 
 export default function SchedulingSystem({
-  selectedTherapist,
+  selectedTherapistId,
   onBack,
   onScheduleComplete
 }) {
@@ -85,8 +85,8 @@ export default function SchedulingSystem({
     fetchTherapists()
   }, [])
 
-  const therapist = selectedTherapist
-    ? therapists.find(t => t.id === selectedTherapist.id || t.name === selectedTherapist.name)
+  const therapist = selectedTherapistId
+    ? therapists.find(t => t.id === selectedTherapistId)
     : therapists[0]
 
   if (loading) {
