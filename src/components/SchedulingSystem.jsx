@@ -2,33 +2,74 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Calendar, Clock, User, CreditCard, CheckCircle, ArrowLeft, Loader2, Brain } from 'lucide-react'
+import { Calendar, Clock, CheckCircle, ArrowLeft, Loader2, Brain, LogIn } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import apiService from '../services/api.js'
-import creditsService from '../services/creditsService.js'
+import authService from '../services/authService.js'
 
-
-const sessionDurations = [
-  { minutes: 30, label: "Check-in Rápido", description: "Ideal para acompanhamento" },
-  { minutes: 50, label: "Sessão Padrão", description: "Duração tradicional", popular: true },
-  { minutes: 90, label: "Sessão Estendida", description: "Para trabalho profundo" }
-]
+const formatPrice = (price) => {
+  return parseFloat(price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
 
 export default function SchedulingSystem({
-  selectedTherapist,
-  userCredits,
+  selectedTherapistId,
   onBack,
   onScheduleComplete
 }) {
+  const navigate = useNavigate()
+  const isLoggedIn = authService.isLoggedIn()
+
+  if (!isLoggedIn) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-8 text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
+            <LogIn className="h-8 w-8 text-blue-600" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Por favor, crie o seu cadastro para agendar</h2>
+            <p className="text-gray-600">
+              Para agendar uma sessão online, você precisa ter uma conta na TerapiaConecta.
+              Preencha nosso formulário e entraremos em contato para finalizar seu cadastro.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={() => navigate('/form')}
+            >
+              Quero me cadastrar
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              size="lg"
+              onClick={() => navigate('/login', { state: { from: '/scheduling' } })}
+            >
+              Já tenho conta — Entrar
+            </Button>
+          </div>
+          {onBack && (
+            <Button variant="link" onClick={onBack} className="text-gray-500">
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Voltar
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
-  const [selectedDuration, setSelectedDuration] = useState(50)
-  const [step, setStep] = useState('duration') // 'duration', 'datetime', 'confirm'
+  const [selectedService, setSelectedService] = useState(null)
+  const [step, setStep] = useState('service') // 'service', 'datetime', 'confirm'
   const [therapists, setTherapists] = useState([])
   const [loading, setLoading] = useState(true)
   const [booking, setBooking] = useState(false)
   const [bookingError, setBookingError] = useState(null)
 
-  // Fetch therapists from API
   useEffect(() => {
     const fetchTherapists = async () => {
       try {
@@ -44,12 +85,10 @@ export default function SchedulingSystem({
     fetchTherapists()
   }, [])
 
-  // Get therapist data - either from selectedTherapist prop or use first available
-  const therapist = selectedTherapist
-    ? therapists.find(t => t.id === selectedTherapist.id || t.name === selectedTherapist.name)
+  const therapist = selectedTherapistId
+    ? therapists.find(t => t.id === selectedTherapistId)
     : therapists[0]
 
-  // Handle loading and missing therapist states
   if (loading) {
     return (
       <Card className="max-w-2xl mx-auto">
@@ -74,21 +113,19 @@ export default function SchedulingSystem({
     )
   }
 
-  const sessionCost = selectedDuration * (therapist.credits_per_minute || 1.0)
-  const canAfford = userCredits >= sessionCost
+  const availableServices = (therapist.services || []).filter(s => s.requires_login)
 
-  // Generate next 7 days with availability
+  // Generate next 7 weekdays with availability
   const getAvailableDates = () => {
     const dates = []
     const today = new Date()
 
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 1; i <= 14 && dates.length < 7; i++) {
       const date = new Date(today)
       date.setDate(today.getDate() + i)
       const dateStr = date.toISOString().split('T')[0]
-      // Show weekdays as available (skip weekends for now)
       const dayOfWeek = date.getDay()
-      if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Monday to Friday
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
         dates.push({
           date: dateStr,
           display: date.toLocaleDateString('pt-BR', {
@@ -109,7 +146,6 @@ export default function SchedulingSystem({
 
   const getAvailableTimes = () => {
     if (!selectedDate) return []
-    // Available time slots during business hours
     return ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"]
   }
 
@@ -118,35 +154,20 @@ export default function SchedulingSystem({
     setBookingError(null)
 
     try {
-      // For now, simulate credit deduction since we don't have a booking endpoint yet
-      // In production, this would call an API endpoint that:
-      // 1. Creates the appointment
-      // 2. Deducts credits automatically
-      // 3. Returns the booking confirmation
-
-      console.log(`🔄 Simulating booking session for ${sessionCost} credits...`)
-
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 2000))
-
-      // For demo purposes, we'll just proceed with the booking
-      // In real implementation: await apiService.post('/appointments', appointmentData)
 
       const appointment = {
         therapist: therapist.name,
         therapistId: therapist.id,
         date: selectedDate,
         time: selectedTime,
-        duration: selectedDuration,
-        cost: sessionCost,
+        duration: selectedService.duration,
+        cost: selectedService.price,
+        service: selectedService.name,
         specialty: therapist.specialty,
         bookingConfirmed: true,
-        creditsDeducted: sessionCost
       }
 
-      console.log(`✅ Session booked! ${sessionCost} credits deducted.`)
-
-      // Pass the appointment data to parent with success flag
       onScheduleComplete(appointment)
     } catch (error) {
       console.error('Error booking session:', error)
@@ -156,7 +177,7 @@ export default function SchedulingSystem({
     }
   }
 
-  if (step === 'duration') {
+  if (step === 'service') {
     return (
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
@@ -186,67 +207,53 @@ export default function SchedulingSystem({
         </CardHeader>
         <CardContent>
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4">Escolha a duração da sessão:</h3>
-            <div className="grid gap-4">
-              {sessionDurations.map((duration) => {
-                const cost = duration.minutes * (therapist.credits_per_minute || 1.0)
-                const affordable = userCredits >= cost
-                return (
-                  <Card 
-                    key={duration.minutes}
-                    className={`cursor-pointer transition-all hover:scale-105 ${
-                      selectedDuration === duration.minutes ? 'ring-2 ring-blue-500' : ''
-                    } ${!affordable ? 'opacity-50' : ''}`}
-                    onClick={() => affordable && setSelectedDuration(duration.minutes)}
+            <h3 className="text-lg font-semibold mb-4">Escolha o tipo de sessão:</h3>
+            {availableServices.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>Este terapeuta ainda não possui serviços disponíveis para agendamento online.</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {availableServices.map((service) => (
+                  <Card
+                    key={service.id}
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      selectedService?.id === service.id ? 'ring-2 ring-blue-500' : ''
+                    }`}
+                    onClick={() => setSelectedService(service)}
                   >
-                    {duration.popular && (
-                      <Badge className="absolute -top-2 left-4 bg-blue-600">
-                        Mais Popular
-                      </Badge>
-                    )}
                     <CardContent className="p-4">
                       <div className="flex justify-between items-center">
                         <div>
-                          <h4 className="font-semibold">{duration.label}</h4>
-                          <p className="text-sm text-gray-600">{duration.description}</p>
-                          <p className="text-sm text-gray-500">{duration.minutes} minutos</p>
+                          <h4 className="font-semibold">{service.name}</h4>
+                          {service.description && (
+                            <p className="text-sm text-gray-600">{service.description}</p>
+                          )}
+                          <p className="text-sm text-gray-500">{service.duration} minutos</p>
                         </div>
                         <div className="text-right">
                           <div className="text-xl font-bold text-blue-600">
-                            {cost} créditos
+                            {formatPrice(service.price)}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            R${(cost * 2).toFixed(0)} valor
-                          </div>
-                          {!affordable && (
-                            <div className="text-xs text-red-500 mt-1">
-                              Créditos insuficientes
-                            </div>
-                          )}
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                )
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-lg mb-6">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Seus créditos disponíveis:</span>
-              <span className="text-xl font-bold text-blue-600">{userCredits} créditos</span>
-            </div>
-          </div>
-
-          <Button 
-            className="w-full" 
-            size="lg"
-            disabled={!canAfford}
-            onClick={() => setStep('datetime')}
-          >
-            Continuar para Agendamento
-          </Button>
+          {availableServices.length > 0 && (
+            <Button
+              className="w-full"
+              size="lg"
+              disabled={!selectedService}
+              onClick={() => setStep('datetime')}
+            >
+              Continuar para Agendamento
+            </Button>
+          )}
         </CardContent>
       </Card>
     )
@@ -260,14 +267,14 @@ export default function SchedulingSystem({
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <div className="flex items-center gap-4 mb-4">
-            <Button variant="ghost" size="sm" onClick={() => setStep('duration')}>
+            <Button variant="ghost" size="sm" onClick={() => setStep('service')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
             </Button>
           </div>
           <CardTitle className="text-2xl">Escolha Data e Horário</CardTitle>
           <CardDescription>
-            Sessão de {selectedDuration} minutos • {sessionCost} créditos
+            {selectedService.name} — {selectedService.duration} minutos — {formatPrice(selectedService.price)}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -316,8 +323,8 @@ export default function SchedulingSystem({
             </div>
           )}
 
-          <Button 
-            className="w-full" 
+          <Button
+            className="w-full"
             size="lg"
             disabled={!selectedDate || !selectedTime}
             onClick={() => setStep('confirm')}
@@ -330,10 +337,10 @@ export default function SchedulingSystem({
   }
 
   if (step === 'confirm') {
-    const selectedDateObj = new Date(selectedDate)
-    const formattedDate = selectedDateObj.toLocaleDateString('pt-BR', { 
-      weekday: 'long', 
-      day: 'numeric', 
+    const selectedDateObj = new Date(selectedDate + 'T00:00:00')
+    const formattedDate = selectedDateObj.toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      day: 'numeric',
       month: 'long',
       year: 'numeric'
     })
@@ -370,7 +377,7 @@ export default function SchedulingSystem({
                   <p className="text-gray-600">{therapist.specialty}</p>
                 </div>
               </div>
-              
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-blue-600" />
@@ -379,23 +386,23 @@ export default function SchedulingSystem({
                     <p className="text-sm text-gray-600">{formattedDate}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-blue-600" />
                   <div>
                     <p className="font-medium">Horário</p>
-                    <p className="text-sm text-gray-600">{selectedTime} ({selectedDuration} min)</p>
+                    <p className="text-sm text-gray-600">{selectedTime} ({selectedService.duration} min)</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="bg-blue-50 p-6 rounded-lg">
-              <h4 className="font-semibold mb-3">Resumo do Pagamento</h4>
+              <h4 className="font-semibold mb-3">Resumo</h4>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span>Sessão de {selectedDuration} minutos</span>
-                  <span>{sessionCost} créditos</span>
+                  <span>{selectedService.name}</span>
+                  <span>{formatPrice(selectedService.price)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Taxa da plataforma</span>
@@ -403,10 +410,7 @@ export default function SchedulingSystem({
                 </div>
                 <div className="border-t pt-2 flex justify-between font-semibold">
                   <span>Total</span>
-                  <span className="text-blue-600">{sessionCost} créditos</span>
-                </div>
-                <div className="text-sm text-gray-600">
-                  Créditos restantes após sessão: {userCredits - sessionCost}
+                  <span className="text-blue-600">{formatPrice(selectedService.price)}</span>
                 </div>
               </div>
             </div>
@@ -417,18 +421,16 @@ export default function SchedulingSystem({
                 <div className="text-sm">
                   <p className="font-medium text-green-800">O que acontece agora:</p>
                   <ul className="mt-2 space-y-1 text-green-700">
-                    <li>• Você receberá um email de confirmação</li>
-                    <li>• Link da videochamada será enviado 15 min antes</li>
-                    <li>• Créditos serão debitados apenas após a sessão</li>
-                    <li>• Você pode cancelar até 2h antes sem cobrança</li>
+                    <li>Você receberá um email de confirmação</li>
+                    <li>Link da videochamada será enviado 15 min antes</li>
+                    <li>Você pode cancelar até 24h antes sem cobrança</li>
                   </ul>
                 </div>
               </div>
             </div>
 
-            {/* Error Display */}
             {bookingError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-800 text-sm">{bookingError}</p>
               </div>
             )}
@@ -442,13 +444,10 @@ export default function SchedulingSystem({
               {booking ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Agendando Sessão...
+                  Agendando...
                 </>
               ) : (
-                <>
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Confirmar e Agendar Sessão
-                </>
+                'Confirmar e Agendar'
               )}
             </Button>
           </div>
@@ -459,4 +458,3 @@ export default function SchedulingSystem({
 
   return null
 }
-

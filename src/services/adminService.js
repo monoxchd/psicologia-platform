@@ -117,6 +117,40 @@ class AdminService {
   async updateDnfLead(id, data) {
     return api.put(`/admin/dnf_leads/${id}`, { dnf_lead: data })
   }
+
+  // Services
+  async getServices(q = '') {
+    const params = q ? { q } : {}
+    return api.get('/admin/services', params)
+  }
+
+  async getService(id) {
+    return api.get(`/admin/services/${id}`)
+  }
+
+  async createService(data) {
+    return api.post('/admin/services', { service: data })
+  }
+
+  async updateService(id, data) {
+    return api.put(`/admin/services/${id}`, { service: data })
+  }
+
+  async toggleServiceActive(id) {
+    return api.request(`/admin/services/${id}/toggle_active`, { method: 'PATCH' })
+  }
+
+  async addTherapistToService(serviceId, therapistId, customPrice = null) {
+    return api.post(`/admin/services/${serviceId}/therapists`, { therapist_id: therapistId, custom_price: customPrice })
+  }
+
+  async updateTherapistServicePrice(serviceId, therapistId, customPrice) {
+    return api.put(`/admin/services/${serviceId}/therapists/${therapistId}`, { custom_price: customPrice })
+  }
+
+  async removeTherapistFromService(serviceId, therapistId) {
+    return api.delete(`/admin/services/${serviceId}/therapists/${therapistId}`)
+  }
 }
 
 export default new AdminService()

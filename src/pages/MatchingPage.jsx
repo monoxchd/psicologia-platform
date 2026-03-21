@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Star, CheckCircle, Calendar, MessageCircle, ExternalLink, Brain } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { Star, CheckCircle, Calendar, Brain, Clock, ExternalLink } from 'lucide-react'
 import therapistService from '../services/therapistService'
+import authService from '../services/authService'
 import ClientBottomNav from '../components/ClientBottomNav'
 
 export default function MatchingPage() {
+  const navigate = useNavigate()
   const location = useLocation()
   const { formData } = location.state || {}
 
@@ -15,6 +17,10 @@ export default function MatchingPage() {
   const [therapistError, setTherapistError] = useState(null)
 
   useEffect(() => {
+    if (!authService.isLoggedIn()) {
+      navigate('/login', { state: { from: '/matching' } })
+      return
+    }
     fetchTherapists()
   }, [])
 
@@ -33,6 +39,18 @@ export default function MatchingPage() {
     }
   }
 
+  const handleServiceClick = (therapist, service) => {
+    navigate('/scheduling', { state: { therapistId: therapist.id, serviceId: service.id } })
+  }
+
+  const getLowestPrice = (therapist) => {
+    if (therapist.services && therapist.services.length > 0) {
+      const prices = therapist.services.map(s => parseFloat(s.price))
+      return Math.min(...prices)
+    }
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12 pb-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -49,7 +67,7 @@ export default function MatchingPage() {
                 <p className="text-red-800">{therapistError}</p>
               </div>
             )}
-            
+
             {loadingTherapists ? (
               <div className="flex justify-center items-center py-12">
                 <div className="text-center">
@@ -59,69 +77,81 @@ export default function MatchingPage() {
               </div>
             ) : (
               <div className="grid md:grid-cols-3 gap-6">
-                {therapists.map((therapist) => (
-                <Card key={therapist.id} className="relative">
-                  <CardHeader className="text-center">
-                    {therapist.image && therapist.image !== '👨‍⚕️' ? (
-                      <img
-                        src={therapist.image}
-                        alt={therapist.name}
-                        className="w-16 h-16 rounded-full object-cover mx-auto mb-4"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
-                        <Brain className="h-9 w-9 text-purple-600" />
-                      </div>
-                    )}
-                    <CardTitle className="text-xl">{therapist.name}</CardTitle>
-                    <CardDescription>{therapist.specialty}</CardDescription>
-                    <div className="flex items-center justify-center space-x-1 mt-2">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-semibold">{therapist.rating}</span>
-                      <span className="text-gray-500">({therapist.experience})</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="text-center">
-                    <div className="space-y-2 mb-6">
-                      <div className="text-sm">
-                        <span className="font-medium">Valor:</span>{' '}
-                        <span className="text-green-600 font-bold">R$ {therapist.creditsPerMinute}/consulta</span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">Disponível:</span>{' '}
-                        <span className="text-green-600 font-semibold">{therapist.available}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Button
-                        className="w-full bg-green-600 hover:bg-green-700"
-                        onClick={() => {
-                          const message = encodeURIComponent(`Olá! Gostaria de agendar uma sessão com ${therapist.name}. Vi o perfil na TerapiaConecta.`)
-                          window.open(`https://wa.me/5511914214449?text=${message}`, '_blank')
-                        }}
-                      >
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Agendar via WhatsApp
-                      </Button>
-                      {therapist.personalSiteUrl && (
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => window.open(therapist.personalSiteUrl, '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Ver Site
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                {therapists.map((therapist) => {
+                  const lowestPrice = getLowestPrice(therapist)
+
+                  return (
+                    <Card key={therapist.id} className="relative flex flex-col">
+                      <CardHeader className="text-center">
+                        {therapist.image && therapist.image !== '👨‍⚕️' ? (
+                          <img
+                            src={therapist.image}
+                            alt={therapist.name}
+                            className="w-16 h-16 rounded-full object-cover mx-auto mb-4"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
+                            <Brain className="h-9 w-9 text-purple-600" />
+                          </div>
+                        )}
+                        <CardTitle className="text-xl">{therapist.name}</CardTitle>
+                        <CardDescription>{therapist.specialty}</CardDescription>
+                        <div className="flex items-center justify-center space-x-1 mt-2">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="font-semibold">{therapist.rating}</span>
+                          <span className="text-gray-500">({therapist.experience})</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="text-center flex-1 flex flex-col">
+                        <div className="space-y-2 mb-6">
+                          {lowestPrice && (
+                            <div className="text-sm">
+                              <span className="text-green-600 font-bold">a partir de R$ {lowestPrice.toFixed(0)}</span>
+                            </div>
+                          )}
+                          <div className="text-sm">
+                            <span className="text-green-600 font-semibold">{therapist.available}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-gray-500 mb-4">
+                          {therapist.crpNumber && <span>CRP: {therapist.crpNumber}</span>}
+                          {therapist.crpNumber && therapist.personalSiteUrl && <span> · </span>}
+                          {therapist.personalSiteUrl && (
+                            <a
+                              href={therapist.personalSiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline inline-flex items-center gap-0.5"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Site
+                            </a>
+                          )}
+                        </div>
+
+                        <div className="space-y-2 mt-auto">
+                          {therapist.services.length > 0 ? (
+                            <Button
+                              className="w-full"
+                              onClick={() => handleServiceClick(therapist, therapist.services[0])}
+                            >
+                              <Clock className="h-4 w-4 mr-2" />
+                              Agendar Sessão
+                            </Button>
+                          ) : (
+                            <p className="text-sm text-gray-500">Nenhum serviço disponível no momento</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             )}
 
             <div className="mt-12 bg-green-50 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-green-900 mb-4">🎉 Parabéns! Você está quase lá:</h3>
+              <h3 className="text-lg font-semibold text-green-900 mb-4">Parabéns! Você está quase lá:</h3>
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center text-green-800">
                   <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
@@ -133,7 +163,7 @@ export default function MatchingPage() {
                 </div>
                 <div className="flex items-center text-green-800">
                   <Calendar className="h-4 w-4 text-green-600 mr-2" />
-                  Próximo: Escolher psicólogo e agendar via WhatsApp
+                  Próximo: Escolher psicólogo e agendar
                 </div>
               </div>
             </div>

@@ -52,6 +52,11 @@ export default function LoginPage() {
 
         <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
 
+        <div className="text-center">
+          <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">
+            ← Voltar para a página inicial
+          </Link>
+        </div>
       </div>
     </div>
   )

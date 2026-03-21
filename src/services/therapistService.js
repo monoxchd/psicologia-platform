@@ -58,7 +58,7 @@ class TherapistService {
       id: therapist.id,
       name: therapist.name,
       specialty: therapist.specialty,
-      experience: `${therapist.experience_years} anos`,
+      experience: `${therapist.experience_years} ${therapist.experience_years === 1 ? 'ano' : 'anos'}`,
       rating: therapist.rating,
       creditsPerMinute: therapist.credits_per_minute,
       available: therapist.next_available
@@ -68,7 +68,8 @@ class TherapistService {
       bio: therapist.bio,
       crpNumber: therapist.crp_number,
       personalSiteUrl: therapist.personal_site_url,
-      calendlyUrl: therapist.calendly_url
+      calendlyUrl: therapist.calendly_url,
+      services: therapist.services || []
     };
   }
 
