@@ -935,12 +935,13 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
         calendly_url: therapist.calendly_url || '',
         acolhimento_price: therapist.acolhimento_price || '',
         acolhimento_quote: therapist.acolhimento_quote || '',
+        position: therapist.position ?? 0,
         password: '',
         password_confirmation: '',
       } : {
         email: '', name: '', specialty: '', experience_years: '', bio: '',
         crp_number: '', credits_per_minute: '', personal_site_url: '', calendly_url: '',
-        acolhimento_price: '', acolhimento_quote: '',
+        acolhimento_price: '', acolhimento_quote: '', position: 0,
         password: '', password_confirmation: '',
       })
     }
@@ -1000,7 +1001,7 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
               <Input id="therapist-crp" name="crp_number" value={form.crp_number || ''} onChange={handleChange} placeholder="XX/XXXXX" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="therapist-exp">Anos de experiência</Label>
               <Input id="therapist-exp" name="experience_years" type="number" min="0" value={form.experience_years || ''} onChange={handleChange} />
@@ -1008,6 +1009,10 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
             <div>
               <Label htmlFor="therapist-credits">Valor por sessão (R$)</Label>
               <Input id="therapist-credits" name="credits_per_minute" type="number" min="0" step="0.01" value={form.credits_per_minute || ''} onChange={handleChange} />
+            </div>
+            <div>
+              <Label htmlFor="therapist-position">Posição</Label>
+              <Input id="therapist-position" name="position" type="number" min="0" value={form.position ?? 0} onChange={handleChange} placeholder="0" />
             </div>
           </div>
           <div>
