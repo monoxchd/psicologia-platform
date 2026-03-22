@@ -47,7 +47,7 @@ export default function AcolhimentoLandingPage() {
     if (therapist) {
       const priceRef = therapist.acolhimento_price ? `R$${therapist.acolhimento_price}` : ''
       message = encodeURIComponent(
-        `Olá, vi a página da ${therapist.name} e gostaria de saber mais sobre a Sessão de Acolhimento. [ref: ${slug}/${priceRef}]`
+        `Olá, vi a página da ${therapist.name} e gostaria de saber mais sobre a Sessão de Acolhimento. [ref: ${slug || 'acolhimento'}/${priceRef}]`
       )
     } else {
       message = encodeURIComponent('Olá, gostaria de saber mais sobre a Sessão de Acolhimento.')
