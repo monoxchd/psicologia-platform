@@ -12,7 +12,7 @@ export default function AcolhimentoLandingPage() {
   const { slug } = useParams()
   const [isScrolled, setIsScrolled] = useState(false)
   const [therapist, setTherapist] = useState(null)
-  const [loading, setLoading] = useState(!!slug)
+  const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [disclaimerOpen, setDisclaimerOpen] = useState(false)
 
@@ -25,15 +25,15 @@ export default function AcolhimentoLandingPage() {
   }, [])
 
   useEffect(() => {
-    if (!slug) return
-
     const loadTherapist = async () => {
       try {
         setLoading(true)
-        const data = await therapistService.getTherapistBySlug(slug)
+        const data = slug
+          ? await therapistService.getTherapistBySlug(slug)
+          : await therapistService.getTherapistById(1)
         setTherapist(data)
       } catch {
-        setNotFound(true)
+        if (slug) setNotFound(true)
       } finally {
         setLoading(false)
       }
@@ -96,7 +96,7 @@ export default function AcolhimentoLandingPage() {
   const seoTitle = isDynamic
     ? `Sessão de Acolhimento com ${therapistName} | Terapia Conecta`
     : 'Sessão de Acolhimento | Terapia Conecta'
-  const seoDescription = isDynamic && therapistPrice
+  const seoDescription = slug && therapistPrice
     ? `Sessão de Acolhimento com ${therapistName.split(' ')[0]} — ${formatPrice(therapistPrice)}. 30 minutos de escuta profissional para você dar o primeiro passo.`
     : 'Sessão de Acolhimento — 30 minutos de escuta profissional para você dar o primeiro passo. Sem compromisso.'
 
@@ -122,7 +122,7 @@ export default function AcolhimentoLandingPage() {
       </header>
 
       {/* Disclaimer banner */}
-      {isDynamic && therapistPrice && (
+      {slug && therapistPrice && (
         <div className="bg-amber-50 border-b border-amber-200">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <button
@@ -436,7 +436,7 @@ export default function AcolhimentoLandingPage() {
                 Como funciona o agendamento e o pagamento?
               </AccordionTrigger>
               <AccordionContent className="text-gray-700">
-                {isDynamic && therapistPrice ? (
+                {slug && therapistPrice ? (
                   <>
                     A Sessão de Acolhimento com {therapistName.split(' ')[0]} tem o valor de <strong>{formatPrice(therapistPrice)}</strong>. Entre em contato pelo WhatsApp, escolha o melhor horário e nós te explicamos todos os detalhes sobre a forma de pagamento.
                   </>
@@ -466,7 +466,7 @@ export default function AcolhimentoLandingPage() {
       {/* Bloco 8: CTA Fixo */}
       <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
         <div className="max-w-3xl mx-auto">
-          {isDynamic && therapistPrice && (
+          {slug && therapistPrice && (
             <p className="text-center text-sm text-gray-600 mb-2">
               Sessão de Acolhimento com {therapistName.split(' ')[0]} — <strong>{formatPrice(therapistPrice)}</strong>
             </p>
