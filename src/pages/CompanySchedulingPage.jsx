@@ -53,18 +53,17 @@ export default function CompanySchedulingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [booked, setBooked] = useState(false)
   const [bookingError, setBookingError] = useState('')
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [companyData, therapistData, availData] = await Promise.all([
+        const [companyData, therapistData] = await Promise.all([
           companyService.getCompanyBySlug(slug),
           therapistService.getTherapistById(therapistId),
-          therapistService.getTherapistAvailability(therapistId),
         ])
         setCompany(companyData.company)
         setTherapist(therapistData)
-        setAvailability(availData.availability || {})
       } catch (err) {
         setError('Não foi possível carregar os dados.')
       } finally {
@@ -80,7 +79,7 @@ export default function CompanySchedulingPage() {
     return Object.keys(availability)
       .filter((date) => {
         const slots = availability[date]
-        return slots && slots.length > 0
+        return slots && slots.length > 0 && slots.some(s => s.available)
       })
       .sort()
   }, [availability, selectedDuration])
@@ -91,11 +90,22 @@ export default function CompanySchedulingPage() {
     return availability[selectedDate]
   }, [selectedDate, availability])
 
-  const handleSelectDuration = (duration) => {
+  const handleSelectDuration = async (duration) => {
     setSelectedDuration(duration)
     setSelectedDate(null)
     setSelectedTime(null)
+    setAvailability({})
     setStep(2)
+    setLoadingAvailability(true)
+    try {
+      const availData = await therapistService.getTherapistAvailability(therapistId, { duration })
+      setAvailability(availData.availability || {})
+    } catch (err) {
+      console.error('Error fetching availability:', err)
+      setAvailability({})
+    } finally {
+      setLoadingAvailability(false)
+    }
   }
 
   const handleSelectDate = (date) => {
@@ -334,11 +344,11 @@ export default function CompanySchedulingPage() {
             {SESSION_TYPES.map((type) => (
               <Card
                 key={type.duration}
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  selectedDuration === type.duration ? 'ring-2' : ''
-                }`}
+                className={`transition-all hover:shadow-md ${
+                  loadingAvailability ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                } ${selectedDuration === type.duration ? 'ring-2' : ''}`}
                 style={selectedDuration === type.duration ? { borderColor: primaryColor, boxShadow: `0 0 0 2px ${primaryColor}30` } : {}}
-                onClick={() => handleSelectDuration(type.duration)}
+                onClick={() => !loadingAvailability && handleSelectDuration(type.duration)}
               >
                 <CardContent className="p-5 flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -388,7 +398,12 @@ export default function CompanySchedulingPage() {
               {selectedSessionType?.title} — {selectedDuration} minutos
             </div>
 
-            {availableDates.length === 0 ? (
+            {loadingAvailability ? (
+              <div className="text-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500">Carregando horários disponíveis...</p>
+              </div>
+            ) : availableDates.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">Nenhum horário disponível no momento.</p>
@@ -422,18 +437,21 @@ export default function CompanySchedulingPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-3">Horário</p>
                     <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                      {availableTimes.map((time) => (
+                      {availableTimes.map((slot) => (
                         <button
-                          key={time}
-                          onClick={() => handleSelectTime(time)}
+                          key={slot.time}
+                          disabled={!slot.available}
+                          onClick={() => slot.available && handleSelectTime(slot.time)}
                           className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            selectedTime === time
-                              ? 'text-white'
-                              : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'
+                            !slot.available
+                              ? 'border border-red-200 bg-red-50 text-red-400 line-through opacity-70 cursor-not-allowed'
+                              : selectedTime === slot.time
+                                ? 'text-white'
+                                : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'
                           }`}
-                          style={selectedTime === time ? { backgroundColor: primaryColor } : {}}
+                          style={slot.available && selectedTime === slot.time ? { backgroundColor: primaryColor } : {}}
                         >
-                          {time}
+                          {slot.time}
                         </button>
                       ))}
                     </div>
