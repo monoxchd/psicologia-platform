@@ -15,6 +15,9 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog.jsx'
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
+} from '@/components/ui/dialog.jsx'
+import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
 } from 'recharts'
@@ -69,6 +72,7 @@ export default function ClientDashboardPage() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [nextAppointment, setNextAppointment] = useState(null)
+  const [allAppointments, setAllAppointments] = useState([])
   const [stats, setStats] = useState(null)
   const [recentEntries, setRecentEntries] = useState([])
   const [activities, setActivities] = useState([])
@@ -103,6 +107,7 @@ export default function ClientDashboardPage() {
         if (appointmentsRes.status === 'fulfilled') {
           const appts = appointmentsRes.value?.data?.appointments ||
                         appointmentsRes.value?.appointments || []
+          setAllAppointments(appts)
           if (appts.length > 0) setNextAppointment(appts[0])
         }
 
@@ -141,7 +146,9 @@ export default function ClientDashboardPage() {
     setCancelling(true)
     try {
       await appointmentService.cancel(nextAppointment.id)
-      setNextAppointment(null)
+      const remaining = allAppointments.filter(a => a.id !== nextAppointment.id)
+      setAllAppointments(remaining)
+      setNextAppointment(remaining[0] || null)
     } catch (err) {
       console.error('Error cancelling:', err)
     } finally {
@@ -242,13 +249,70 @@ export default function ClientDashboardPage() {
         {nextAppointment ? (
           <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm">
             <CardContent className="p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-4 w-4 text-indigo-600" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-indigo-700">Próxima sessão</span>
-                {nextAppointment.starting_soon && (
-                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] py-0 px-1.5">
-                    Em breve
-                  </Badge>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-indigo-600" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-indigo-700">Próxima sessão</span>
+                  {nextAppointment.starting_soon && (
+                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] py-0 px-1.5">
+                      Em breve
+                    </Badge>
+                  )}
+                </div>
+                {allAppointments.length > 1 && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5">
+                        Ver todos ({allAppointments.length})
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Suas Sessões Agendadas</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-3 mt-2">
+                        {allAppointments.map((appt) => (
+                          <div
+                            key={appt.id}
+                            className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50"
+                          >
+                            <Avatar className="h-9 w-9 shrink-0">
+                              <AvatarImage src={appt.therapist?.photo} />
+                              <AvatarFallback className="bg-indigo-100 text-indigo-700 text-xs font-bold">
+                                {appt.therapist?.name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 truncate">
+                                {appt.therapist?.name}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {appt.formatted_date || appt.date} {appt.formatted_time || appt.time}
+                                </span>
+                                <span>{appt.duration} min</span>
+                                <span className="flex items-center gap-1">
+                                  {appt.mode === 'online' ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+                                  {appt.mode === 'online' ? 'Online' : 'Presencial'}
+                                </span>
+                              </div>
+                            </div>
+                            <Badge
+                              className={`text-[10px] shrink-0 ${
+                                appt.status === 'confirmed'
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                  : 'bg-amber-100 text-amber-800 border-amber-200'
+                              }`}
+                            >
+                              {appt.status === 'confirmed' ? 'Confirmada' : 'Pendente'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 )}
               </div>
 

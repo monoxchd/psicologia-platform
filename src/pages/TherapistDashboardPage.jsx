@@ -35,6 +35,10 @@ const TherapistDashboardPage = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!authService.isLoggedIn() || !authService.isTherapist()) {
+      navigate('/login', { replace: true })
+      return
+    }
     loadDashboardData()
   }, [])
 
@@ -44,6 +48,10 @@ const TherapistDashboardPage = () => {
 
       // Get current user
       const currentUser = await authService.getCurrentUser()
+      if (!currentUser) {
+        navigate('/login', { replace: true })
+        return
+      }
       setUser(currentUser)
 
       // Get therapist's articles

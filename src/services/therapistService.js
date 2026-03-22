@@ -31,11 +31,12 @@ class TherapistService {
     }
   }
 
-  async getTherapistAvailability(id, startDate, endDate) {
+  async getTherapistAvailability(id, { startDate, endDate, duration } = {}) {
     try {
       const params = {};
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
+      if (duration) params.duration = duration;
       
       const availability = await api.get(`/therapists/${id}/availability`, params);
       return availability;

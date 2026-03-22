@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
@@ -6,6 +6,8 @@ import { Calendar, Clock, CheckCircle, ArrowLeft, Loader2, Brain, LogIn } from '
 import { useNavigate } from 'react-router-dom'
 import apiService from '../services/api.js'
 import authService from '../services/authService.js'
+import therapistService from '../services/therapistService.js'
+import appointmentService from '../services/appointmentService.js'
 
 const formatPrice = (price) => {
   return parseFloat(price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -18,6 +20,52 @@ export default function SchedulingSystem({
 }) {
   const navigate = useNavigate()
   const isLoggedIn = authService.isLoggedIn()
+
+  const [selectedDate, setSelectedDate] = useState('')
+  const [selectedTime, setSelectedTime] = useState('')
+  const [selectedService, setSelectedService] = useState(null)
+  const [step, setStep] = useState('service') // 'service', 'datetime', 'confirm'
+  const [therapists, setTherapists] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [booking, setBooking] = useState(false)
+  const [bookingError, setBookingError] = useState(null)
+  const [availability, setAvailability] = useState({})
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
+
+  useEffect(() => {
+    if (!isLoggedIn) return
+
+    const fetchTherapists = async () => {
+      try {
+        const response = await apiService.get('/therapists')
+        setTherapists(response)
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching therapists:', error)
+        setLoading(false)
+      }
+    }
+
+    fetchTherapists()
+  }, [isLoggedIn])
+
+  const therapist = selectedTherapistId
+    ? therapists.find(t => t.id === selectedTherapistId)
+    : therapists[0]
+
+  const availableDates = useMemo(() => {
+    return Object.keys(availability)
+      .filter(date => {
+        const slots = availability[date]
+        return slots && slots.length > 0 && slots.some(s => s.available)
+      })
+      .sort()
+  }, [availability])
+
+  const availableTimes = useMemo(() => {
+    if (!selectedDate || !availability[selectedDate]) return []
+    return availability[selectedDate]
+  }, [selectedDate, availability])
 
   if (!isLoggedIn) {
     return (
@@ -61,34 +109,6 @@ export default function SchedulingSystem({
     )
   }
 
-  const [selectedDate, setSelectedDate] = useState('')
-  const [selectedTime, setSelectedTime] = useState('')
-  const [selectedService, setSelectedService] = useState(null)
-  const [step, setStep] = useState('service') // 'service', 'datetime', 'confirm'
-  const [therapists, setTherapists] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [booking, setBooking] = useState(false)
-  const [bookingError, setBookingError] = useState(null)
-
-  useEffect(() => {
-    const fetchTherapists = async () => {
-      try {
-        const response = await apiService.get('/therapists')
-        setTherapists(response)
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching therapists:', error)
-        setLoading(false)
-      }
-    }
-
-    fetchTherapists()
-  }, [])
-
-  const therapist = selectedTherapistId
-    ? therapists.find(t => t.id === selectedTherapistId)
-    : therapists[0]
-
   if (loading) {
     return (
       <Card className="max-w-2xl mx-auto">
@@ -115,38 +135,36 @@ export default function SchedulingSystem({
 
   const availableServices = (therapist.services || []).filter(s => s.requires_login)
 
-  // Generate next 7 weekdays with availability
-  const getAvailableDates = () => {
-    const dates = []
-    const today = new Date()
-
-    for (let i = 1; i <= 14 && dates.length < 7; i++) {
-      const date = new Date(today)
-      date.setDate(today.getDate() + i)
-      const dateStr = date.toISOString().split('T')[0]
-      const dayOfWeek = date.getDay()
-      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-        dates.push({
-          date: dateStr,
-          display: date.toLocaleDateString('pt-BR', {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short'
-          }),
-          fullDisplay: date.toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long'
-          })
-        })
-      }
+  const fetchAvailability = async () => {
+    setLoadingAvailability(true)
+    try {
+      const data = await therapistService.getTherapistAvailability(therapist.id, { duration: selectedService.duration })
+      setAvailability(data.availability || {})
+    } catch (error) {
+      console.error('Error fetching availability:', error)
+      setAvailability({})
+    } finally {
+      setLoadingAvailability(false)
     }
-    return dates
   }
 
-  const getAvailableTimes = () => {
-    if (!selectedDate) return []
-    return ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"]
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr + 'T00:00:00')
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    if (date.getTime() === today.getTime()) return 'Hoje'
+    if (date.getTime() === tomorrow.getTime()) return 'Amanhã'
+    return date.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
+  }
+
+  const handleGoToDatetime = () => {
+    setSelectedDate('')
+    setSelectedTime('')
+    fetchAvailability()
+    setStep('datetime')
   }
 
   const handleSchedule = async () => {
@@ -154,9 +172,15 @@ export default function SchedulingSystem({
     setBookingError(null)
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await appointmentService.createAppointment({
+        therapist_id: therapist.id,
+        scheduled_at: `${selectedDate} ${selectedTime}`,
+        duration: selectedService.duration,
+        mode: 'online',
+        service_id: selectedService.id,
+      })
 
-      const appointment = {
+      onScheduleComplete({
         therapist: therapist.name,
         therapistId: therapist.id,
         date: selectedDate,
@@ -166,12 +190,10 @@ export default function SchedulingSystem({
         service: selectedService.name,
         specialty: therapist.specialty,
         bookingConfirmed: true,
-      }
-
-      onScheduleComplete(appointment)
+      })
     } catch (error) {
-      console.error('Error booking session:', error)
-      setBookingError('Erro ao agendar sessão. Tente novamente.')
+      const msg = error.errors?.[0] || 'Erro ao agendar sessão. Tente novamente.'
+      setBookingError(msg)
     } finally {
       setBooking(false)
     }
@@ -249,7 +271,7 @@ export default function SchedulingSystem({
               className="w-full"
               size="lg"
               disabled={!selectedService}
-              onClick={() => setStep('datetime')}
+              onClick={handleGoToDatetime}
             >
               Continuar para Agendamento
             </Button>
@@ -260,9 +282,6 @@ export default function SchedulingSystem({
   }
 
   if (step === 'datetime') {
-    const availableDates = getAvailableDates()
-    const availableTimes = getAvailableTimes()
-
     return (
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
@@ -278,59 +297,73 @@ export default function SchedulingSystem({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              Datas Disponíveis
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {availableDates.map((dateObj) => (
-                <Button
-                  key={dateObj.date}
-                  variant={selectedDate === dateObj.date ? "default" : "outline"}
-                  className="h-auto p-3 text-left"
-                  onClick={() => {
-                    setSelectedDate(dateObj.date)
-                    setSelectedTime('')
-                  }}
-                >
-                  <div>
-                    <div className="font-medium">{dateObj.display}</div>
-                    <div className="text-xs opacity-70">{dateObj.fullDisplay}</div>
-                  </div>
-                </Button>
-              ))}
+          {loadingAvailability ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
+              <p className="text-gray-500">Carregando horários disponíveis...</p>
             </div>
-          </div>
-
-          {selectedDate && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Clock className="h-5 w-5 mr-2" />
-                Horários Disponíveis
-              </h3>
-              <div className="grid grid-cols-3 gap-3">
-                {availableTimes.map((time) => (
-                  <Button
-                    key={time}
-                    variant={selectedTime === time ? "default" : "outline"}
-                    onClick={() => setSelectedTime(time)}
-                  >
-                    {time}
-                  </Button>
-                ))}
+          ) : availableDates.length === 0 ? (
+            <div className="text-center py-12">
+              <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">Nenhum horário disponível no momento.</p>
+              <p className="text-sm text-gray-400 mt-1">O terapeuta ainda não definiu sua disponibilidade.</p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Datas Disponíveis
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {availableDates.map((date) => (
+                    <Button
+                      key={date}
+                      variant={selectedDate === date ? "default" : "outline"}
+                      className="h-auto p-3"
+                      onClick={() => {
+                        setSelectedDate(date)
+                        setSelectedTime('')
+                      }}
+                    >
+                      {formatDate(date)}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
 
-          <Button
-            className="w-full"
-            size="lg"
-            disabled={!selectedDate || !selectedTime}
-            onClick={() => setStep('confirm')}
-          >
-            Revisar Agendamento
-          </Button>
+              {selectedDate && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center">
+                    <Clock className="h-5 w-5 mr-2" />
+                    Horários Disponíveis
+                  </h3>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {availableTimes.map((slot) => (
+                      <Button
+                        key={slot.time}
+                        variant={selectedTime === slot.time ? "default" : "outline"}
+                        disabled={!slot.available}
+                        className={!slot.available ? "border-red-200 bg-red-50 text-red-400 line-through opacity-70 cursor-not-allowed hover:bg-red-50" : ""}
+                        onClick={() => slot.available && setSelectedTime(slot.time)}
+                      >
+                        {slot.time}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button
+                className="w-full"
+                size="lg"
+                disabled={!selectedDate || !selectedTime}
+                onClick={() => setStep('confirm')}
+              >
+                Revisar Agendamento
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     )
