@@ -344,11 +344,11 @@ export default function CompanySchedulingPage() {
             {SESSION_TYPES.map((type) => (
               <Card
                 key={type.duration}
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  selectedDuration === type.duration ? 'ring-2' : ''
-                }`}
+                className={`transition-all hover:shadow-md ${
+                  loadingAvailability ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                } ${selectedDuration === type.duration ? 'ring-2' : ''}`}
                 style={selectedDuration === type.duration ? { borderColor: primaryColor, boxShadow: `0 0 0 2px ${primaryColor}30` } : {}}
-                onClick={() => handleSelectDuration(type.duration)}
+                onClick={() => !loadingAvailability && handleSelectDuration(type.duration)}
               >
                 <CardContent className="p-5 flex items-center justify-between">
                   <div className="flex items-center gap-4">
