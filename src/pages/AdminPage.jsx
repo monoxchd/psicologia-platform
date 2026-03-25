@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Building2, Users, UserCog, Plus, Search, Edit, Power, Loader2,
-  Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye, Briefcase
+  Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye, Briefcase, ClipboardList
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
@@ -97,6 +97,10 @@ export default function AdminPage() {
               <Briefcase className="h-4 w-4" />
               Serviços
             </TabsTrigger>
+            <TabsTrigger value="questionnaires" className="gap-1.5">
+              <ClipboardList className="h-4 w-4" />
+              Questionários
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies">
@@ -113,6 +117,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="services">
             <ServicesTab />
+          </TabsContent>
+          <TabsContent value="questionnaires">
+            <QuestionnairesTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -1992,5 +1999,130 @@ function ServiceDetailDialog({ open, onOpenChange, service, onUpdate }) {
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// ─── Questionnaires Tab ──────────────────────────────────────
+
+function QuestionnairesTab() {
+  const [questionnaires, setQuestionnaires] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [toggleTarget, setToggleTarget] = useState(null)
+
+  const loadQuestionnaires = async () => {
+    try {
+      const data = await adminService.getQuestionnaires()
+      setQuestionnaires(data)
+    } catch (e) {
+      toast.error('Erro ao carregar questionários')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadQuestionnaires() }, [])
+
+  const filtered = useMemo(() => {
+    if (!search) return questionnaires
+    const q = search.toLowerCase()
+    return questionnaires.filter(qn =>
+      qn.title.toLowerCase().includes(q) ||
+      qn.slug?.toLowerCase().includes(q) ||
+      qn.company_name?.toLowerCase().includes(q)
+    )
+  }, [questionnaires, search])
+
+  const handleToggleActive = async () => {
+    if (!toggleTarget) return
+    try {
+      const updated = await adminService.toggleQuestionnaireActive(toggleTarget.id)
+      setQuestionnaires(prev => prev.map(q => q.id === updated.id ? updated : q))
+      toast.success(updated.active ? 'Questionário ativado' : 'Questionário desativado')
+    } catch (e) {
+      toast.error('Erro ao alterar status')
+    } finally {
+      setToggleTarget(null)
+    }
+  }
+
+  if (loading) return <LoadingState />
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-4 mt-4 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Buscar questionários..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          {filtered.length === 0 ? (
+            <EmptyState message="Nenhum questionário encontrado" />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead className="text-center">Perguntas</TableHead>
+                  <TableHead className="text-center">Respostas</TableHead>
+                  <TableHead className="text-center">Anônimo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map(q => (
+                  <TableRow key={q.id}>
+                    <TableCell className="font-medium">{q.title}</TableCell>
+                    <TableCell className="text-gray-500 text-sm font-mono">{q.slug}</TableCell>
+                    <TableCell>{q.company_name || <span className="text-gray-400">Global</span>}</TableCell>
+                    <TableCell className="text-center">{q.question_count}</TableCell>
+                    <TableCell className="text-center">{q.response_count}</TableCell>
+                    <TableCell className="text-center">
+                      {q.allow_anonymous ? (
+                        <Badge className="bg-blue-100 text-blue-800">Sim</Badge>
+                      ) : (
+                        <span className="text-gray-400">Não</span>
+                      )}
+                    </TableCell>
+                    <TableCell><ActiveBadge active={q.active} /></TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={q.active ? 'Desativar' : 'Ativar'}
+                          onClick={() => setToggleTarget(q)}
+                        >
+                          <Power className={`h-4 w-4 ${q.active ? 'text-red-500' : 'text-green-500'}`} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <ToggleActiveDialog
+        open={!!toggleTarget}
+        onOpenChange={(open) => !open && setToggleTarget(null)}
+        name={toggleTarget?.title}
+        active={toggleTarget?.active}
+        onConfirm={handleToggleActive}
+      />
+    </>
   )
 }

@@ -151,6 +151,16 @@ class AdminService {
   async removeTherapistFromService(serviceId, therapistId) {
     return api.delete(`/admin/services/${serviceId}/therapists/${therapistId}`)
   }
+
+  // Questionnaires
+  async getQuestionnaires(q = '') {
+    const params = q ? { q } : {}
+    return api.get('/admin/questionnaires', params)
+  }
+
+  async toggleQuestionnaireActive(id) {
+    return api.request(`/admin/questionnaires/${id}/toggle_active`, { method: 'PATCH' })
+  }
 }
 
 export default new AdminService()
