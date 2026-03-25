@@ -100,31 +100,28 @@ function ScaleInput({ value, onChange, config }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-center gap-3">
+      <div className="flex justify-between">
         {numbers.map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => onChange(n)}
-            className={`w-12 h-12 rounded-full border-2 font-semibold text-lg transition-all
-              ${value === n
-                ? 'border-primary bg-primary text-white shadow-md scale-110'
-                : 'border-gray-300 bg-white text-gray-600 hover:border-primary/50 hover:bg-primary/5'
-              }`}
-          >
-            {n}
-          </button>
+          <div key={n} className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onChange(n)}
+              className={`w-12 h-12 rounded-full border-2 font-semibold text-lg transition-all
+                ${value === n
+                  ? 'border-primary bg-primary text-white shadow-md scale-110'
+                  : 'border-gray-300 bg-white text-gray-600 hover:border-primary/50 hover:bg-primary/5'
+                }`}
+            >
+              {n}
+            </button>
+            {labels[String(n)] && (
+              <span className="text-xs text-gray-500 text-center max-w-16">
+                {labels[String(n)]}
+              </span>
+            )}
+          </div>
         ))}
       </div>
-      {Object.keys(labels).length > 0 && (
-        <div className="flex justify-between text-xs text-gray-500 px-1">
-          {numbers.map((n) => (
-            <span key={n} className="w-12 text-center">
-              {labels[String(n)] || ''}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
@@ -394,6 +391,11 @@ export default function QuestionnaireFormPage() {
   const currentSection = sections[currentSectionIndex]
   const isFirstSection = currentSectionIndex === 0
   const isLastSection = currentSectionIndex === sections.length - 1
+
+  // Check if current section has a consent question and if user declined
+  const consentQuestion = currentSection?.questions?.find(q => q.config?.is_consent)
+  const consentValue = form.watch(consentQuestion?.id)
+  const consentDeclined = consentQuestion && consentValue && consentValue !== consentQuestion.options?.[0]
   const progressPercent = sections.length > 0
     ? Math.round(((currentSectionIndex + 1) / sections.length) * 100)
     : 0
@@ -602,14 +604,20 @@ export default function QuestionnaireFormPage() {
                 <Button
                   type="button"
                   onClick={handleNext}
+                  disabled={consentDeclined}
                   className="gap-2 text-white"
-                  style={{ backgroundColor: accentColor }}
+                  style={{ backgroundColor: consentDeclined ? undefined : accentColor }}
                 >
                   Próximo
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               )}
             </div>
+            {consentDeclined && (
+              <p className="text-sm text-gray-500 text-center mt-3">
+                Sua participação é voluntária. Você pode fechar esta página a qualquer momento.
+              </p>
+            )}
           </form>
         </Form>
 

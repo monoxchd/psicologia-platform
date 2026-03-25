@@ -284,7 +284,7 @@ export default function QuestionnaireResponseDetailPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{questionnaire.title}</h1>
-            <p className="text-gray-600">Resposta de {client.name}</p>
+            <p className="text-gray-600">Resposta de {response.anonymous ? 'Anônimo' : client?.name || 'Colaborador'}</p>
           </div>
         </div>
 
@@ -371,40 +371,47 @@ export default function QuestionnaireResponseDetailPage() {
             <CardTitle className="text-lg">Informações do Colaborador</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-gray-400" />
-                <div>
-                  <p className="text-sm text-gray-500">Nome</p>
-                  <p className="font-medium">{client.name}</p>
-                </div>
+            {response.anonymous || !client ? (
+              <div className="flex items-center gap-3 text-gray-500">
+                <User className="h-4 w-4" />
+                <p className="text-sm">Resposta anônima — sem dados de identificação</p>
               </div>
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-gray-400" />
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium">{client.email}</p>
-                </div>
-              </div>
-              {client.department && (
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex items-center gap-3">
-                  <Briefcase className="h-4 w-4 text-gray-400" />
+                  <User className="h-4 w-4 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-500">Departamento</p>
-                    <p className="font-medium">{client.department}</p>
+                    <p className="text-sm text-gray-500">Nome</p>
+                    <p className="font-medium">{client.name}</p>
                   </div>
                 </div>
-              )}
-              {client.company_name && (
                 <div className="flex items-center gap-3">
-                  <Building2 className="h-4 w-4 text-gray-400" />
+                  <Mail className="h-4 w-4 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-500">Empresa</p>
-                    <p className="font-medium">{client.company_name}</p>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium">{client.email}</p>
                   </div>
                 </div>
-              )}
-            </div>
+                {client.department && (
+                  <div className="flex items-center gap-3">
+                    <Briefcase className="h-4 w-4 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500">Departamento</p>
+                      <p className="font-medium">{client.department}</p>
+                    </div>
+                  </div>
+                )}
+                {client.company_name && (
+                  <div className="flex items-center gap-3">
+                    <Building2 className="h-4 w-4 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500">Empresa</p>
+                      <p className="font-medium">{client.company_name}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
