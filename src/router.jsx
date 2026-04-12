@@ -23,9 +23,11 @@ import CompanyRegisterPage from './pages/CompanyRegisterPage.jsx'
 import QuestionnaireFormPage from './pages/QuestionnaireFormPage.jsx'
 import QuestionnaireResponsesPage from './pages/QuestionnaireResponsesPage.jsx'
 import QuestionnaireResponseDetailPage from './pages/QuestionnaireResponseDetailPage.jsx'
+import CompanyLoginPage from './pages/CompanyLoginPage.jsx'
 import CompanyMatchingPage from './pages/CompanyMatchingPage.jsx'
 import CompanySchedulingPage from './pages/CompanySchedulingPage.jsx'
 import HrDashboardPage from './pages/HrDashboardPage.jsx'
+import CompanyAuthGate from './components/CompanyAuthGate.jsx'
 import EnigmaQuizPage from './pages/EnigmaQuizPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 
@@ -115,24 +117,28 @@ export const router = createBrowserRouter([
     element: <CompanyLandingPage />
   },
   {
+    path: "/empresa/:slug/login",
+    element: <CompanyLoginPage />
+  },
+  {
     path: "/empresa/:slug/cadastro",
     element: <CompanyRegisterPage />
   },
   {
     path: "/empresa/:slug/psicologos",
-    element: <CompanyMatchingPage />
+    element: <CompanyAuthGate><CompanyMatchingPage /></CompanyAuthGate>
   },
   {
     path: "/empresa/:slug/agendar/:therapistId",
-    element: <CompanySchedulingPage />
+    element: <CompanyAuthGate><CompanySchedulingPage /></CompanyAuthGate>
   },
   {
     path: "/empresa/:slug/rh",
-    element: <HrDashboardPage />
+    element: <CompanyAuthGate><HrDashboardPage /></CompanyAuthGate>
   },
   {
     path: "/empresa/:slug/questionario/:questionnaire_slug",
-    element: <QuestionnaireFormPage />
+    element: <CompanyAuthGate><QuestionnaireFormPage /></CompanyAuthGate>
   },
   {
     path: "/therapist/questionarios/:slug/respostas",
