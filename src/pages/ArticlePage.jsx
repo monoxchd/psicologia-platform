@@ -13,6 +13,8 @@ import CreditEarnedPopup from '../components/CreditEarnedPopup.jsx'
 import EditorJSRenderer from '../components/EditorJSRenderer'
 import EnigmaQuizInline from '../components/EnigmaQuizInline'
 import activityService from '../services/activityService'
+import ExitIntentModal from '../components/ExitIntentModal'
+import useExitIntent from '../hooks/useExitIntent'
 
 const ENIGMA_SLUG = 'quando-a-cadeira-ao-lado-fica-vazia'
 
@@ -30,6 +32,11 @@ const ArticlePage = () => {
   const [userCredits, setUserCredits] = useState(0)
   const [hasTrackedRead, setHasTrackedRead] = useState(false)
   const [trackingRead, setTrackingRead] = useState(false)
+
+  const { isOpen: exitIntentOpen, close: closeExitIntent } = useExitIntent({
+    storageKey: 'tc_exit_intent_blog',
+    enabled: !authService.isLoggedIn(),
+  })
 
   useEffect(() => {
     loadArticle()
@@ -291,6 +298,7 @@ const ArticlePage = () => {
                   })()}
                   className="prose-headings:text-gray-900 prose-a:text-blue-600"
                   showTherapistCTA={true}
+                  priorityTherapistId={article.author?.id}
                 />
 
                 {/* Enigma Quiz — only on the grief article */}
@@ -428,7 +436,10 @@ const ArticlePage = () => {
                 <p className="text-sm text-gray-600 mb-4">
                   Conecte-se com terapeutas licenciados em nossa plataforma
                 </p>
-                <Link to="/matching">
+                <Link
+                  to="/matching"
+                  state={article.author?.id ? { priorityTherapistId: article.author.id } : undefined}
+                >
                   <Button className="w-full">Encontrar um Terapeuta</Button>
                 </Link>
               </CardContent>
@@ -444,6 +455,17 @@ const ArticlePage = () => {
         creditsEarned={5}
         activity="lendo um artigo"
         totalCredits={userCredits}
+      />
+
+      {/* Exit-intent modal (desktop, non-logged-in users) */}
+      <ExitIntentModal
+        open={exitIntentOpen}
+        onOpenChange={(open) => { if (!open) closeExitIntent() }}
+        title="Antes de ir, quer conhecer nossos psicólogos?"
+        subtitle="Às vezes, o primeiro passo é o mais difícil."
+        ctaLabel="Ver psicólogos"
+        ctaTo="/matching"
+        ctaState={article?.author?.id ? { priorityTherapistId: article.author.id } : undefined}
       />
     </div>
   )

@@ -5,6 +5,9 @@ import { Heart, Clock, Shield, Star, Users, ArrowRight, BookOpen } from 'lucide-
 import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import TherapistsList from '../components/TherapistsList.jsx'
+import ExitIntentModal from '../components/ExitIntentModal.jsx'
+import useExitIntent from '../hooks/useExitIntent.js'
+import authService from '../services/authService.js'
 import { blogService } from '../services/blogService.js'
 import horizontalLogo from '../assets/horizontal-logo.png'
 import heroImage from '../assets/hero-image.jpg'
@@ -12,6 +15,12 @@ import heroImage from '../assets/hero-image.jpg'
 export default function LandingPage() {
   const navigate = useNavigate()
   const [latestArticles, setLatestArticles] = useState([])
+
+  const { isOpen: exitIntentOpen, close: closeExitIntent } = useExitIntent({
+    storageKey: 'tc_exit_intent_landing',
+    enabled: !authService.isLoggedIn(),
+    scrollThreshold: 0.7,
+  })
 
   useEffect(() => {
     const fetchLatestArticles = async () => {
@@ -323,6 +332,16 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Exit-intent modal (desktop, non-logged-in users) */}
+      <ExitIntentModal
+        open={exitIntentOpen}
+        onOpenChange={(open) => { if (!open) closeExitIntent() }}
+        title="Antes de ir, quer conhecer nossos psicólogos?"
+        subtitle="Às vezes, o primeiro passo é o mais difícil."
+        ctaLabel="Ver psicólogos"
+        ctaTo="/matching"
+      />
     </div>
   )
 }

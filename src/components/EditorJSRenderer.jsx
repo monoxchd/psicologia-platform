@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 /**
  * Inline CTA Component for therapist matching
  */
-const InlineTherapistCTA = () => (
+const InlineTherapistCTA = ({ priorityTherapistId }) => (
   <div className="my-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-lg">
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
@@ -14,6 +14,7 @@ const InlineTherapistCTA = () => (
       </div>
       <Link
         to="/matching"
+        state={priorityTherapistId ? { priorityTherapistId } : undefined}
         className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 !text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors whitespace-nowrap no-underline"
       >
         Encontrar Terapeuta
@@ -50,8 +51,9 @@ const getCTAPositions = (totalBlocks) => {
  * @param {Object} props.data - EditorJS data object with blocks array
  * @param {String} props.className - Additional CSS classes
  * @param {Boolean} props.showTherapistCTA - Show CTA at strategic reading positions
+ * @param {Number} props.priorityTherapistId - Optional therapist id to pin first in matching list
  */
-const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false }) => {
+const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false, priorityTherapistId }) => {
   if (!data || !data.blocks || !Array.isArray(data.blocks)) {
     return null;
   }
@@ -100,7 +102,7 @@ const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false }) =>
       return (
         <React.Fragment key={index}>
           {blockContent}
-          <InlineTherapistCTA />
+          <InlineTherapistCTA priorityTherapistId={priorityTherapistId} />
         </React.Fragment>
       );
     }

@@ -10,17 +10,14 @@ import ClientBottomNav from '../components/ClientBottomNav'
 export default function MatchingPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { formData } = location.state || {}
+  const { formData, priorityTherapistId } = location.state || {}
+  const isLoggedIn = authService.isLoggedIn()
 
   const [therapists, setTherapists] = useState([])
   const [loadingTherapists, setLoadingTherapists] = useState(false)
   const [therapistError, setTherapistError] = useState(null)
 
   useEffect(() => {
-    if (!authService.isLoggedIn()) {
-      navigate('/login', { state: { from: '/matching' } })
-      return
-    }
     fetchTherapists()
   }, [])
 
@@ -30,6 +27,13 @@ export default function MatchingPage() {
     try {
       const data = await therapistService.getAllTherapists()
       const formattedTherapists = therapistService.formatTherapistsForUI(data)
+      if (priorityTherapistId) {
+        const priorityIdx = formattedTherapists.findIndex(t => t.id === priorityTherapistId)
+        if (priorityIdx > 0) {
+          const [priority] = formattedTherapists.splice(priorityIdx, 1)
+          formattedTherapists.unshift(priority)
+        }
+      }
       setTherapists(formattedTherapists)
     } catch (error) {
       console.error('Failed to load therapists:', error)
@@ -40,6 +44,10 @@ export default function MatchingPage() {
   }
 
   const handleServiceClick = (therapist, service) => {
+    if (!isLoggedIn) {
+      navigate('/form')
+      return
+    }
     navigate('/scheduling', { state: { therapistId: therapist.id, serviceId: service.id } })
   }
 
@@ -56,9 +64,13 @@ export default function MatchingPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <Card className="shadow-xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl text-gray-900">Psicólogos Recomendados para Você</CardTitle>
+            <CardTitle className="text-3xl text-gray-900">
+              {formData ? 'Psicólogos Recomendados para Você' : 'Nossos Psicólogos'}
+            </CardTitle>
             <CardDescription className="text-lg">
-              Baseado no seu perfil, encontramos estes profissionais ideais
+              {formData
+                ? 'Baseado no seu perfil, encontramos estes profissionais ideais'
+                : 'Conheça nossa equipe de profissionais licenciados'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -150,6 +162,7 @@ export default function MatchingPage() {
               </div>
             )}
 
+            {isLoggedIn && (
             <div className="mt-12 bg-green-50 p-6 rounded-lg">
               <h3 className="text-lg font-semibold text-green-900 mb-4">Parabéns! Você está quase lá:</h3>
               <div className="grid md:grid-cols-2 gap-4 text-sm">
@@ -167,11 +180,12 @@ export default function MatchingPage() {
                 </div>
               </div>
             </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <ClientBottomNav />
+      {isLoggedIn && <ClientBottomNav />}
     </div>
   )
 }
