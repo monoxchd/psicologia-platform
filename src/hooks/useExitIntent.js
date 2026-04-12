@@ -19,6 +19,7 @@ import { track } from '../services/analytics'
  * @param {Number} [options.cooldownMs=86400000] - Cooldown in ms (default 24h)
  * @param {Boolean} [options.enabled=true] - Set false to disable (e.g. for logged-in users)
  * @param {Number} [options.scrollThreshold=0.85] - Mobile scroll ratio (0..1) that triggers the modal
+ * @param {Boolean} [options.mobileEnabled=true] - Set false to disable the mobile scroll trigger entirely
  * @returns {{ isOpen: boolean, close: () => void }}
  */
 export default function useExitIntent({
@@ -26,6 +27,7 @@ export default function useExitIntent({
   cooldownMs = 24 * 60 * 60 * 1000,
   enabled = true,
   scrollThreshold = 0.85,
+  mobileEnabled = true,
 } = {}) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -60,6 +62,8 @@ export default function useExitIntent({
       })
     }
 
+    if (isMobile && !mobileEnabled) return
+
     if (isMobile) {
       // Mobile: scroll past engagement threshold → trigger once.
       const handleScroll = () => {
@@ -88,7 +92,7 @@ export default function useExitIntent({
 
     document.addEventListener('mouseout', handleMouseOut)
     return () => document.removeEventListener('mouseout', handleMouseOut)
-  }, [storageKey, cooldownMs, enabled, scrollThreshold])
+  }, [storageKey, cooldownMs, enabled, scrollThreshold, mobileEnabled])
 
   const close = () => setIsOpen(false)
 

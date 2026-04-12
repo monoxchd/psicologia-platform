@@ -36,6 +36,7 @@ const ArticlePage = () => {
   const { isOpen: exitIntentOpen, close: closeExitIntent } = useExitIntent({
     storageKey: 'tc_exit_intent_blog',
     enabled: !authService.isLoggedIn(),
+    mobileEnabled: false,
   })
 
   useEffect(() => {
