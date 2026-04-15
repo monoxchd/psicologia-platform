@@ -138,7 +138,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/empresa/:slug/questionario/:questionnaire_slug",
-    element: <CompanyAuthGate><QuestionnaireFormPage /></CompanyAuthGate>
+    element: <QuestionnaireFormPage />
   },
   {
     path: "/therapist/questionarios/:slug/respostas",

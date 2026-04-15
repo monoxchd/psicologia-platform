@@ -159,17 +159,15 @@ export default function CompanyRegisterPage() {
                 Nossa equipe de psicólogos entrará em contato em breve.
               </p>
               <div className="space-y-3">
-                {company.questionnaire_slug && (
-                  <Link to={`/empresa/${slug}/questionario/${company.questionnaire_slug}`}>
-                    <Button
-                      className="w-full text-white gap-2"
-                      style={{ backgroundColor: primaryColor }}
-                    >
-                      <ClipboardList className="h-4 w-4" />
-                      Preencher Questionário Psicossocial
-                    </Button>
-                  </Link>
-                )}
+                <Link to={`/empresa/${slug}/questionario/questionario-de-acolhimento`}>
+                  <Button
+                    className="w-full text-white gap-2"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    <ClipboardList className="h-4 w-4" />
+                    Questionário de Acolhimento
+                  </Button>
+                </Link>
                 <Link to={`/empresa/${slug}/psicologos`}>
                   <Button
                     variant="outline"
