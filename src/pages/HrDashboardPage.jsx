@@ -1,1141 +1,441 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Button } from '@/components/ui/button.jsx'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.jsx'
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart.jsx'
+import { Loader2, ShieldCheck, Share2, Users, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react'
 import {
-  Users, UserCheck, AlertTriangle, Calendar,
-  Shield, ShieldCheck, Download, TrendingUp, TrendingDown,
-  Loader2, ArrowUpRight, ArrowDownRight,
-  Moon, Repeat, GraduationCap, Lightbulb, Target, BarChart3
-} from 'lucide-react'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
   PieChart, Pie, Cell,
-  AreaChart, Area,
-  ScatterChart, Scatter, ZAxis, Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer
 } from 'recharts'
-import { toast } from 'sonner'
 import companyService from '@/services/companyService'
 import CompanyHeader from '@/components/CompanyHeader.jsx'
 
-function riskColor(score) {
-  if (score < 4) return '#22c55e'
-  if (score < 6) return '#f59e0b'
-  if (score < 8) return '#f97316'
-  return '#ef4444'
+const LEVEL_COLOR = {
+  baixo:    '#22c55e',
+  moderado: '#f59e0b',
+  alto:     '#f97316',
+  critico:  '#ef4444'
 }
-
-function riskLabel(score) {
-  if (score < 4) return 'Baixo'
-  if (score < 6) return 'Moderado'
-  if (score < 8) return 'Alto'
-  return 'Crítico'
+const LEVEL_LABEL = {
+  baixo: 'Baixo',
+  moderado: 'Moderado',
+  alto: 'Alto',
+  critico: 'Crítico'
 }
-
-function trendPercentage(current, previous) {
-  if (!previous || previous === 0) return null
-  return (((current - previous) / previous) * 100).toFixed(0)
+const DASS_SEVERITY_ORDER = ['normal', 'leve', 'moderado', 'severo', 'extremamente_severo']
+const DASS_SEVERITY_LABEL = {
+  normal: 'Normal',
+  leve: 'Leve',
+  moderado: 'Moderado',
+  severo: 'Severo',
+  extremamente_severo: 'Ext. severo'
 }
-
-const FREQ_LABELS = { 1: 'Nunca', 2: 'Raramente', 3: 'Às vezes', 4: 'Frequentemente', 5: 'Sempre' }
-
-const TRAINING_COLORS = {
-  'Sem Treinamento': '#f59e0b',
-  'Treinamento Recente': '#22c55e',
-  'Treinamento Antigo': '#3b82f6'
+const DASS_SEVERITY_COLOR = {
+  normal: '#22c55e',
+  leve: '#a3e635',
+  moderado: '#f59e0b',
+  severo: '#f97316',
+  extremamente_severo: '#ef4444'
 }
+const DASS_TITLE = { depression: 'Depressão', anxiety: 'Ansiedade', stress: 'Estresse' }
 
 export default function HrDashboardPage() {
   const { slug } = useParams()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [insights, setInsights] = useState(null)
-  const [insightsLoading, setInsightsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('operational')
+  const [expandedRisk, setExpandedRisk] = useState(null)
 
   useEffect(() => {
-    async function fetchDashboard() {
+    async function fetch() {
       try {
-        const result = await companyService.getHrDashboard(slug)
-        setData(result)
-      } catch (err) {
-        setError('Dados não disponíveis para esta empresa.')
+        const res = await companyService.getHrDashboard(slug)
+        setData(res)
+      } catch (_) {
+        setError('Não foi possível carregar o painel.')
       } finally {
         setLoading(false)
       }
     }
-    fetchDashboard()
+    fetch()
   }, [slug])
 
-  useEffect(() => {
-    if (activeTab === 'insights' && !insights && !insightsLoading) {
-      async function fetchInsights() {
-        setInsightsLoading(true)
-        try {
-          const result = await companyService.getHrInsights(slug)
-          setInsights(result)
-        } catch (err) {
-          console.error('Error loading insights:', err)
-        } finally {
-          setInsightsLoading(false)
-        }
-      }
-      fetchInsights()
-    }
-  }, [activeTab, insights, insightsLoading, slug])
-
-  const sessionTrend = useMemo(() => {
-    if (!data) return null
-    return trendPercentage(data.metrics.sessions_this_month, data.metrics.sessions_last_month)
-  }, [data])
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto" />
-          <p className="text-sm text-gray-500">Carregando painel...</p>
-        </div>
-      </div>
-    )
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="h-8 w-8 animate-spin text-gray-400" /></div>
+  }
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-gray-600">{error}</p></div>
   }
 
-  if (error || !data) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <AlertTriangle className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-          <h1 className="text-xl font-semibold text-gray-900 mb-1">Painel não disponível</h1>
-          <p className="text-gray-500 text-sm">{error || 'Verifique o link e tente novamente.'}</p>
-        </div>
-      </div>
-    )
-  }
-
-  const { company, metrics, concerns_distribution, risk_distribution, department_breakdown, monthly_sessions, nr1_compliance } = data
-  const primaryColor = company.primary_color || '#4f46e5'
-  const secondaryColor = company.secondary_color || '#6366f1'
-
-  const concernsConfig = Object.fromEntries(
-    (concerns_distribution || []).map((item, i) => [
-      item.concern,
-      { label: item.concern, color: i === 0 ? primaryColor : `${primaryColor}${['cc', 'aa', '88', '66', '55', '44', '33'][i] || '55'}` }
-    ])
-  )
-
-  const riskConfig = Object.fromEntries(
-    (risk_distribution || []).map(item => [
-      item.level,
-      { label: item.level, color: item.color }
-    ])
-  )
-
-  const sessionsConfig = {
-    sessions: { label: 'Sessões', color: primaryColor }
-  }
-
-  const deptConfig = Object.fromEntries(
-    (department_breakdown || []).map(item => [
-      item.department,
-      { label: item.department, color: riskColor(item.avg_risk) }
-    ])
-  )
+  const { company, questionnaire, coverage, risks, dass21, departments } = data
+  const primaryColor = company?.primary_color || '#4f46e5'
+  const total = coverage?.total_respondents ?? 0
+  const belowThreshold = coverage?.below_threshold
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50">
       <CompanyHeader company={company} slug={slug} />
 
-      {/* ── Title Banner ─────────────────────────────────── */}
+      {/* Title banner */}
       <section
-        className="px-4 sm:px-6 lg:px-8 py-8"
+        className="px-4 sm:px-6 lg:px-8 py-8 border-b"
         style={{
-          background: `linear-gradient(135deg, ${primaryColor}06 0%, ${secondaryColor}10 50%, ${primaryColor}04 100%)`
+          background: `linear-gradient(135deg, ${primaryColor}06, ${primaryColor}12)`,
+          borderColor: `${primaryColor}20`
         }}
       >
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-                Saúde Mental Corporativa
+                Diagnóstico de Riscos Psicossociais
               </h1>
               <p className="text-gray-500 mt-1 text-sm">
-                Visão geral do programa de bem-estar — {company.name}
+                {questionnaire ? questionnaire.title : 'Sem questionário ativo'}
+                {questionnaire && ` · v${questionnaire.version}`}
               </p>
             </div>
-            <div
-              className="hidden sm:flex items-center gap-2 text-xs px-3 py-1.5 rounded-full font-medium"
-              style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}
-            >
-              <div
-                className="h-1.5 w-1.5 rounded-full animate-pulse"
-                style={{ backgroundColor: primaryColor }}
+            <div className="flex flex-wrap items-center gap-2">
+              <KpiChip icon={Users} label="Respostas" value={total} primaryColor={primaryColor} />
+              <KpiChip
+                icon={ShieldCheck}
+                label="Última resposta"
+                value={coverage?.last_response_at ? new Date(coverage.last_response_at).toLocaleDateString('pt-BR') : '—'}
+                primaryColor={primaryColor}
               />
-              Dados em tempo real
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Tabs ─────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="-mt-4">
-          <TabsList className="mb-6">
-            <TabsTrigger value="operational" className="gap-1.5">
-              <BarChart3 className="h-3.5 w-3.5" />
-              Painel Operacional
-            </TabsTrigger>
-            <TabsTrigger value="insights" className="gap-1.5">
-              <Lightbulb className="h-3.5 w-3.5" />
-              Insights Analíticos
-              {insights && (
-                <span className="text-[10px] opacity-60 ml-1">{insights.period}</span>
-              )}
-            </TabsTrigger>
-          </TabsList>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-          {/* ── TAB 1: Operational ───────────────────────── */}
-          <TabsContent value="operational">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {/* Card 1: Enrolled */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Colaboradores Cadastrados
-                  </CardTitle>
-                  <div
-                    className="h-8 w-8 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: `${primaryColor}12` }}
-                  >
-                    <Users className="h-4 w-4" style={{ color: primaryColor }} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-gray-900 tabular-nums">
-                    {metrics.enrolled_employees}
-                    <span className="text-base font-normal text-gray-400">/{metrics.employee_count}</span>
-                  </div>
-                  <div className="mt-3 space-y-1.5">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">Adesão</span>
-                      <span className="font-semibold" style={{ color: primaryColor }}>{metrics.enrollment_rate}%</span>
-                    </div>
-                    <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${Math.min(metrics.enrollment_rate, 100)}%`,
-                          backgroundColor: primaryColor
-                        }}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Card 2: Active */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Colaboradores Ativos
-                  </CardTitle>
-                  <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-blue-50">
-                    <UserCheck className="h-4 w-4 text-blue-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-gray-900 tabular-nums">
-                    {metrics.active_employees}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Com sessão nos últimos 30 dias
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Card 3: Avg Risk */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Score Médio de Risco
-                  </CardTitle>
-                  <div
-                    className="h-8 w-8 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: `${riskColor(metrics.average_risk_score)}15` }}
-                  >
-                    <AlertTriangle className="h-4 w-4" style={{ color: riskColor(metrics.average_risk_score) }} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-baseline gap-2">
-                    <span
-                      className="text-3xl font-bold tabular-nums"
-                      style={{ color: riskColor(metrics.average_risk_score) }}
-                    >
-                      {metrics.average_risk_score}
-                    </span>
-                    <span className="text-sm font-normal text-gray-400">/10</span>
-                  </div>
-                  <Badge
-                    className="mt-2 text-[10px] px-2 py-0.5 border-0"
-                    style={{
-                      backgroundColor: `${riskColor(metrics.average_risk_score)}15`,
-                      color: riskColor(metrics.average_risk_score)
-                    }}
-                  >
-                    {riskLabel(metrics.average_risk_score)}
-                  </Badge>
-                </CardContent>
-              </Card>
-
-              {/* Card 4: Sessions This Month */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Sessões Este Mês
-                  </CardTitle>
-                  <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-violet-50">
-                    <Calendar className="h-4 w-4 text-violet-600" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-gray-900 tabular-nums">
-                    {metrics.sessions_this_month}
-                  </div>
-                  {sessionTrend !== null && (
-                    <div className="flex items-center gap-1 mt-1">
-                      {Number(sessionTrend) >= 0 ? (
-                        <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" />
-                      ) : (
-                        <ArrowDownRight className="h-3.5 w-3.5 text-red-500" />
-                      )}
-                      <span className={`text-xs font-medium ${Number(sessionTrend) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {Math.abs(Number(sessionTrend))}% vs. mês anterior
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-              {/* Concerns Distribution */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold text-gray-900">Principais Preocupações</CardTitle>
-                  <CardDescription className="text-xs">Sintomas e áreas reportados pelos colaboradores</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {concerns_distribution && concerns_distribution.length > 0 ? (
-                    <ChartContainer config={concernsConfig} className="aspect-[4/3] w-full">
-                      <BarChart
-                        data={concerns_distribution}
-                        layout="vertical"
-                        margin={{ left: 8, right: 24, top: 8, bottom: 8 }}
-                      >
-                        <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="#f1f5f9" />
-                        <YAxis
-                          dataKey="concern"
-                          type="category"
-                          width={110}
-                          tick={{ fontSize: 11, fill: '#64748b' }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <XAxis type="number" hide />
-                        <ChartTooltip
-                          content={<ChartTooltipContent hideLabel />}
-                          cursor={{ fill: `${primaryColor}08` }}
-                        />
-                        <Bar
-                          dataKey="count"
-                          radius={[0, 6, 6, 0]}
-                          fill={primaryColor}
-                          maxBarSize={28}
-                          name="Ocorrências"
-                        />
-                      </BarChart>
-                    </ChartContainer>
-                  ) : (
-                    <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-                      Sem dados disponíveis
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Risk Distribution */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold text-gray-900">Distribuição de Risco</CardTitle>
-                  <CardDescription className="text-xs">Classificação dos colaboradores por nível de risco</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {risk_distribution && risk_distribution.some(r => r.count > 0) ? (
-                    <div className="flex items-center gap-6">
-                      <ChartContainer config={riskConfig} className="aspect-square w-full max-w-[200px] mx-auto">
-                        <PieChart>
-                          <ChartTooltip content={<ChartTooltipContent nameKey="level" />} />
-                          <Pie
-                            data={risk_distribution.filter(r => r.count > 0)}
-                            dataKey="count"
-                            nameKey="level"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius="55%"
-                            outerRadius="85%"
-                            strokeWidth={2}
-                            stroke="#fff"
-                            paddingAngle={2}
-                          >
-                            {risk_distribution.filter(r => r.count > 0).map((entry) => (
-                              <Cell key={entry.level} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ChartContainer>
-                      <div className="flex flex-col gap-2.5 min-w-[120px]">
-                        {risk_distribution.map((item) => (
-                          <div key={item.level} className="flex items-center gap-2.5">
-                            <div
-                              className="h-3 w-3 rounded-sm shrink-0"
-                              style={{ backgroundColor: item.color }}
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-baseline justify-between gap-2">
-                                <span className="text-xs text-gray-600">{item.level}</span>
-                                <span className="text-sm font-semibold text-gray-900 tabular-nums">{item.count}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-                      Sem dados disponíveis
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Monthly Sessions */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold text-gray-900">Sessões por Mês</CardTitle>
-                  <CardDescription className="text-xs">Evolução do uso do programa nos últimos 6 meses</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {monthly_sessions && monthly_sessions.length > 0 ? (
-                    <ChartContainer config={sessionsConfig} className="aspect-[2/1] w-full">
-                      <AreaChart
-                        data={monthly_sessions}
-                        margin={{ left: 0, right: 8, top: 12, bottom: 0 }}
-                      >
-                        <defs>
-                          <linearGradient id="sessionGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={primaryColor} stopOpacity={0.25} />
-                            <stop offset="100%" stopColor={primaryColor} stopOpacity={0.02} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f1f5f9" />
-                        <XAxis
-                          dataKey="month"
-                          tick={{ fontSize: 11, fill: '#94a3b8' }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 11, fill: '#94a3b8' }}
-                          axisLine={false}
-                          tickLine={false}
-                          width={32}
-                        />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Area
-                          type="monotone"
-                          dataKey="sessions"
-                          stroke={primaryColor}
-                          strokeWidth={2}
-                          fill="url(#sessionGradient)"
-                          name="sessions"
-                          dot={{ r: 3, fill: primaryColor, stroke: '#fff', strokeWidth: 2 }}
-                          activeDot={{ r: 5, fill: primaryColor, stroke: '#fff', strokeWidth: 2 }}
-                        />
-                      </AreaChart>
-                    </ChartContainer>
-                  ) : (
-                    <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-                      Sem dados disponíveis
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Department Breakdown */}
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold text-gray-900">Risco por Departamento</CardTitle>
-                  <CardDescription className="text-xs">Score médio de risco e volume de sessões</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {department_breakdown && department_breakdown.length > 0 ? (
-                    <ChartContainer config={deptConfig} className="aspect-[4/3] w-full">
-                      <BarChart
-                        data={department_breakdown}
-                        layout="vertical"
-                        margin={{ left: 8, right: 24, top: 8, bottom: 8 }}
-                      >
-                        <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="#f1f5f9" />
-                        <YAxis
-                          dataKey="department"
-                          type="category"
-                          width={100}
-                          tick={{ fontSize: 11, fill: '#64748b' }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <XAxis type="number" hide />
-                        <ChartTooltip
-                          content={
-                            <ChartTooltipContent
-                              formatter={(value, name, item) => (
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-muted-foreground text-xs">Score: {item.payload.avg_risk}</span>
-                                  <span className="text-muted-foreground text-xs">Sessões: {item.payload.sessions}</span>
-                                  <span className="text-muted-foreground text-xs">Colab.: {item.payload.employees}</span>
-                                </div>
-                              )}
-                            />
-                          }
-                          cursor={{ fill: '#f8fafc' }}
-                        />
-                        <Bar
-                          dataKey="avg_risk"
-                          radius={[0, 6, 6, 0]}
-                          maxBarSize={28}
-                          name="Score Risco"
-                        >
-                          {department_breakdown.map((entry) => (
-                            <Cell key={entry.department} fill={riskColor(entry.avg_risk)} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ChartContainer>
-                  ) : (
-                    <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-                      Sem dados disponíveis
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* NR-1 Compliance Section */}
-            <Card className="border-0 shadow-sm mb-8">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="h-10 w-10 rounded-xl flex items-center justify-center"
-                      style={{
-                        backgroundColor: nr1_compliance.status === 'em_conformidade' ? '#22c55e15' : '#f59e0b15'
-                      }}
-                    >
-                      {nr1_compliance.status === 'em_conformidade' ? (
-                        <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                      ) : (
-                        <Shield className="h-5 w-5 text-amber-600" />
-                      )}
-                    </div>
-                    <div>
-                      <CardTitle className="text-base font-semibold text-gray-900">
-                        Conformidade NR-1
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        Programa de Gerenciamento de Riscos Psicossociais
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <Badge
-                    className="border-0 text-xs px-3 py-1"
-                    style={{
-                      backgroundColor: nr1_compliance.status === 'em_conformidade' ? '#22c55e15' : '#f59e0b15',
-                      color: nr1_compliance.status === 'em_conformidade' ? '#16a34a' : '#d97706'
-                    }}
-                  >
-                    {nr1_compliance.status === 'em_conformidade' ? 'Em Conformidade' : 'Ação Necessária'}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Left: Assessment rate + button */}
-                  <div className="space-y-6">
-                    <div>
-                      <div className="flex justify-between items-baseline mb-2">
-                        <span className="text-sm text-gray-600">Avaliações concluídas</span>
-                        <span className="text-2xl font-bold text-gray-900 tabular-nums">
-                          {nr1_compliance.assessment_rate}%
-                        </span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{
-                            width: `${Math.min(nr1_compliance.assessment_rate, 100)}%`,
-                            backgroundColor: nr1_compliance.assessment_rate >= 80 ? '#22c55e' : '#f59e0b'
-                          }}
-                        />
-                      </div>
-                      <p className="text-xs text-gray-400 mt-2">
-                        Meta: 80% dos colaboradores com avaliação psicossocial concluída
-                      </p>
-                    </div>
-
-                    <div
-                      className="p-4 rounded-xl text-sm leading-relaxed"
-                      style={{
-                        backgroundColor: nr1_compliance.status === 'em_conformidade' ? '#f0fdf4' : '#fffbeb',
-                        color: nr1_compliance.status === 'em_conformidade' ? '#166534' : '#92400e'
-                      }}
-                    >
-                      {nr1_compliance.status === 'em_conformidade'
-                        ? 'A empresa está em conformidade com as exigências da NR-1 para riscos psicossociais. Continue monitorando os indicadores.'
-                        : 'É necessário ampliar a cobertura das avaliações psicossociais para atingir a conformidade. Recomendamos ações de engajamento.'
-                      }
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                      onClick={() => toast.info('Relatório PGR em desenvolvimento')}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Baixar Relatório PGR
-                    </Button>
-                  </div>
-
-                  {/* Right: Risk factors */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-4">
-                      Principais Fatores de Risco
-                    </h4>
-                    {nr1_compliance.top_risk_factors && nr1_compliance.top_risk_factors.length > 0 ? (
-                      <div className="space-y-4">
-                        {nr1_compliance.top_risk_factors.map((factor, i) => (
-                          <div key={i}>
-                            <div className="flex justify-between items-baseline mb-1.5">
-                              <span className="text-sm text-gray-600">{factor.factor}</span>
-                              <span className="text-sm font-semibold text-gray-900 tabular-nums">
-                                {factor.percentage}%
-                              </span>
-                            </div>
-                            <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
-                              <div
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{
-                                  width: `${Math.min(factor.percentage, 100)}%`,
-                                  backgroundColor: factor.percentage > 30 ? '#ef4444' : factor.percentage > 15 ? '#f59e0b' : '#22c55e'
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-400">Nenhum fator de risco identificado</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ── TAB 2: Insights Analíticos ────────────────── */}
-          <TabsContent value="insights">
-            {insightsLoading ? (
-              <div className="flex items-center justify-center py-24">
-                <div className="text-center space-y-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto" />
-                  <p className="text-sm text-gray-500">Processando análise estatística...</p>
-                </div>
-              </div>
-            ) : insights ? (
-              <InsightsContent insights={insights} primaryColor={primaryColor} />
-            ) : (
-              <div className="flex items-center justify-center py-24">
-                <div className="text-center">
-                  <AlertTriangle className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">Não foi possível carregar os insights.</p>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* ── Footer ───────────────────────────────────────── */}
-      <footer className="bg-gray-900 text-white py-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center text-gray-400 text-xs space-y-1">
-          <p>TerapiaConecta — Programa de saúde mental corporativo</p>
-          <p>&copy; 2026 TerapiaConecta. Todos os direitos reservados.</p>
-        </div>
-      </footer>
+        {belowThreshold ? (
+          <EmptyState primaryColor={primaryColor} questionnaireSlug={questionnaire?.slug} companySlug={slug} />
+        ) : (
+          <>
+            <RisksPanel risks={risks} expandedRisk={expandedRisk} setExpandedRisk={setExpandedRisk} primaryColor={primaryColor} />
+            <Dass21Panel dass21={dass21} primaryColor={primaryColor} />
+            <DepartmentHeatmap departments={departments} risks={risks} primaryColor={primaryColor} />
+          </>
+        )}
+      </main>
     </div>
   )
 }
 
-/* ── Insights Tab Component ──────────────────────────────── */
-
-function InsightsContent({ insights, primaryColor }) {
-  const { insights: data, total_respondents, period } = insights
-  const { sleep_anxiety, work_frequency, training } = data
-
-  // Derived values for recommendations
-  const untrained = training.distribution.find(d => d.group === 'Sem Treinamento')
-  const regularWorkers = work_frequency.groups.find(g => g.group === 'Regularmente')
-  const occasionalWorkers = work_frequency.groups.find(g => g.group === 'Ocasionalmente')
-
-  const confidenceDiff = regularWorkers?.avg_confidence && occasionalWorkers?.avg_confidence
-    ? (((regularWorkers.avg_confidence - occasionalWorkers.avg_confidence) / occasionalWorkers.avg_confidence) * 100).toFixed(1)
-    : null
-
-  const anxietyDiff = regularWorkers?.avg_anxiety && occasionalWorkers?.avg_anxiety
-    ? (((occasionalWorkers.avg_anxiety - regularWorkers.avg_anxiety) / regularWorkers.avg_anxiety) * 100).toFixed(1)
-    : null
-
-  const trainedGroup = training.distribution.find(d => d.group === 'Treinamento Recente')
-  const confidenceGap = trainedGroup?.avg_confidence && untrained?.avg_confidence
-    ? (((trainedGroup.avg_confidence - untrained.avg_confidence) / untrained.avg_confidence) * 100).toFixed(1)
-    : null
-
-  // Chart configs
-  const scatterConfig = { respondentes: { label: 'Respondentes', color: primaryColor } }
-
-  const freqConfig = {
-    confidence: { label: 'Confiança', color: primaryColor },
-    anxiety: { label: 'Ansiedade', color: '#f59e0b' }
-  }
-
-  const trainingConfig = Object.fromEntries(
-    training.distribution.map(d => [
-      d.group,
-      { label: d.group, color: TRAINING_COLORS[d.group] || '#94a3b8' }
-    ])
+function KpiChip({ icon: Icon, label, value, primaryColor }) {
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+      style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      <span className="text-gray-500">{label}:</span>
+      <span>{value}</span>
+    </div>
   )
+}
+
+function LevelPill({ level, status }) {
+  if (status === 'gap') {
+    return <Badge variant="outline" className="text-gray-500 border-gray-300">Não medido</Badge>
+  }
+  if (!level) return <Badge variant="outline" className="text-gray-400">—</Badge>
+  const color = LEVEL_COLOR[level]
+  return (
+    <Badge
+      className="border-0 text-white"
+      style={{ backgroundColor: color }}
+    >
+      {LEVEL_LABEL[level]}
+    </Badge>
+  )
+}
+
+function RisksPanel({ risks, expandedRisk, setExpandedRisk, primaryColor }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">13 Riscos Psicossociais</CardTitle>
+        <CardDescription>
+          Riscos estabelecidos pela NR-1 (Portaria MTE nº 1.419/2024), derivados das respostas anônimas
+          via COPSOQ e instrumentos complementares. Clique em cada linha para ver as fontes.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="divide-y">
+          {risks.map((risk) => {
+            const expanded = expandedRisk === risk.id
+            const score = risk.score_0_100 ?? 0
+            const color = risk.status === 'gap'
+              ? '#d1d5db'
+              : (LEVEL_COLOR[risk.level] || '#d1d5db')
+            const attenuated = risk.status === 'partial'
+            return (
+              <div key={risk.id} className="py-3">
+                <button
+                  type="button"
+                  onClick={() => setExpandedRisk(expanded ? null : risk.id)}
+                  className="w-full flex items-center gap-3 text-left"
+                >
+                  <span className="text-xs font-semibold text-gray-400 w-6 shrink-0">{String(risk.number).padStart(2, '0')}</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-medium text-gray-900 truncate">{risk.label}</span>
+                    <span className="block mt-1.5 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <span
+                        className="block h-full"
+                        style={{
+                          width: `${Math.min(score, 100)}%`,
+                          backgroundColor: color,
+                          opacity: attenuated ? 0.55 : 1
+                        }}
+                      />
+                    </span>
+                  </span>
+                  <span className="shrink-0 flex items-center gap-3">
+                    {risk.status !== 'gap' && risk.respondents_affected_pct != null && (
+                      <span className="text-xs text-gray-500 w-20 text-right hidden sm:inline">
+                        {risk.respondents_affected_pct}% afetados
+                      </span>
+                    )}
+                    <LevelPill level={risk.level} status={risk.status} />
+                    {expanded
+                      ? <ChevronDown className="h-4 w-4 text-gray-400" />
+                      : <ChevronRight className="h-4 w-4 text-gray-400" />}
+                  </span>
+                </button>
+                {expanded && (
+                  <div className="mt-3 ml-9 pl-3 border-l-2 text-sm text-gray-600 space-y-1" style={{ borderColor: `${primaryColor}30` }}>
+                    <p className="font-medium text-gray-700">Fontes de medição</p>
+                    {risk.source_summary.map((s, i) => (
+                      <p key={i} className="text-xs">• {s}</p>
+                    ))}
+                    {risk.status === 'gap' && (
+                      <p className="text-xs text-amber-700 mt-2">
+                        Nenhum item do questionário atual alimenta este risco. Considere adicionar perguntas específicas.
+                      </p>
+                    )}
+                    {risk.status === 'partial' && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Apenas algumas fontes têm dados — resultado parcial.
+                      </p>
+                    )}
+                    {risk.status !== 'gap' && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Score {risk.score_0_100}/100 · {risk.respondents_with_data} respondentes com dados
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function Dass21Panel({ dass21 }) {
+  const anySeverePct = dass21?.any_severe_pct ?? 0
 
   return (
-    <div className="space-y-6">
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-0 shadow-sm" style={{ borderLeft: `4px solid ${primaryColor}` }}>
-          <CardContent className="pt-5 pb-4 text-center">
-            <div className="text-3xl font-bold" style={{ color: primaryColor }}>{total_respondents}</div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-1">Respondentes</div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm" style={{ borderLeft: '4px solid #3b82f6' }}>
-          <CardContent className="pt-5 pb-4 text-center">
-            <div className="text-3xl font-bold text-blue-600">{sleep_anxiety.sample_size}</div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-1">Análises Completas</div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm" style={{ borderLeft: '4px solid #f59e0b' }}>
-          <CardContent className="pt-5 pb-4 text-center">
-            <div className="text-3xl font-bold text-amber-600">{sleep_anxiety.correlation}</div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-1">Correlação Sono-Ansiedade</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ── INSIGHT 1: Sleep × Anxiety ─────────────────── */}
-      <Card className="border-0 shadow-sm overflow-hidden" style={{ borderLeft: `4px solid #3b82f6` }}>
-        <CardHeader className="pb-3">
-          <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
-              <Moon className="h-4.5 w-4.5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Insight 01</p>
-              <CardTitle className="text-lg font-bold text-gray-900">
-                Dificuldade para Dormir & Ansiedade no Trabalho
-              </CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <p className="text-sm text-gray-600 leading-relaxed">
-            A correlação entre dificuldade para dormir e ansiedade no trabalho em altura é{' '}
-            <strong className="text-gray-900">significativa (r={sleep_anxiety.correlation})</strong>.
-            Colaboradores que relatam problemas de sono também apresentam níveis mais elevados de ansiedade durante o trabalho.
-          </p>
-
-          {/* Scatter/Bubble Chart */}
-          {sleep_anxiety.scatter_data && sleep_anxiety.scatter_data.length > 0 && (
-            <ChartContainer config={scatterConfig} className="aspect-[16/9] w-full">
-              <ScatterChart margin={{ left: 8, right: 24, top: 12, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis
-                  dataKey="x"
-                  type="number"
-                  domain={[0.5, 5.5]}
-                  ticks={[1, 2, 3, 4, 5]}
-                  tick={{ fontSize: 11, fill: '#64748b' }}
-                  axisLine={false}
-                  tickLine={false}
-                  label={{ value: 'Dificuldade para Dormir (1-5)', position: 'insideBottom', offset: -2, style: { fontSize: 11, fill: '#94a3b8', fontWeight: 600 } }}
-                />
-                <YAxis
-                  dataKey="y"
-                  type="number"
-                  domain={[0.5, 5.5]}
-                  ticks={[1, 2, 3, 4, 5]}
-                  tick={{ fontSize: 11, fill: '#64748b' }}
-                  axisLine={false}
-                  tickLine={false}
-                  label={{ value: 'Ansiedade no Trabalho (1-5)', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 11, fill: '#94a3b8', fontWeight: 600 } }}
-                />
-                <ZAxis dataKey="count" range={[60, 500]} />
-                <ChartTooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null
-                    const d = payload[0].payload
-                    return (
-                      <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-xs">
-                        <p className="text-gray-500">Sono: <span className="font-semibold text-gray-900">{FREQ_LABELS[d.x]}</span></p>
-                        <p className="text-gray-500">Ansiedade: <span className="font-semibold text-gray-900">{FREQ_LABELS[d.y]}</span></p>
-                        <p className="font-semibold text-blue-600 mt-1">{d.count} respondentes</p>
-                      </div>
-                    )
-                  }}
-                />
-                <Scatter
-                  data={sleep_anxiety.scatter_data}
-                  fill="#3b82f6"
-                  fillOpacity={0.55}
-                  stroke="#2563eb"
-                  strokeWidth={1}
-                />
-              </ScatterChart>
-            </ChartContainer>
-          )}
-
-          {/* Key Insight Callout */}
-          <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a40 100%)' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <Lightbulb className="h-4 w-4 text-amber-600" />
-              <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Oportunidade de Ação</span>
-            </div>
-            <p className="text-sm text-gray-800 leading-relaxed">
-              Implementar um <strong style={{ color: primaryColor }}>programa de higiene do sono</strong> pode ter impacto
-              direto na redução de ansiedade. A correlação de <strong>{sleep_anxiety.correlation}</strong> indica que
-              melhorias no sono estão associadas a menores níveis de ansiedade no trabalho.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── INSIGHT 2: Work Frequency ──────────────────── */}
-      <Card className="border-0 shadow-sm overflow-hidden" style={{ borderLeft: '4px solid #f59e0b' }}>
-        <CardHeader className="pb-3">
-          <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0 mt-0.5">
-              <Repeat className="h-4.5 w-4.5 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Insight 02</p>
-              <CardTitle className="text-lg font-bold text-gray-900">
-                Frequência de Trabalho: Confiança vs Ansiedade
-              </CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <p className="text-sm text-gray-600 leading-relaxed">
-            Existe uma diferença marcante entre trabalhadores que trabalham <strong className="text-gray-900">regularmente</strong> versus <strong className="text-gray-900">ocasionalmente</strong> em altura.
-          </p>
-
-          {/* Grouped Bar Chart */}
-          {work_frequency.groups && work_frequency.groups.length > 0 && (
-            <ChartContainer config={freqConfig} className="aspect-[2/1] w-full">
-              <BarChart
-                data={work_frequency.groups}
-                margin={{ left: 0, right: 8, top: 12, bottom: 0 }}
-              >
-                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis
-                  dataKey="group"
-                  tick={{ fontSize: 11, fill: '#64748b' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  domain={[0, 5]}
-                  ticks={[0, 1, 2, 3, 4, 5]}
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={28}
-                />
-                <ChartTooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload?.length) return null
-                    const entry = work_frequency.groups.find(g => g.group === label)
-                    return (
-                      <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-xs">
-                        <p className="font-semibold text-gray-900 mb-1">{label}</p>
-                        <p className="text-gray-500">Confiança: <span className="font-semibold" style={{ color: primaryColor }}>{entry?.avg_confidence}/5</span></p>
-                        <p className="text-gray-500">Ansiedade: <span className="font-semibold text-amber-600">{entry?.avg_anxiety}/5</span></p>
-                        <p className="text-gray-400 mt-1">{entry?.count} trabalhadores</p>
-                      </div>
-                    )
-                  }}
-                />
-                <Legend
-                  verticalAlign="top"
-                  height={36}
-                  formatter={(value) => (
-                    <span className="text-xs text-gray-600">{value === 'avg_confidence' ? 'Confiança' : 'Ansiedade'}</span>
-                  )}
-                />
-                <Bar dataKey="avg_confidence" name="Confiança" fill={primaryColor} radius={[4, 4, 0, 0]} maxBarSize={40} />
-                <Bar dataKey="avg_anxiety" name="Ansiedade" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={40} />
-              </BarChart>
-            </ChartContainer>
-          )}
-
-          {/* Comparison stats */}
-          {confidenceDiff && anxietyDiff && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-                <p className="text-xs text-gray-500 mb-1">Confiança</p>
-                <p className="text-sm text-gray-700">
-                  Regulares: <strong className="text-gray-900">{regularWorkers.avg_confidence}/5</strong> vs Ocasionais: <strong className="text-gray-900">{occasionalWorkers.avg_confidence}/5</strong>
-                </p>
-                <p className="text-xs font-semibold mt-1" style={{ color: primaryColor }}>+{confidenceDiff}% de diferença</p>
-              </div>
-              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-                <p className="text-xs text-gray-500 mb-1">Ansiedade</p>
-                <p className="text-sm text-gray-700">
-                  Regulares: <strong className="text-gray-900">{regularWorkers.avg_anxiety}/5</strong> vs Ocasionais: <strong className="text-gray-900">{occasionalWorkers.avg_anxiety}/5</strong>
-                </p>
-                <p className="text-xs font-semibold text-amber-600 mt-1">-{anxietyDiff}% de diferença</p>
-              </div>
-            </div>
-          )}
-
-          {/* Key Insight Callout */}
-          <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a40 100%)' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <Lightbulb className="h-4 w-4 text-amber-600" />
-              <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Oportunidade de Ação</span>
-            </div>
-            <p className="text-sm text-gray-800 leading-relaxed">
-              Trabalhadores ocasionais são um grupo de <strong style={{ color: primaryColor }}>alto risco</strong>.
-              Eles têm menos confiança e mais ansiedade. Programas de treinamento contínuo e mentorado entre
-              trabalhadores regulares e ocasionais podem transformar esse perfil.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── INSIGHT 3: Training ────────────────────────── */}
-      <Card className="border-0 shadow-sm overflow-hidden" style={{ borderLeft: `4px solid ${primaryColor}` }}>
-        <CardHeader className="pb-3">
-          <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: `${primaryColor}12` }}>
-              <GraduationCap className="h-4.5 w-4.5" style={{ color: primaryColor }} />
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Insight 03</p>
-              <CardTitle className="text-lg font-bold text-gray-900">
-                Treinamento: O Fator Crítico
-              </CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <p className="text-sm text-gray-600 leading-relaxed">
-            A distribuição de treinamento revela uma <strong className="text-gray-900">lacuna crítica</strong> na capacitação dos trabalhadores.
-          </p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Training Doughnut */}
-            {training.distribution && training.distribution.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Distribuição de Treinamento</h4>
-                <ChartContainer config={trainingConfig} className="aspect-square w-full max-w-[240px] mx-auto">
-                  <PieChart>
-                    <ChartTooltip
-                      content={({ active, payload }) => {
-                        if (!active || !payload?.length) return null
-                        const d = payload[0].payload
-                        return (
-                          <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-xs">
-                            <p className="font-semibold text-gray-900">{d.group}</p>
-                            <p className="text-gray-500">{d.count} trabalhadores ({d.percentage}%)</p>
-                          </div>
-                        )
-                      }}
-                    />
-                    <Pie
-                      data={training.distribution}
-                      dataKey="count"
-                      nameKey="group"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="50%"
-                      outerRadius="82%"
-                      strokeWidth={2}
-                      stroke="#fff"
-                      paddingAngle={3}
-                    >
-                      {training.distribution.map((entry) => (
-                        <Cell key={entry.group} fill={TRAINING_COLORS[entry.group] || '#94a3b8'} />
-                      ))}
-                    </Pie>
-                    <Legend
-                      verticalAlign="bottom"
-                      height={48}
-                      formatter={(value) => <span className="text-xs text-gray-600">{value}</span>}
-                    />
-                  </PieChart>
-                </ChartContainer>
-              </div>
-            )}
-
-            {/* Confidence by Training */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Confiança por Nível de Treinamento</h4>
-              <div className="space-y-3">
-                {training.distribution.map((group) => (
-                  <div key={group.group} className="p-3 rounded-lg bg-gray-50 border border-gray-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-2.5 w-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: TRAINING_COLORS[group.group] }}
-                        />
-                        <span className="text-sm font-medium text-gray-700">{group.group}</span>
-                      </div>
-                      <span className="text-xs text-gray-500">{group.count} ({group.percentage}%)</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-2 rounded-full bg-gray-200 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${((group.avg_confidence || 0) / 5) * 100}%`,
-                            backgroundColor: TRAINING_COLORS[group.group]
-                          }}
-                        />
-                      </div>
-                      <span className="text-sm font-bold text-gray-900 tabular-nums w-12 text-right">
-                        {group.avg_confidence || '—'}/5
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {training.correlation !== undefined && (
-                <p className="text-xs text-gray-500 mt-3">
-                  Correlação treinamento-confiança: <strong className="text-gray-700">r={training.correlation}</strong> (n={training.sample_size})
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Stats highlight */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {untrained && (
-              <div className="p-3 rounded-lg bg-amber-50 border border-amber-100 text-center">
-                <div className="text-2xl font-bold text-amber-600">{untrained.percentage}%</div>
-                <div className="text-xs text-amber-700 font-medium">Sem Treinamento</div>
-              </div>
-            )}
-            <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 text-center">
-              <div className="text-2xl font-bold text-blue-600">{training.correlation}</div>
-              <div className="text-xs text-blue-700 font-medium">Correlação (r)</div>
-            </div>
-            {confidenceGap && (
-              <div className="p-3 rounded-lg border text-center" style={{ backgroundColor: `${primaryColor}08`, borderColor: `${primaryColor}20` }}>
-                <div className="text-2xl font-bold" style={{ color: primaryColor }}>+{confidenceGap}%</div>
-                <div className="text-xs font-medium" style={{ color: primaryColor }}>Gap de Confiança</div>
-              </div>
-            )}
-          </div>
-
-          {/* Key Insight Callout */}
-          <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a40 100%)' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <Lightbulb className="h-4 w-4 text-amber-600" />
-              <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Oportunidade de Ação</span>
-            </div>
-            <p className="text-sm text-gray-800 leading-relaxed">
-              <strong style={{ color: primaryColor }}>Treinamento é o maior preditor de confiança e segurança.</strong>{' '}
-              {untrained && <>Com <strong>{untrained.percentage}%</strong> dos trabalhadores sem treinamento e </>}
-              uma correlação de <strong>r={training.correlation}</strong>, investir em programas de capacitação contínua
-              é o caminho mais eficaz para melhorar a segurança.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Recommendations ────────────────────────────── */}
-      <Card className="border-0 shadow-none overflow-hidden">
-        <div
-          className="p-6 sm:p-8 rounded-xl text-white"
-          style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 60%, #1e3a5f 100%)` }}
-        >
-          <div className="flex items-center gap-2.5 mb-5">
-            <Target className="h-5 w-5" />
-            <h3 className="text-lg font-bold">Plano de Ação Recomendado</h3>
-          </div>
-          <div className="space-y-3.5">
-            {sleep_anxiety.correlation > 0.15 && (
-              <div className="flex items-start gap-3 text-sm opacity-95">
-                <span className="text-amber-300 font-bold shrink-0">Fase 1</span>
-                <p>Implementar programa de higiene do sono com foco em trabalhadores com ansiedade elevada (correlação r={sleep_anxiety.correlation}).</p>
-              </div>
-            )}
-            {untrained && untrained.percentage > 10 && (
-              <div className="flex items-start gap-3 text-sm opacity-95">
-                <span className="text-amber-300 font-bold shrink-0">Fase 2</span>
-                <p>Oferecer treinamento específico para os {untrained.percentage}% sem certificação — priorizar trabalhadores ocasionais.</p>
-              </div>
-            )}
-            {confidenceDiff && (
-              <div className="flex items-start gap-3 text-sm opacity-95">
-                <span className="text-amber-300 font-bold shrink-0">Fase 3</span>
-                <p>Criar programa de mentorado entre trabalhadores regulares (mais confiantes, +{confidenceDiff}%) e ocasionais.</p>
-              </div>
-            )}
-            <div className="flex items-start gap-3 text-sm opacity-95">
-              <span className="text-amber-300 font-bold shrink-0">Fase 4</span>
-              <p>Monitorar indicadores de sono, ansiedade e confiança a cada trimestre.</p>
-            </div>
-            <div className="flex items-start gap-3 text-sm opacity-95">
-              <span className="text-amber-300 font-bold shrink-0">Fase 5</span>
-              <p>Revalidar treinamento anualmente — nenhum trabalhador com treinamento superior a 2 anos sem reciclagem.</p>
-            </div>
-          </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Saúde Mental (DASS-21)</CardTitle>
+        <CardDescription>
+          Indicadores de consequência — depressão, ansiedade e estresse. Instrumento clínico validado
+          (cutoffs da DASS-21 em faixas de gravidade).
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {['depression', 'anxiety', 'stress'].map((subscale) => (
+            <Dass21Card key={subscale} subscale={subscale} data={dass21?.[subscale]} />
+          ))}
         </div>
-      </Card>
+        {anySeverePct > 0 && (
+          <div className="mt-4 flex items-start gap-2 p-3 rounded-lg" style={{ backgroundColor: '#fef3c7' }}>
+            <AlertTriangle className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-900">
+              <strong>{anySeverePct}%</strong> dos respondentes apresentam ao menos um indicador em nível severo ou extremamente severo.
+              Recomenda-se encaminhamento psicológico prioritário.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
-      {/* ── Methodology Note ───────────────────────────── */}
-      <div className="rounded-lg bg-gray-50 border border-gray-100 px-5 py-4">
-        <p className="text-xs text-gray-400 leading-relaxed">
-          <strong className="text-gray-500">Metodologia:</strong> Análise de correlação de Pearson com {total_respondents} respondentes.
-          Dados coletados via questionário psicossocial validado para trabalho em altura.
-          Período: {period}.
-        </p>
+function Dass21Card({ subscale, data }) {
+  if (!data || data.total_with_data === 0) {
+    return (
+      <div className="border rounded-lg p-4 text-center">
+        <p className="text-sm font-medium text-gray-700 mb-1">{DASS_TITLE[subscale]}</p>
+        <p className="text-xs text-gray-400">Sem dados</p>
       </div>
+    )
+  }
+  const chartData = DASS_SEVERITY_ORDER.map((sev) => ({
+    severity: DASS_SEVERITY_LABEL[sev],
+    value: data.distribution[sev] ?? 0,
+    color: DASS_SEVERITY_COLOR[sev]
+  })).filter((d) => d.value > 0)
+
+  return (
+    <div className="border rounded-lg p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-medium text-gray-700">{DASS_TITLE[subscale]}</p>
+        <span className="text-xs text-gray-400">{data.total_with_data} resp.</span>
+      </div>
+      <div className="h-32">
+        <ResponsiveContainer>
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="severity"
+              cx="50%" cy="50%"
+              innerRadius="55%" outerRadius="85%"
+              paddingAngle={2}
+            >
+              {chartData.map((e, i) => <Cell key={i} fill={e.color} />)}
+            </Pie>
+            <Tooltip formatter={(v, n) => [`${v}%`, n]} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="text-xs text-center mt-2" style={{ color: data.severo_or_worse_pct > 0 ? '#b45309' : '#6b7280' }}>
+        {data.severo_or_worse_pct > 0
+          ? `${data.severo_or_worse_pct}% em nível severo+`
+          : 'Nenhum caso severo'}
+      </p>
     </div>
+  )
+}
+
+function DepartmentHeatmap({ departments, risks, primaryColor }) {
+  if (!departments || departments.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Por Departamento</CardTitle>
+          <CardDescription>
+            Comparação entre áreas da empresa. Áreas com menos de 5 respostas ficam ocultas para preservar o anonimato.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500">
+            Nenhuma área atingiu o mínimo de 5 respostas ainda. Continue divulgando o questionário para a equipe.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Por Departamento</CardTitle>
+        <CardDescription>
+          Nível de risco por área. Áreas com menos de 5 respostas não aparecem (anonimato preservado).
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-2 pr-3 font-medium text-gray-500">Área</th>
+                <th className="text-center py-2 px-1 font-medium text-gray-500 w-16">Resp.</th>
+                {risks.map((r) => (
+                  <th
+                    key={r.id}
+                    title={r.label}
+                    className="text-center py-2 px-1 font-medium text-gray-500"
+                  >
+                    {String(r.number).padStart(2, '0')}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {departments.map((dept) => (
+                <tr key={dept.name} className="border-b">
+                  <td className="py-2 pr-3 font-medium text-gray-800">{dept.name}</td>
+                  <td className="py-2 px-1 text-center text-gray-500">{dept.respondents}</td>
+                  {dept.risks.map((r) => {
+                    const bg = r.status === 'gap' ? '#f3f4f6' : (LEVEL_COLOR[r.level] || '#f3f4f6')
+                    const attenuated = r.status === 'partial'
+                    return (
+                      <td key={r.id} className="p-0">
+                        <div
+                          className="h-8 mx-0.5 rounded flex items-center justify-center"
+                          title={`${r.score ?? '—'}/100 · ${LEVEL_LABEL[r.level] || 'Não medido'}`}
+                          style={{ backgroundColor: bg, opacity: attenuated ? 0.55 : 1 }}
+                        >
+                          {r.status !== 'gap' && r.score != null && (
+                            <span className="text-[10px] font-semibold text-white drop-shadow">
+                              {Math.round(r.score)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center gap-3 mt-4 text-xs text-gray-500 flex-wrap">
+          <span>Legenda:</span>
+          {['baixo', 'moderado', 'alto', 'critico'].map((l) => (
+            <span key={l} className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded" style={{ backgroundColor: LEVEL_COLOR[l] }} />
+              {LEVEL_LABEL[l]}
+            </span>
+          ))}
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-gray-100 border border-gray-200" />
+            Não medido
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function EmptyState({ primaryColor, questionnaireSlug, companySlug }) {
+  const url = questionnaireSlug
+    ? `${window.location.origin}/empresa/${companySlug}/questionario/${questionnaireSlug}`
+    : null
+
+  return (
+    <Card>
+      <CardContent className="py-12 text-center space-y-4">
+        <div
+          className="w-16 h-16 rounded-full mx-auto flex items-center justify-center"
+          style={{ backgroundColor: `${primaryColor}15` }}
+        >
+          <Share2 className="h-8 w-8" style={{ color: primaryColor }} />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Aguardando respostas</h3>
+          <p className="text-sm text-gray-600 mt-1 max-w-md mx-auto">
+            O painel é liberado após a primeira resposta. Compartilhe o link do questionário com a equipe
+            — a participação é 100% anônima.
+          </p>
+        </div>
+        {url && (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white text-xs font-mono text-gray-700 max-w-full overflow-x-auto">
+            {url}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

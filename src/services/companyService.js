@@ -11,13 +11,9 @@ const companyService = {
     return response.data
   },
 
-  async getHrDashboard(slug) {
-    const response = await apiService.get(`/companies/${slug}/hr_dashboard`)
-    return response.data
-  },
-
-  async getHrInsights(slug) {
-    const response = await apiService.get(`/companies/${slug}/hr_insights`)
+  async getHrDashboard(slug, { questionnaireSlug } = {}) {
+    const qs = questionnaireSlug ? `?questionnaire_slug=${encodeURIComponent(questionnaireSlug)}` : ''
+    const response = await apiService.get(`/companies/${slug}/hr_dashboard${qs}`)
     return response.data
   }
 }
