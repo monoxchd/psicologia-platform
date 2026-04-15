@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Button } from '@/components/ui/button.jsx'
@@ -8,7 +8,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import {
   Users, UserCheck, AlertTriangle, Calendar,
   Shield, ShieldCheck, Download, TrendingUp, TrendingDown,
-  Loader2, Activity, ArrowUpRight, ArrowDownRight,
+  Loader2, ArrowUpRight, ArrowDownRight,
   Moon, Repeat, GraduationCap, Lightbulb, Target, BarChart3
 } from 'lucide-react'
 import {
@@ -19,7 +19,7 @@ import {
 } from 'recharts'
 import { toast } from 'sonner'
 import companyService from '@/services/companyService'
-import horizontalLogo from '../assets/horizontal-logo.png'
+import CompanyHeader from '@/components/CompanyHeader.jsx'
 
 function riskColor(score) {
   if (score < 4) return '#22c55e'
@@ -147,39 +147,7 @@ export default function HrDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* ── Header ───────────────────────────────────────── */}
-      <header
-        className="sticky top-0 z-50 border-b"
-        style={{ backgroundColor: 'white', borderColor: `${primaryColor}20` }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <Link to={`/empresa/${slug}`}>
-                <img
-                  src={company.logo_url || horizontalLogo}
-                  alt={company.logo_url ? `${company.name} Logo` : 'Terapia Conecta'}
-                  className="h-7 object-contain"
-                />
-              </Link>
-              <div
-                className="w-px h-6"
-                style={{ backgroundColor: `${primaryColor}30` }}
-              />
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4" style={{ color: primaryColor }} />
-                <span className="text-sm font-semibold text-gray-900">Painel RH</span>
-              </div>
-            </div>
-            <span
-              className="text-xs font-medium px-3 py-1.5 rounded-full"
-              style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}
-            >
-              {company.name}
-            </span>
-          </div>
-        </div>
-      </header>
+      <CompanyHeader company={company} slug={slug} />
 
       {/* ── Title Banner ─────────────────────────────────── */}
       <section

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Loader2, ChevronLeft, ChevronRight, CheckCircle2, Send } from 'lucide-react'
+import { Loader2, ChevronLeft, ChevronRight, CheckCircle2, Send, Shield, LogOut } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx'
@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/form.jsx'
 import companyService from '@/services/companyService'
 import questionnaireService from '@/services/questionnaireService'
-import horizontalLogo from '../assets/horizontal-logo.png'
+import authService from '@/services/authService'
+import CompanyHeader from '@/components/CompanyHeader.jsx'
 
 function buildZodSchema(questions) {
   const shape = {}
@@ -333,6 +334,7 @@ export default function QuestionnaireFormPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
+  const [isAdvancing, setIsAdvancing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
@@ -401,12 +403,21 @@ export default function QuestionnaireFormPage() {
     : 0
 
   const handleNext = async () => {
-    if (!currentSection) return
-    const fieldNames = currentSection.questions.map((q) => q.id)
-    const isValid = await form.trigger(fieldNames)
-    if (isValid) {
-      setCurrentSectionIndex((i) => i + 1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Guard against rapid re-triggers: a fast double-click could land on the
+    // Enviar button after React swaps the button's type on section change,
+    // causing the form to submit before the user sees the final section.
+    if (isAdvancing || !currentSection) return
+    setIsAdvancing(true)
+    try {
+      const fieldNames = currentSection.questions.map((q) => q.id)
+      const isValid = await form.trigger(fieldNames)
+      if (isValid) {
+        setCurrentSectionIndex((i) => i + 1)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    } finally {
+      // Short window absorbs any trailing click from the same gesture.
+      setTimeout(() => setIsAdvancing(false), 350)
     }
   }
 
@@ -452,28 +463,52 @@ export default function QuestionnaireFormPage() {
   const accentColor = secondaryColor || primaryColor
   const highlightColor = primaryColor
 
+  // Anonymous questionnaires reject logged-in submissions — block before the form renders.
+  if (questionnaire?.allow_anonymous && authService.isLoggedIn()) {
+    const handleLogoutAndStay = () => {
+      authService.logout()
+      window.location.reload()
+    }
+
+    return (
+      <div className="min-h-screen bg-gray-50" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
+        <CompanyHeader company={company} slug={slug} />
+        <div className="flex items-center justify-center py-16 px-4">
+          <Card className="w-full max-w-md text-center">
+            <CardContent className="p-8">
+              <div
+                className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center"
+                style={{ backgroundColor: `${highlightColor}20` }}
+              >
+                <Shield className="h-8 w-8" style={{ color: accentColor }} />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Questionário anônimo</h2>
+              <p className="text-gray-600 mb-6">
+                Este questionário é 100% anônimo — respostas não são vinculadas a usuários identificados.
+                Para participar, saia da sua conta e acesse novamente.
+              </p>
+              <Button
+                onClick={handleLogoutAndStay}
+                className="w-full gap-2 text-white"
+                style={{ backgroundColor: accentColor }}
+              >
+                <LogOut className="h-4 w-4" />
+                Sair e responder anonimamente
+              </Button>
+              <p className="text-xs text-gray-400 mt-4">
+                Você pode voltar para a sua conta a qualquer momento.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-gray-50" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex justify-between items-center">
-              <img
-                src={company?.logo_url || horizontalLogo}
-                alt={company?.logo_url ? `${company.name} Logo` : 'Terapia Conecta Logo'}
-                className="h-8 object-contain"
-              />
-              {company?.name && (
-                <span
-                  className="text-sm font-medium px-3 py-1 rounded-full"
-                  style={{ backgroundColor: `${highlightColor}20`, color: accentColor }}
-                >
-                  {company.name}
-                </span>
-              )}
-            </div>
-          </div>
-        </header>
+        <CompanyHeader company={company} slug={slug} />
 
         <div className="flex items-center justify-center py-16 px-4">
           <Card className="w-full max-w-md text-center">
@@ -501,26 +536,7 @@ export default function QuestionnaireFormPage() {
 
   return (
     <div className="min-h-screen bg-gray-50" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <img
-              src={company?.logo_url || horizontalLogo}
-              alt={company?.logo_url ? `${company.name} Logo` : 'Terapia Conecta Logo'}
-              className="h-8 object-contain"
-            />
-            {company?.name && (
-              <span
-                className="text-sm font-medium px-3 py-1 rounded-full"
-                style={{ backgroundColor: `${highlightColor}20`, color: accentColor }}
-              >
-                {company.name}
-              </span>
-            )}
-          </div>
-        </div>
-      </header>
+      <CompanyHeader company={company} slug={slug} />
 
       <div className="max-w-2xl mx-auto py-8 px-4">
         {/* Title + Progress */}
@@ -540,7 +556,10 @@ export default function QuestionnaireFormPage() {
         {/* Section Card */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
-            <Card>
+            {/* key per-section forces a fresh DOM subtree on each transition.
+                Prevents React removeChild crashes when extensions (Translate,
+                password managers) have mutated the previous section's DOM. */}
+            <Card key={`section-${currentSectionIndex}`}>
               <CardHeader>
                 <CardTitle className="text-lg">{currentSection?.name}</CardTitle>
                 <CardDescription>
@@ -583,8 +602,9 @@ export default function QuestionnaireFormPage() {
 
               {isLastSection ? (
                 <Button
+                  key="submit-button"
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isAdvancing}
                   className="gap-2 text-white"
                   style={{ backgroundColor: accentColor }}
                 >
@@ -602,9 +622,10 @@ export default function QuestionnaireFormPage() {
                 </Button>
               ) : (
                 <Button
+                  key="next-button"
                   type="button"
                   onClick={handleNext}
-                  disabled={consentDeclined}
+                  disabled={consentDeclined || isAdvancing}
                   className="gap-2 text-white"
                   style={{ backgroundColor: consentDeclined ? undefined : accentColor }}
                 >

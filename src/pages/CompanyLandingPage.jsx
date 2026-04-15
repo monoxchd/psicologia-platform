@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { ClipboardList, UserCheck, HeartHandshake, ArrowRight, Star, Loader2, LogIn } from 'lucide-react'
+import { ClipboardList, UserCheck, HeartHandshake, ArrowRight, Star, Loader2 } from 'lucide-react'
 import companyService from '@/services/companyService'
-import horizontalLogo from '../assets/horizontal-logo.png'
+import CompanyHeader from '@/components/CompanyHeader.jsx'
 
 export default function CompanyLandingPage() {
   const { slug } = useParams()
@@ -52,34 +52,7 @@ export default function CompanyLandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <img
-              src={company.logo_url || horizontalLogo}
-              alt={company.logo_url ? `${company.name} Logo` : 'Terapia Conecta Logo'}
-              className="h-8 object-contain"
-            />
-            <div className="flex items-center gap-3">
-              {company.name && (
-                <span
-                  className="text-sm font-medium px-3 py-1 rounded-full"
-                  style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-                >
-                  {company.name}
-                </span>
-              )}
-              <Link to={`/empresa/${slug}/login`}>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <LogIn className="h-4 w-4" />
-                  Entrar
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <CompanyHeader company={company} slug={slug} />
 
       {/* Hero */}
       <section

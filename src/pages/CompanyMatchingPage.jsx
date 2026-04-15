@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Star, Calendar, Loader2, Users } from 'lucide-react'
 import companyService from '@/services/companyService'
-import horizontalLogo from '../assets/horizontal-logo.png'
+import CompanyHeader from '@/components/CompanyHeader.jsx'
 
 export default function CompanyMatchingPage() {
   const { slug } = useParams()
@@ -71,26 +71,7 @@ export default function CompanyMatchingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <Link to={`/empresa/${slug}`}>
-              <img
-                src={company.logo_url || horizontalLogo}
-                alt={company.logo_url ? `${company.name} Logo` : 'Terapia Conecta Logo'}
-                className="h-8 object-contain"
-              />
-            </Link>
-            <span
-              className="text-sm font-medium px-3 py-1 rounded-full"
-              style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-            >
-              {company.name}
-            </span>
-          </div>
-        </div>
-      </header>
+      <CompanyHeader company={company} slug={slug} />
 
       {/* Hero */}
       <section
