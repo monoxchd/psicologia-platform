@@ -1,11 +1,13 @@
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Heart, Clock, Shield, Star, Users, ArrowRight, BookOpen } from 'lucide-react'
+import { Heart, Clock, ShieldCheck, Users, ArrowRight, BookOpen, Filter, Calendar, MessageCircle } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import TherapistsList from '../components/TherapistsList.jsx'
+import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
 import ExitIntentModal from '../components/ExitIntentModal.jsx'
+import WhatsAppButton from '../components/WhatsAppButton.jsx'
+import PrivacyStrip from '../components/PrivacyStrip.jsx'
 import useExitIntent from '../hooks/useExitIntent.js'
 import authService from '../services/authService.js'
 import { blogService } from '../services/blogService.js'
@@ -61,44 +63,44 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-bold text-gray-900 mb-6">
-                Saúde Mental <span className="text-blue-600">Acessível</span> e Especializada
+                Encontre o psicólogo certo — com <span className="text-blue-600">privacidade</span> de verdade.
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                Acesse conteúdo de qualidade sobre bem-estar e conecte-se com psicólogos
-                especializados. Informação confiável e profissionais qualificados em um só lugar.
+                Sem anúncios baseados no seu sofrimento, sem rastreio invasivo.
+                Só cuidado profissional, no seu ritmo.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   size="lg"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg"
-                  onClick={() => navigate('/blog')}
-                >
-                  Explorar Blog
-                  <BookOpen className="ml-2 h-5 w-5" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="px-8 py-4 text-lg"
                   onClick={() => {
                     document.getElementById('terapeutas')?.scrollIntoView({ behavior: 'smooth' })
                   }}
                 >
-                  Conhecer Terapeutas
+                  Encontrar meu psicólogo
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
+                <WhatsAppButton
+                  source="hero"
+                  label="Falar no WhatsApp"
+                  message="Oi, cheguei pelo site e queria conversar antes de marcar uma sessão."
+                  variant="outline"
+                  size="lg"
+                  className="px-8 py-4 text-lg"
+                />
               </div>
-              <div className="mt-8 flex items-center space-x-6 text-sm text-gray-500">
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
                 <div className="flex items-center">
-                  <BookOpen className="h-4 w-4 mr-1" />
-                  Conteúdo Confiável
+                  <ShieldCheck className="h-4 w-4 mr-1 text-emerald-600" />
+                  100% privado
                 </div>
                 <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-1" />
-                  Psicólogos Especializados
+                  <Users className="h-4 w-4 mr-1 text-blue-600" />
+                  Psicólogos registrados
                 </div>
                 <div className="flex items-center">
-                  <Shield className="h-4 w-4 mr-1" />
-                  100% Seguro
+                  <MessageCircle className="h-4 w-4 mr-1 text-emerald-600" />
+                  Atendimento humano
                 </div>
               </div>
             </div>
@@ -122,25 +124,28 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Privacy Strip */}
+      <PrivacyStrip />
+
       {/* How It Works */}
       <section id="como-funciona" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Como Funciona</h2>
-            <p className="text-xl text-gray-600">Três passos simples para cuidar da sua saúde mental</p>
+            <p className="text-xl text-gray-600">Três passos simples para encontrar cuidado psicológico</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="text-center p-6">
               <CardHeader>
                 <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                  <BookOpen className="h-8 w-8 text-blue-600" />
+                  <Filter className="h-8 w-8 text-blue-600" />
                 </div>
-                <CardTitle>1. Leia Artigos</CardTitle>
+                <CardTitle>1. Filtre por demanda</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Explore nosso blog com conteúdo confiável sobre saúde mental, bem-estar e
-                  autoconhecimento escrito por profissionais qualificados.
+                  Diga o que você está buscando — tipo de atendimento, gênero do profissional,
+                  temas ou localização. A gente filtra pra você.
                 </p>
               </CardContent>
             </Card>
@@ -150,12 +155,12 @@ export default function LandingPage() {
                 <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                   <Users className="h-8 w-8 text-green-600" />
                 </div>
-                <CardTitle>2. Escolha seu Psicólogo</CardTitle>
+                <CardTitle>2. Escolha seu psicólogo</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Conheça nossos psicólogos especializados, veja seus perfis,
-                  especialidades e encontre o profissional ideal para você.
+                  Conheça os profissionais que combinam com você: perfis, especialidades
+                  e abordagem. Sem overwhelm, sem paradoxo da escolha.
                 </p>
               </CardContent>
             </Card>
@@ -163,14 +168,14 @@ export default function LandingPage() {
             <Card className="text-center p-6">
               <CardHeader>
                 <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                  <Clock className="h-8 w-8 text-purple-600" />
+                  <Calendar className="h-8 w-8 text-purple-600" />
                 </div>
-                <CardTitle>3. Marque sua Sessão</CardTitle>
+                <CardTitle>3. Marque sua sessão</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Acesse a página do profissional escolhido e agende sua sessão
-                  diretamente através do sistema de agendamento deles.
+                  Agende direto na plataforma ou fale com a gente no WhatsApp.
+                  Primeiro contato humano, sempre.
                 </p>
               </CardContent>
             </Card>
@@ -178,9 +183,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Therapists List Section */}
-      <section id="terapeutas" className="py-20 bg-white">
-        <TherapistsList />
+      {/* Therapists Finder Section */}
+      <section id="terapeutas" className="py-16 bg-white">
+        <TherapistFinder
+          heading="Encontre seu psicólogo"
+          subheading="Filtre por demanda. Sem paradoxo da escolha."
+          initialDisplay={3}
+          pageSize={6}
+        />
       </section>
 
       {/* Blog Preview Section */}
@@ -337,10 +347,19 @@ export default function LandingPage() {
       <ExitIntentModal
         open={exitIntentOpen}
         onOpenChange={(open) => { if (!open) closeExitIntent() }}
-        title="Antes de ir, quer conhecer nossos psicólogos?"
-        subtitle="Às vezes, o primeiro passo é o mais difícil."
-        ctaLabel="Ver psicólogos"
-        ctaTo="/matching"
+        title="Às vezes o primeiro passo é só conversar."
+        subtitle="A Sessão de Acolhimento foi pensada para quem ainda não sabe por onde começar."
+        ctaLabel="Conhecer a Sessão de Acolhimento"
+        ctaTo="/acolhimento"
+        secondary={
+          <WhatsAppButton
+            source="exit_modal"
+            label="Falar no WhatsApp"
+            message="Oi, cheguei pelo site e queria saber mais antes de marcar."
+            variant="outline"
+            className="w-full"
+          />
+        }
       />
     </div>
   )

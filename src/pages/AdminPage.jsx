@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Building2, Users, UserCog, Plus, Search, Edit, Power, Loader2,
-  Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye, Briefcase, ClipboardList
+  Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye, Briefcase, ClipboardList, Tag as TagIcon
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
@@ -101,6 +101,10 @@ export default function AdminPage() {
               <ClipboardList className="h-4 w-4" />
               Questionários
             </TabsTrigger>
+            <TabsTrigger value="themes" className="gap-1.5">
+              <TagIcon className="h-4 w-4" />
+              Temas
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies">
@@ -120,6 +124,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="questionnaires">
             <QuestionnairesTab />
+          </TabsContent>
+          <TabsContent value="themes">
+            <ThemesTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -927,9 +934,24 @@ function CompanyDetailDialog({ open, onOpenChange, company, onUpdate }) {
 function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
   const [form, setForm] = useState({})
   const [saving, setSaving] = useState(false)
+  const [availableTags, setAvailableTags] = useState([])
 
   useEffect(() => {
     if (open) {
+      const mapOffice = (o) => ({
+        id: o.id,
+        label: o.label || '',
+        cep: o.cep || '',
+        street: o.street || '',
+        neighborhood: o.neighborhood || '',
+        city: o.city || 'São Paulo',
+        state: o.state || 'SP',
+        active: o.active !== false,
+        position: o.position ?? 0,
+        location_geocoded_at: o.location_geocoded_at,
+        _destroy: false,
+      })
+
       setForm(therapist ? {
         email: therapist.email || '',
         name: therapist.name || '',
@@ -943,19 +965,84 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
         acolhimento_price: therapist.acolhimento_price || '',
         acolhimento_quote: therapist.acolhimento_quote || '',
         position: therapist.position ?? 0,
+        gender: therapist.gender || '',
+        pronouns: therapist.pronouns || '',
+        serves_children: !!therapist.serves_children,
+        serves_teens: !!therapist.serves_teens,
+        serves_adults: therapist.serves_adults ?? true,
+        offers_remote: therapist.offers_remote ?? true,
+        offers_presencial: !!therapist.offers_presencial,
+        offices: Array.isArray(therapist.offices) ? therapist.offices.map(mapOffice) : [],
+        tag_ids: Array.isArray(therapist.tag_ids) ? therapist.tag_ids : [],
         password: '',
         password_confirmation: '',
       } : {
         email: '', name: '', specialty: '', experience_years: '', bio: '',
         crp_number: '', credits_per_minute: '', personal_site_url: '', calendly_url: '',
         acolhimento_price: '', acolhimento_quote: '', position: 0,
+        gender: '', pronouns: '',
+        serves_children: false, serves_teens: false, serves_adults: true,
+        offers_remote: true, offers_presencial: false,
+        offices: [],
+        tag_ids: [],
         password: '', password_confirmation: '',
       })
     }
   }, [open, therapist])
 
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    adminService.getTags()
+      .then(tags => { if (!cancelled) setAvailableTags(tags) })
+      .catch(() => { if (!cancelled) setAvailableTags([]) })
+    return () => { cancelled = true }
+  }, [open])
+
   const handleChange = (e) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, type, value, checked } = e.target
+    setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  const toggleTagId = (id) => {
+    setForm(prev => {
+      const current = prev.tag_ids || []
+      const next = current.includes(id)
+        ? current.filter(x => x !== id)
+        : [...current, id]
+      return { ...prev, tag_ids: next }
+    })
+  }
+
+  const addOffice = () => {
+    setForm(prev => ({
+      ...prev,
+      offices: [
+        ...(prev.offices || []),
+        { id: null, label: '', cep: '', street: '', neighborhood: '', city: 'São Paulo', state: 'SP', active: true, position: (prev.offices || []).length, _destroy: false },
+      ],
+    }))
+  }
+
+  const updateOffice = (idx, key, value) => {
+    setForm(prev => {
+      const next = [...(prev.offices || [])]
+      next[idx] = { ...next[idx], [key]: value }
+      return { ...prev, offices: next }
+    })
+  }
+
+  const removeOffice = (idx) => {
+    setForm(prev => {
+      const next = [...(prev.offices || [])]
+      const item = next[idx]
+      if (item?.id) {
+        next[idx] = { ...item, _destroy: true }
+      } else {
+        next.splice(idx, 1)
+      }
+      return { ...prev, offices: next }
+    })
   }
 
   const handleSubmit = async (e) => {
@@ -967,15 +1054,47 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
       toast.error('Senhas não conferem'); return
     }
 
+    const offices = form.offices || []
+    for (const o of offices) {
+      if (o._destroy) continue
+      if (o.cep && !/^\d{8}$/.test(o.cep.replace(/\D/g, ''))) {
+        toast.error(`CEP inválido em "${o.label || 'localização sem nome'}" — deve ter 8 dígitos`); return
+      }
+    }
+
     setSaving(true)
-    const data = { ...form }
-    if (data.experience_years) data.experience_years = parseInt(data.experience_years)
-    if (data.credits_per_minute) data.credits_per_minute = parseFloat(data.credits_per_minute)
-    if (data.acolhimento_price) data.acolhimento_price = parseFloat(data.acolhimento_price)
-    if (!data.acolhimento_price) delete data.acolhimento_price
-    if (!data.password) { delete data.password; delete data.password_confirmation }
-    await onSave(data)
-    setSaving(false)
+    try {
+      const data = { ...form }
+      if (data.experience_years) data.experience_years = parseInt(data.experience_years)
+      if (data.credits_per_minute) data.credits_per_minute = parseFloat(data.credits_per_minute)
+      if (data.acolhimento_price) data.acolhimento_price = parseFloat(data.acolhimento_price)
+      if (!data.acolhimento_price) delete data.acolhimento_price
+      if (!data.password) { delete data.password; delete data.password_confirmation }
+      if (!data.gender) delete data.gender
+
+      data.therapist_offices_attributes = offices
+        .filter(o => !(o._destroy && !o.id))
+        .map(o => {
+          const attrs = {
+            label: o.label || null,
+            cep: o.cep ? o.cep.replace(/\D/g, '') : null,
+            street: o.street || null,
+            neighborhood: o.neighborhood || null,
+            city: o.city || null,
+            state: o.state || null,
+            active: !!o.active,
+            position: o.position ?? 0,
+          }
+          if (o.id) attrs.id = o.id
+          if (o._destroy) attrs._destroy = '1'
+          return attrs
+        })
+      delete data.offices
+
+      await onSave(data)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -1053,6 +1172,211 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
               <Input id="therapist-calendly" name="calendly_url" type="url" value={form.calendly_url || ''} onChange={handleChange} />
             </div>
           </div>
+
+          {/* Demografia & Público */}
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium mb-2">Demografia & Público</p>
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div>
+                <Label>Gênero</Label>
+                <Select
+                  value={form.gender || '_unset'}
+                  onValueChange={val => setForm(prev => ({ ...prev, gender: val === '_unset' ? '' : val }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Não informado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_unset">Não informado</SelectItem>
+                    <SelectItem value="female">Feminino</SelectItem>
+                    <SelectItem value="male">Masculino</SelectItem>
+                    <SelectItem value="other">Outro</SelectItem>
+                    <SelectItem value="prefer_not_to_say">Prefere não dizer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="therapist-pronouns">Pronomes</Label>
+                <Input id="therapist-pronouns" name="pronouns" value={form.pronouns || ''} onChange={handleChange} placeholder="ela/dela" />
+              </div>
+            </div>
+            <Label className="text-xs text-gray-600">Atende</Label>
+            <div className="flex flex-wrap gap-4 mt-1">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" name="serves_children" checked={!!form.serves_children} onChange={handleChange} />
+                Crianças (0–12)
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" name="serves_teens" checked={!!form.serves_teens} onChange={handleChange} />
+                Adolescentes (13–17)
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" name="serves_adults" checked={!!form.serves_adults} onChange={handleChange} />
+                Adultos (18+)
+              </label>
+            </div>
+          </div>
+
+          {/* Modalidade */}
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium mb-2">Modalidade</p>
+            <div className="flex flex-wrap gap-4">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" name="offers_remote" checked={!!form.offers_remote} onChange={handleChange} />
+                Atende online (remoto)
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" name="offers_presencial" checked={!!form.offers_presencial} onChange={handleChange} />
+                Atende presencial
+              </label>
+            </div>
+          </div>
+
+          {/* Locais de atendimento presencial */}
+          {form.offers_presencial && (
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium">Locais de atendimento presencial</p>
+                <Button type="button" size="sm" variant="outline" onClick={addOffice}>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Adicionar localização
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mb-3">
+                Cada local tem seu próprio CEP. Ao salvar, endereço e coordenadas são preenchidos
+                automaticamente (ViaCEP + OpenStreetMap). O filtro de proximidade usa o local mais próximo.
+              </p>
+              {(form.offices || []).filter(o => !o._destroy).length === 0 ? (
+                <p className="text-xs text-gray-400 italic">Nenhuma localização adicionada ainda.</p>
+              ) : (
+                <div className="space-y-3">
+                  {(form.offices || []).map((office, idx) => {
+                    if (office._destroy) return null
+                    return (
+                      <div key={idx} className="border rounded-lg p-3 bg-gray-50">
+                        <div className="flex items-start gap-2 mb-2">
+                          <div className="flex-1">
+                            <Label className="text-xs">Identificação</Label>
+                            <Input
+                              value={office.label || ''}
+                              onChange={e => updateOffice(idx, 'label', e.target.value)}
+                              placeholder="Ex: Pinheiros, Angélica, Paulista"
+                              className="bg-white"
+                            />
+                          </div>
+                          <div className="flex items-center gap-3 pt-6">
+                            <label className="inline-flex items-center gap-1 text-xs whitespace-nowrap">
+                              <input
+                                type="checkbox"
+                                checked={!!office.active}
+                                onChange={e => updateOffice(idx, 'active', e.target.checked)}
+                              />
+                              Ativo
+                            </label>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeOffice(idx)}
+                              className="text-red-500 hover:text-red-700 px-2"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mb-2">
+                          <div>
+                            <Label className="text-xs">CEP</Label>
+                            <Input
+                              value={office.cep || ''}
+                              onChange={e => updateOffice(idx, 'cep', e.target.value)}
+                              placeholder="04038000"
+                              maxLength={9}
+                              className="bg-white"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Label className="text-xs">Rua</Label>
+                            <Input
+                              value={office.street || ''}
+                              onChange={e => updateOffice(idx, 'street', e.target.value)}
+                              placeholder="Preenchido pelo CEP"
+                              className="bg-white"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <Label className="text-xs">Bairro</Label>
+                            <Input
+                              value={office.neighborhood || ''}
+                              onChange={e => updateOffice(idx, 'neighborhood', e.target.value)}
+                              className="bg-white"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Cidade</Label>
+                            <Input
+                              value={office.city || ''}
+                              onChange={e => updateOffice(idx, 'city', e.target.value)}
+                              placeholder="São Paulo"
+                              className="bg-white"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">UF</Label>
+                            <Input
+                              value={office.state || ''}
+                              onChange={e => updateOffice(idx, 'state', e.target.value)}
+                              maxLength={2}
+                              placeholder="SP"
+                              className="bg-white"
+                            />
+                          </div>
+                        </div>
+                        {office.location_geocoded_at && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            Geocodificado em: {new Date(office.location_geocoded_at).toLocaleString('pt-BR')}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tags / Temas */}
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium mb-1">Temas / Especializações</p>
+            <p className="text-xs text-gray-500 mb-3">Selecione as tags que aparecem no filtro de busca.</p>
+            {availableTags.length === 0 ? (
+              <p className="text-xs text-gray-400">Nenhuma tag cadastrada.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {availableTags.map(tag => {
+                  const selected = (form.tag_ids || []).includes(tag.id)
+                  return (
+                    <button
+                      type="button"
+                      key={tag.id}
+                      onClick={() => toggleTagId(tag.id)}
+                      className={
+                        "px-2.5 py-1 rounded-full text-xs border transition-colors " +
+                        (selected
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-400")
+                      }
+                    >
+                      {tag.name}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="border-t pt-4">
             <p className="text-sm font-medium mb-2">{therapist ? 'Alterar senha (opcional)' : 'Senha *'}</p>
             <div className="grid grid-cols-2 gap-4">
@@ -2124,5 +2448,330 @@ function QuestionnairesTab() {
         onConfirm={handleToggleActive}
       />
     </>
+  )
+}
+
+// ─── Themes Tab ──────────────────────────────────────────────
+
+function ThemesTab() {
+  const [themes, setThemes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [toggleTarget, setToggleTarget] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+
+  const loadThemes = async () => {
+    try {
+      const data = await adminService.getThemes()
+      setThemes(Array.isArray(data) ? data : [])
+    } catch (e) {
+      toast.error('Erro ao carregar temas')
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadThemes() }, [])
+
+  const handleNew = () => { setEditing(null); setDialogOpen(true) }
+  const handleEdit = (theme) => { setEditing(theme); setDialogOpen(true) }
+
+  const handleSave = async (data) => {
+    try {
+      if (editing) {
+        await adminService.updateTheme(editing.id, data)
+        toast.success('Tema atualizado')
+      } else {
+        await adminService.createTheme(data)
+        toast.success('Tema criado')
+      }
+      setDialogOpen(false)
+      loadThemes()
+    } catch (e) {
+      const msg = e.errors?.[0] || e.message || 'Erro ao salvar tema'
+      toast.error(msg)
+      console.error(e)
+    }
+  }
+
+  const handleToggleActive = async () => {
+    if (!toggleTarget) return
+    try {
+      await adminService.toggleThemeActive(toggleTarget.id)
+      toast.success(toggleTarget.active ? 'Tema desativado' : 'Tema ativado')
+      setToggleTarget(null)
+      loadThemes()
+    } catch (e) {
+      toast.error('Erro ao alternar status')
+      console.error(e)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    try {
+      await adminService.deleteTheme(deleteTarget.id)
+      toast.success('Tema removido')
+      setDeleteTarget(null)
+      loadThemes()
+    } catch (e) {
+      toast.error('Erro ao remover tema')
+      console.error(e)
+    }
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Temas de busca</CardTitle>
+              <p className="text-sm text-gray-500 mt-1">
+                Temas aparecem no filtro da home. Cada tema agrupa várias tags — o paciente vê poucos temas, o terapeuta usa tags granulares.
+              </p>
+            </div>
+            <Button onClick={handleNew} size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              Novo tema
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            </div>
+          ) : themes.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 text-sm">
+              Nenhum tema cadastrado. Rode <code className="bg-gray-100 px-1 rounded">rake themes:seed</code> para criar os 8 iniciais, ou clique em "Novo tema".
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">Ordem</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Tags</TableHead>
+                  <TableHead className="w-24">Status</TableHead>
+                  <TableHead className="w-36 text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {themes.map(theme => (
+                  <TableRow key={theme.id}>
+                    <TableCell className="font-mono text-xs">{theme.display_order}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{theme.name}</div>
+                      {theme.description && (
+                        <div className="text-xs text-gray-500 line-clamp-2">{theme.description}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {(theme.tags || []).slice(0, 5).map(tag => (
+                          <span key={tag.id} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                            {tag.name}
+                          </span>
+                        ))}
+                        {(theme.tags || []).length > 5 && (
+                          <span className="text-[10px] text-gray-400 px-1">+{theme.tags.length - 5}</span>
+                        )}
+                        {(theme.tags || []).length === 0 && (
+                          <span className="text-xs text-gray-400 italic">sem tags</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={theme.active ? 'default' : 'secondary'}>
+                        {theme.active ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center gap-1 justify-end">
+                        <Button size="sm" variant="ghost" onClick={() => handleEdit(theme)}>
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setToggleTarget(theme)}>
+                          <Power className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(theme)}>
+                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <ThemeFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        theme={editing}
+        onSave={handleSave}
+      />
+
+      <ToggleActiveDialog
+        open={!!toggleTarget}
+        onOpenChange={(open) => !open && setToggleTarget(null)}
+        name={toggleTarget?.name}
+        active={toggleTarget?.active}
+        onConfirm={handleToggleActive}
+      />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover tema?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O tema "{deleteTarget?.name}" será removido do filtro da home. As tags associadas não são afetadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
+
+// ─── Theme Form Dialog ───────────────────────────────────────
+
+function ThemeFormDialog({ open, onOpenChange, theme, onSave }) {
+  const [form, setForm] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [availableTags, setAvailableTags] = useState([])
+
+  useEffect(() => {
+    if (open) {
+      setForm(theme ? {
+        name: theme.name || '',
+        description: theme.description || '',
+        display_order: theme.display_order ?? 0,
+        active: theme.active !== false,
+        tag_ids: Array.isArray(theme.tag_ids) ? theme.tag_ids : [],
+      } : {
+        name: '', description: '', display_order: 0, active: true, tag_ids: [],
+      })
+    }
+  }, [open, theme])
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    adminService.getTags()
+      .then(tags => { if (!cancelled) setAvailableTags(tags) })
+      .catch(() => { if (!cancelled) setAvailableTags([]) })
+    return () => { cancelled = true }
+  }, [open])
+
+  const handleChange = (e) => {
+    const { name, type, value, checked } = e.target
+    setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  const toggleTagId = (id) => {
+    setForm(prev => {
+      const current = prev.tag_ids || []
+      const next = current.includes(id) ? current.filter(x => x !== id) : [...current, id]
+      return { ...prev, tag_ids: next }
+    })
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!form.name?.trim()) { toast.error('Nome é obrigatório'); return }
+    setSaving(true)
+    try {
+      const data = { ...form }
+      if (data.display_order !== undefined && data.display_order !== '') {
+        data.display_order = parseInt(data.display_order) || 0
+      }
+      await onSave(data)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{theme ? 'Editar Tema' : 'Novo Tema'}</DialogTitle>
+          <DialogDescription>
+            Temas aparecem no filtro público. Use linguagem de paciente (ex: "Ansiedade e estresse") e mapeie para as tags internas que ele representa.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="theme-name">Nome *</Label>
+            <Input id="theme-name" name="name" value={form.name || ''} onChange={handleChange} placeholder="Ex: Ansiedade e estresse" />
+          </div>
+          <div>
+            <Label htmlFor="theme-description">Descrição</Label>
+            <Textarea id="theme-description" name="description" value={form.description || ''} onChange={handleChange} rows={2} placeholder="Opcional — aparece como tooltip no filtro" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="theme-order">Ordem de exibição</Label>
+              <Input id="theme-order" name="display_order" type="number" min="0" value={form.display_order ?? 0} onChange={handleChange} />
+            </div>
+            <div className="flex items-end pb-2">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" name="active" checked={!!form.active} onChange={handleChange} />
+                Ativo (visível no filtro)
+              </label>
+            </div>
+          </div>
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium mb-1">Tags internas</p>
+            <p className="text-xs text-gray-500 mb-3">Qualquer terapeuta marcado com uma dessas tags entra nesse tema.</p>
+            {availableTags.length === 0 ? (
+              <p className="text-xs text-gray-400">Nenhuma tag cadastrada.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5 max-h-56 overflow-y-auto">
+                {availableTags.map(tag => {
+                  const selected = (form.tag_ids || []).includes(tag.id)
+                  return (
+                    <button
+                      type="button"
+                      key={tag.id}
+                      onClick={() => toggleTagId(tag.id)}
+                      className={
+                        "px-2.5 py-1 rounded-full text-xs border transition-colors " +
+                        (selected
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-400")
+                      }
+                    >
+                      {tag.name}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-2">
+              {(form.tag_ids || []).length} tag{(form.tag_ids || []).length === 1 ? '' : 's'} selecionada{(form.tag_ids || []).length === 1 ? '' : 's'}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {theme ? 'Salvar' : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

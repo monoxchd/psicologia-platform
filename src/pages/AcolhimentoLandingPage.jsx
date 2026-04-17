@@ -7,6 +7,8 @@ import { useParams } from 'react-router-dom'
 import therapistService from '../services/therapistService'
 import SEOHead from '../components/SEOHead'
 import horizontalLogo from '../assets/horizontal-logo.png'
+import { openWhatsApp } from '../utils/whatsapp'
+import { track } from '../services/analytics'
 
 export default function AcolhimentoLandingPage() {
   const { slug } = useParams()
@@ -42,17 +44,19 @@ export default function AcolhimentoLandingPage() {
   }, [slug])
 
   const handleWhatsAppClick = () => {
-    const phoneNumber = '5511914214449'
     let message
     if (therapist) {
       const priceRef = therapist.acolhimento_price ? `R$${therapist.acolhimento_price}` : ''
-      message = encodeURIComponent(
-        `Olá, vi a página da ${therapist.name} e gostaria de saber mais sobre a Sessão de Acolhimento. [ref: ${slug || 'acolhimento'}/${priceRef}]`
-      )
+      message = `Olá, vi a página da ${therapist.name} e gostaria de saber mais sobre a Sessão de Acolhimento. [ref: ${slug || 'acolhimento'}/${priceRef}]`
     } else {
-      message = encodeURIComponent('Olá, gostaria de saber mais sobre a Sessão de Acolhimento.')
+      message = 'Olá, gostaria de saber mais sobre a Sessão de Acolhimento.'
     }
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank')
+    track('WhatsApp Click', {
+      source: 'acolhimento',
+      path: window.location.pathname,
+      has_therapist: !!therapist,
+    })
+    openWhatsApp({ message })
   }
 
   if (loading) {

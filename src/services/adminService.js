@@ -78,6 +78,37 @@ class AdminService {
     return api.request(`/admin/therapists/${id}/toggle_active`, { method: 'PATCH' })
   }
 
+  async getTags() {
+    // Public endpoint; returns { tags: [{id, name, slug, articles_count}] }
+    const res = await api.get('/tags')
+    return res?.tags || []
+  }
+
+  // Themes (admin)
+  async getThemes() {
+    return api.get('/admin/themes')
+  }
+
+  async getTheme(id) {
+    return api.get(`/admin/themes/${id}`)
+  }
+
+  async createTheme(data) {
+    return api.post('/admin/themes', { theme: data })
+  }
+
+  async updateTheme(id, data) {
+    return api.put(`/admin/themes/${id}`, { theme: data })
+  }
+
+  async toggleThemeActive(id) {
+    return api.request(`/admin/themes/${id}/toggle_active`, { method: 'PATCH' })
+  }
+
+  async deleteTheme(id) {
+    return api.delete(`/admin/themes/${id}`)
+  }
+
   // Clients
   async getClients(q = '') {
     const params = q ? { q } : {}

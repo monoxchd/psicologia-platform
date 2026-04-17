@@ -1,63 +1,14 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { Button } from '@/components/ui/button.jsx'
+import { useLocation } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Star, CheckCircle, Calendar, Brain, Clock, ExternalLink } from 'lucide-react'
-import therapistService from '../services/therapistService'
+import { CheckCircle, Calendar } from 'lucide-react'
 import authService from '../services/authService'
 import ClientBottomNav from '../components/ClientBottomNav'
+import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
 
 export default function MatchingPage() {
-  const navigate = useNavigate()
   const location = useLocation()
   const { formData, priorityTherapistId } = location.state || {}
   const isLoggedIn = authService.isLoggedIn()
-
-  const [therapists, setTherapists] = useState([])
-  const [loadingTherapists, setLoadingTherapists] = useState(false)
-  const [therapistError, setTherapistError] = useState(null)
-
-  useEffect(() => {
-    fetchTherapists()
-  }, [])
-
-  const fetchTherapists = async () => {
-    setLoadingTherapists(true)
-    setTherapistError(null)
-    try {
-      const data = await therapistService.getAllTherapists()
-      const formattedTherapists = therapistService.formatTherapistsForUI(data)
-      if (priorityTherapistId) {
-        const priorityIdx = formattedTherapists.findIndex(t => t.id === priorityTherapistId)
-        if (priorityIdx > 0) {
-          const [priority] = formattedTherapists.splice(priorityIdx, 1)
-          formattedTherapists.unshift(priority)
-        }
-      }
-      setTherapists(formattedTherapists)
-    } catch (error) {
-      console.error('Failed to load therapists:', error)
-      setTherapistError('Não foi possível carregar os terapeutas. Por favor, tente novamente.')
-    } finally {
-      setLoadingTherapists(false)
-    }
-  }
-
-  const handleServiceClick = (therapist, service) => {
-    if (!isLoggedIn) {
-      navigate('/form')
-      return
-    }
-    navigate('/scheduling', { state: { therapistId: therapist.id, serviceId: service.id } })
-  }
-
-  const getLowestPrice = (therapist) => {
-    if (therapist.services && therapist.services.length > 0) {
-      const prices = therapist.services.map(s => parseFloat(s.price))
-      return Math.min(...prices)
-    }
-    return null
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12 pb-24">
@@ -69,117 +20,37 @@ export default function MatchingPage() {
             </CardTitle>
             <CardDescription className="text-lg">
               {formData
-                ? 'Baseado no seu perfil, encontramos estes profissionais ideais'
-                : 'Conheça nossa equipe de profissionais licenciados'}
+                ? 'Baseado no seu perfil, encontramos estes profissionais.'
+                : 'Filtre por demanda para encontrar quem combina com você.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {therapistError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <p className="text-red-800">{therapistError}</p>
-              </div>
-            )}
-
-            {loadingTherapists ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                  <p className="mt-4 text-gray-600">Carregando terapeutas disponíveis...</p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-3 gap-6">
-                {therapists.map((therapist) => {
-                  const lowestPrice = getLowestPrice(therapist)
-
-                  return (
-                    <Card key={therapist.id} className="relative flex flex-col">
-                      <CardHeader className="text-center">
-                        {therapist.image && therapist.image !== '👨‍⚕️' ? (
-                          <img
-                            src={therapist.image}
-                            alt={therapist.name}
-                            className="w-16 h-16 rounded-full object-cover mx-auto mb-4"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
-                            <Brain className="h-9 w-9 text-purple-600" />
-                          </div>
-                        )}
-                        <CardTitle className="text-xl">{therapist.name}</CardTitle>
-                        <CardDescription>{therapist.specialty}</CardDescription>
-                        <div className="flex items-center justify-center space-x-1 mt-2">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-semibold">{therapist.rating}</span>
-                          <span className="text-gray-500">({therapist.experience})</span>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="text-center flex-1 flex flex-col">
-                        <div className="space-y-2 mb-6">
-                          {lowestPrice && (
-                            <div className="text-sm">
-                              <span className="text-green-600 font-bold">a partir de R$ {lowestPrice.toFixed(0)}</span>
-                            </div>
-                          )}
-                          <div className="text-sm">
-                            <span className="text-green-600 font-semibold">{therapist.available}</span>
-                          </div>
-                        </div>
-
-                        <div className="text-xs text-gray-500 mb-4">
-                          {therapist.crpNumber && <span>CRP: {therapist.crpNumber}</span>}
-                          {therapist.crpNumber && therapist.personalSiteUrl && <span> · </span>}
-                          {therapist.personalSiteUrl && (
-                            <a
-                              href={therapist.personalSiteUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline inline-flex items-center gap-0.5"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              Site
-                            </a>
-                          )}
-                        </div>
-
-                        <div className="space-y-2 mt-auto">
-                          {therapist.services.length > 0 ? (
-                            <Button
-                              className="w-full"
-                              onClick={() => handleServiceClick(therapist, therapist.services[0])}
-                            >
-                              <Clock className="h-4 w-4 mr-2" />
-                              Agendar Sessão
-                            </Button>
-                          ) : (
-                            <p className="text-sm text-gray-500">Nenhum serviço disponível no momento</p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-            )}
+            <TherapistFinder
+              showPrompt={false}
+              priorityTherapistId={priorityTherapistId}
+              heading=""
+              subheading=""
+              pageSize={6}
+            />
 
             {isLoggedIn && (
-            <div className="mt-12 bg-green-50 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-green-900 mb-4">Parabéns! Você está quase lá:</h3>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center text-green-800">
-                  <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                  Perfil criado e analisado
-                </div>
-                <div className="flex items-center text-green-800">
-                  <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                  Psicólogos compatíveis encontrados
-                </div>
-                <div className="flex items-center text-green-800">
-                  <Calendar className="h-4 w-4 text-green-600 mr-2" />
-                  Próximo: Escolher psicólogo e agendar
+              <div className="mt-12 bg-green-50 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold text-green-900 mb-4">Parabéns! Você está quase lá:</h3>
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center text-green-800">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Perfil criado e analisado
+                  </div>
+                  <div className="flex items-center text-green-800">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    Psicólogos compatíveis encontrados
+                  </div>
+                  <div className="flex items-center text-green-800">
+                    <Calendar className="h-4 w-4 text-green-600 mr-2" />
+                    Próximo: Escolher psicólogo e agendar
+                  </div>
                 </div>
               </div>
-            </div>
             )}
           </CardContent>
         </Card>
