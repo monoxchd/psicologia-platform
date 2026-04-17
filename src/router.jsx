@@ -30,6 +30,7 @@ import HrDashboardPage from './pages/HrDashboardPage.jsx'
 import CompanyAuthGate from './components/CompanyAuthGate.jsx'
 import EnigmaQuizPage from './pages/EnigmaQuizPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
+import TriagePage from './pages/TriagePage.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -155,5 +156,9 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: <AdminPage />
+  },
+  {
+    path: "/triagem",
+    element: <TriagePage />
   }
 ])

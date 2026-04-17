@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input.jsx'
 import { Button } from '@/components/ui/button.jsx'
-import { X, Video, MapPin, Filter as FilterIcon } from 'lucide-react'
+import { X, Video, MapPin, Filter as FilterIcon, Compass } from 'lucide-react'
 import therapistService from '../../services/therapistService'
 import { formatCep } from '../../utils/cep'
 
@@ -158,6 +159,16 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
             ))}
           </FilterRow>
         )}
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-gray-100 text-center">
+        <Link
+          to="/triagem"
+          className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-emerald-700 underline underline-offset-4"
+        >
+          <Compass className="h-3.5 w-3.5" />
+          Nenhum desses te descreve? Responda 3 perguntas →
+        </Link>
       </div>
     </div>
   )

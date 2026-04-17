@@ -1,4 +1,6 @@
-import { User, Baby, Video, MapPin, Users } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { User, Baby, Video, MapPin, Users, Compass } from 'lucide-react'
+import { track } from '../../services/analytics'
 
 const TILES = [
   {
@@ -29,9 +31,28 @@ const TILES = [
     icon: MapPin,
     filters: { modality: 'presencial', audience: 'adults' },
   },
+  {
+    key: 'triage',
+    label: 'Não sei por onde começar',
+    caption: 'A gente te ajuda em 3 perguntas',
+    icon: Compass,
+    navigateTo: '/triagem',
+    highlight: true,
+  },
 ]
 
 export default function PromptTiles({ onSelect, onSeeAll }) {
+  const navigate = useNavigate()
+
+  const handleTileClick = (tile) => {
+    if (tile.navigateTo) {
+      track('Prompt Tile Click', { tile: tile.key, path: window.location.pathname })
+      navigate(tile.navigateTo)
+    } else {
+      onSelect(tile.filters, tile.key)
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
@@ -45,15 +66,26 @@ export default function PromptTiles({ onSelect, onSeeAll }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {TILES.map(tile => {
           const Icon = tile.icon
+          const highlighted = tile.highlight
           return (
             <button
               key={tile.key}
               type="button"
-              onClick={() => onSelect(tile.filters, tile.key)}
-              className="group flex items-center gap-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-500 hover:shadow-md transition-all text-left"
+              onClick={() => handleTileClick(tile)}
+              className={
+                'group flex items-center gap-4 p-5 rounded-xl border transition-all text-left ' +
+                (highlighted
+                  ? 'border-emerald-200 bg-emerald-50/50 hover:border-emerald-500 hover:shadow-md sm:col-span-2'
+                  : 'border-gray-200 bg-white hover:border-blue-500 hover:shadow-md')
+              }
             >
-              <div className="w-12 h-12 rounded-full bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center flex-shrink-0 transition-colors">
-                <Icon className="h-6 w-6 text-blue-600" />
+              <div className={
+                'w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ' +
+                (highlighted
+                  ? 'bg-white group-hover:bg-emerald-100'
+                  : 'bg-blue-50 group-hover:bg-blue-100')
+              }>
+                <Icon className={'h-6 w-6 ' + (highlighted ? 'text-emerald-700' : 'text-blue-600')} />
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-gray-900">{tile.label}</p>
