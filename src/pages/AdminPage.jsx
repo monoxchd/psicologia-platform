@@ -29,6 +29,7 @@ import {
 
 import authService from '@/services/authService.js'
 import adminService from '@/services/adminService.js'
+import { formatCep } from '@/utils/cep'
 
 const ADMIN_EMAIL = 'dneves.junior@gmail.com'
 
@@ -1288,10 +1289,11 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
                           <div>
                             <Label className="text-xs">CEP</Label>
                             <Input
-                              value={office.cep || ''}
-                              onChange={e => updateOffice(idx, 'cep', e.target.value)}
-                              placeholder="04038000"
+                              value={formatCep(office.cep || '')}
+                              onChange={e => updateOffice(idx, 'cep', formatCep(e.target.value))}
+                              placeholder="00000-000"
                               maxLength={9}
+                              inputMode="numeric"
                               className="bg-white"
                             />
                           </div>

@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { X, Video, MapPin, Filter as FilterIcon } from 'lucide-react'
 import therapistService from '../../services/therapistService'
+import { formatCep } from '../../utils/cep'
 
 const GENDER_OPTIONS = [
   { value: 'female', label: 'Feminino' },
@@ -121,11 +122,12 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
           <FilterRow label="Proximidade">
             <div className="flex flex-wrap items-center gap-2">
               <Input
-                value={filters.cep || ''}
-                onChange={e => setField('cep', e.target.value)}
-                placeholder="Seu CEP"
+                value={formatCep(filters.cep || '')}
+                onChange={e => setField('cep', formatCep(e.target.value))}
+                placeholder="00000-000"
                 className="w-32"
                 maxLength={9}
+                inputMode="numeric"
               />
               <div className="flex gap-1">
                 {RADIUS_OPTIONS.map(km => (
