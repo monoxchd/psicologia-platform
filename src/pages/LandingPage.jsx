@@ -188,8 +188,7 @@ export default function LandingPage() {
         <TherapistFinder
           heading="Encontre seu psicólogo"
           subheading="Filtre por demanda. Sem paradoxo da escolha."
-          initialDisplay={3}
-          pageSize={6}
+          pageSize={3}
         />
       </section>
 
