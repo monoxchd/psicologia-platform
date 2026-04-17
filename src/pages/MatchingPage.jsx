@@ -7,7 +7,7 @@ import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
 
 export default function MatchingPage() {
   const location = useLocation()
-  const { formData, priorityTherapistId } = location.state || {}
+  const { formData, priorityTherapistId, initialFilters } = location.state || {}
   const isLoggedIn = authService.isLoggedIn()
 
   return (
@@ -28,6 +28,7 @@ export default function MatchingPage() {
             <TherapistFinder
               showPrompt={false}
               priorityTherapistId={priorityTherapistId}
+              initialFilters={initialFilters}
               heading=""
               subheading=""
               pageSize={6}

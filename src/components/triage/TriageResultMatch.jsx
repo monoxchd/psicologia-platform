@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Loader2, ArrowRight } from 'lucide-react'
 import therapistService from '../../services/therapistService'
 import TherapistCard from '../therapist-finder/TherapistCard.jsx'
 import TriageFeedback from './TriageFeedback.jsx'
@@ -10,7 +11,10 @@ import { track } from '../../services/analytics'
 const MAX_RESULTS = 3
 
 export default function TriageResultMatch({ result }) {
+  const navigate = useNavigate()
   const [therapists, setTherapists] = useState([])
+  const [totalMatches, setTotalMatches] = useState(0)
+  const [principalThemeId, setPrincipalThemeId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -28,13 +32,18 @@ export default function TriageResultMatch({ result }) {
         const principalSlug = THEME_SLUG_MAP[result.temaPrincipal]
         const secondarySlug = result.temaSecundario ? THEME_SLUG_MAP[result.temaSecundario] : null
 
+        const principalId = slugToId[principalSlug] || null
         const themeIds = [
-          slugToId[principalSlug],
+          principalId,
           secondarySlug ? slugToId[secondarySlug] : null,
         ].filter(Boolean)
 
         if (themeIds.length === 0) {
-          if (!cancelled) setTherapists([])
+          if (!cancelled) {
+            setTherapists([])
+            setTotalMatches(0)
+            setPrincipalThemeId(null)
+          }
           return
         }
 
@@ -48,10 +57,13 @@ export default function TriageResultMatch({ result }) {
 
         if (!cancelled) {
           setTherapists(ranked)
+          setTotalMatches(formatted.length)
+          setPrincipalThemeId(principalId)
           track('Triage Result Shown', {
             tema_principal: result.temaPrincipal,
             tema_secundario: result.temaSecundario || null,
             result_count: ranked.length,
+            total_matches: formatted.length,
           })
         }
       } catch (e) {
@@ -64,6 +76,15 @@ export default function TriageResultMatch({ result }) {
     load()
     return () => { cancelled = true }
   }, [result])
+
+  const handleSeeMore = () => {
+    track('Triage See More Click', {
+      tema_principal: result.temaPrincipal,
+      total_matches: totalMatches,
+    })
+    const initialFilters = principalThemeId ? { theme_ids: [principalThemeId] } : {}
+    navigate('/matching', { state: { initialFilters } })
+  }
 
   const temaNome = THEME_DISPLAY_NAME[result.temaPrincipal] || result.temaPrincipal
 
@@ -111,6 +132,20 @@ export default function TriageResultMatch({ result }) {
               <TherapistCard key={t.id} therapist={t} index={idx} />
             ))}
           </div>
+
+          {totalMatches > therapists.length && (
+            <div className="text-center mt-6">
+              <button
+                type="button"
+                onClick={handleSeeMore}
+                className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 underline underline-offset-4"
+              >
+                Ver mais psicólogos que trabalham com {temaNome.toLowerCase()}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
           <TriageFeedback tema={result.temaPrincipal} />
         </>
       )}

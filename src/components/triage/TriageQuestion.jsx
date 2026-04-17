@@ -25,15 +25,16 @@ export default function TriageQuestion({ question, onAnswer, onBack, onSkip, can
           <ChevronLeft className="h-4 w-4 mr-1" />
           Voltar
         </Button>
-        {question.skippable && (
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-sm text-gray-500 hover:text-gray-700 underline underline-offset-4"
-          >
-            Pular essa pergunta
-          </button>
-        )}
+        {/* Spec: "opção pular em toda tela". On P1/P2 the skip routes to WhatsApp
+            (handled upstream in TriageFlow's reducer); on P3 it proceeds to
+            matching without the abordagem modifier. Label stays consistent. */}
+        <button
+          type="button"
+          onClick={onSkip}
+          className="text-sm text-gray-500 hover:text-gray-700 underline underline-offset-4"
+        >
+          Pular essa pergunta
+        </button>
       </div>
 
       <h2
@@ -57,15 +58,6 @@ export default function TriageQuestion({ question, onAnswer, onBack, onSkip, can
         ))}
       </div>
 
-      {!question.skippable && (
-        <p className="text-xs text-gray-400 text-center mt-6">
-          Prefere não responder? <button
-            type="button"
-            onClick={onSkip}
-            className="underline underline-offset-2 hover:text-gray-600"
-          >Falar no WhatsApp direto</button>
-        </p>
-      )}
     </div>
   )
 }

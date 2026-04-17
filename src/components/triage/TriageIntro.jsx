@@ -14,8 +14,9 @@ export default function TriageIntro({ onStart, onSkip }) {
       <div className="inline-flex items-start gap-3 text-left bg-emerald-50 border border-emerald-100 rounded-xl p-4 mb-8">
         <Lock className="h-5 w-5 text-emerald-700 flex-shrink-0 mt-0.5" />
         <p className="text-sm text-emerald-900 leading-relaxed">
-          <span className="font-semibold">Suas respostas não são salvas.</span> Esse processo acontece
-          no seu navegador e some quando você fecha a página. Nada é enviado ao servidor.
+          <span className="font-semibold">Suas respostas individuais não saem do seu navegador</span> —
+          somem quando você fecha a página. Se você escolher nos dar feedback no final, enviamos apenas
+          a indicação geral (sem identificação) pra melhorar a ferramenta.
         </p>
       </div>
 
