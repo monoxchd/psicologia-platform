@@ -16,7 +16,8 @@ import { track } from '../services/analytics'
  * ExitIntentModal
  *
  * Gentle "before you leave" modal. Designed to pair with useExitIntent.
- * Renders a badge, headline, short body, primary CTA, and a soft dismiss link.
+ * Renders a badge, headline, short body, primary CTA, optional secondary CTA,
+ * and a soft dismiss link.
  *
  * @param {Object} props
  * @param {Boolean} props.open
@@ -27,6 +28,7 @@ import { track } from '../services/analytics'
  * @param {String} props.ctaLabel
  * @param {String} props.ctaTo - react-router `to` for the primary CTA
  * @param {Object} [props.ctaState] - optional `state` passed to the Link
+ * @param {React.ReactNode} [props.secondary] - optional secondary CTA slot (e.g., WhatsAppButton)
  * @param {String} [props.dismissLabel='Não, obrigado']
  */
 export default function ExitIntentModal({
@@ -38,6 +40,7 @@ export default function ExitIntentModal({
   ctaLabel,
   ctaTo,
   ctaState,
+  secondary,
   dismissLabel = 'Não, obrigado',
 }) {
   // Track whether the close was triggered by a CTA click vs a dismissal
@@ -96,6 +99,9 @@ export default function ExitIntentModal({
             {ctaLabel}
             <ArrowRight className="h-4 w-4" />
           </Link>
+          {secondary && (
+            <div className="w-full">{secondary}</div>
+          )}
           <a
             href="#"
             onClick={handleDismiss}

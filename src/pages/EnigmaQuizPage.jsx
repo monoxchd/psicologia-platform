@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label.jsx'
 import { MessageCircle, ArrowRight, Lock, Eye, Heart, Sparkles } from 'lucide-react'
 import leadService from '../services/leadService'
 import horizontalLogo from '../assets/horizontal-logo.png'
+import { openWhatsApp } from '../utils/whatsapp'
+import { track } from '../services/analytics'
 
 function formatPhone(value) {
   const digits = value.replace(/\D/g, '').slice(0, 11)
@@ -24,7 +26,6 @@ function isValidEmail(value) {
 }
 
 const CORRECT_ANSWER = '33'
-const WHATSAPP_NUMBER = '5511914214449'
 
 const fonts = {
   serif: "'EB Garamond', Georgia, serif",
@@ -147,10 +148,13 @@ export default function EnigmaQuizPage() {
   }
 
   const handleWhatsAppClick = () => {
-    const message = encodeURIComponent(
-      `Oi! Descobri o enigma escondido no artigo sobre luto no trabalho. O texto me tocou e gostaria de conversar com um psicólogo.`
-    )
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank')
+    track('WhatsApp Click', {
+      source: 'enigma_quiz_page',
+      path: window.location.pathname,
+    })
+    openWhatsApp({
+      message: `Oi! Descobri o enigma escondido no artigo sobre luto no trabalho. O texto me tocou e gostaria de conversar com um psicólogo.`,
+    })
   }
 
   const scrollToQuiz = () => {

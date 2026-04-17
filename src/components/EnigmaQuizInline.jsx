@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input.jsx'
 import { Label } from '@/components/ui/label.jsx'
 import { MessageCircle, ArrowRight, Lock, Eye, Heart, Sparkles } from 'lucide-react'
 import api from '../services/api'
+import { openWhatsApp } from '../utils/whatsapp'
+import { track } from '../services/analytics'
 
 const CORRECT_ANSWER = '33'
-const WHATSAPP_NUMBER = '5511914214449'
 
 const fonts = {
   serif: "'EB Garamond', Georgia, serif",
@@ -117,10 +118,13 @@ export default function EnigmaQuizInline() {
   }
 
   const handleWhatsAppClick = () => {
-    const message = encodeURIComponent(
-      `Oi! Descobri o enigma escondido no artigo sobre luto no trabalho. O texto me tocou e gostaria de conversar com um psicólogo.`
-    )
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank')
+    track('WhatsApp Click', {
+      source: 'enigma_quiz_inline',
+      path: window.location.pathname,
+    })
+    openWhatsApp({
+      message: `Oi! Descobri o enigma escondido no artigo sobre luto no trabalho. O texto me tocou e gostaria de conversar com um psicólogo.`,
+    })
   }
 
   // ── Success state ──

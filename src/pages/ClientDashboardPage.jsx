@@ -27,6 +27,8 @@ import activityService from '../services/activityService'
 import { blogService } from '../services/blogService'
 import horizontalLogo from '../assets/horizontal-logo.png'
 import ClientBottomNav from '../components/ClientBottomNav'
+import { openWhatsApp } from '../utils/whatsapp'
+import { track } from '../services/analytics'
 
 const MOOD_EMOJIS = ['', '😞', '😕', '😐', '🙂', '😄']
 const MOOD_COLORS = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981']
@@ -369,10 +371,13 @@ export default function ClientDashboardPage() {
                       variant="outline"
                       className="rounded-lg text-gray-500 hover:text-indigo-700 border-gray-200"
                       onClick={() => {
-                        const message = encodeURIComponent(
-                          `Olá! Gostaria de reagendar minha sessão do dia ${nextAppointment.formatted_date || nextAppointment.date} às ${nextAppointment.formatted_time || nextAppointment.time}. Meu nome é ${firstName}.`
-                        )
-                        window.open(`https://wa.me/5511914214449?text=${message}`, '_blank')
+                        track('WhatsApp Click', {
+                          source: 'dashboard_reschedule',
+                          path: window.location.pathname,
+                        })
+                        openWhatsApp({
+                          message: `Olá! Gostaria de reagendar minha sessão do dia ${nextAppointment.formatted_date || nextAppointment.date} às ${nextAppointment.formatted_time || nextAppointment.time}. Meu nome é ${firstName}.`,
+                        })
                       }}
                     >
                       <MessageCircle className="h-3.5 w-3.5 mr-1" />
