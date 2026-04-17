@@ -100,7 +100,15 @@ export default function ExitIntentModal({
             <ArrowRight className="h-4 w-4" />
           </Link>
           {secondary && (
-            <div className="w-full">{secondary}</div>
+            <div
+              className="w-full"
+              // Any click inside the secondary slot counts as a CTA-driven close —
+              // setting the ref here means the modal's handleOpenChange won't
+              // later fire 'Exit Modal Dismissed' and pollute the dismissal metric.
+              onClickCapture={() => { ctaClickedRef.current = true }}
+            >
+              {secondary}
+            </div>
           )}
           <a
             href="#"
