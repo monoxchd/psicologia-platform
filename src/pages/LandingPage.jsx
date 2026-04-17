@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge.jsx'
 import { Heart, Clock, ShieldCheck, Users, ArrowRight, BookOpen, Filter, Calendar, MessageCircle } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import TherapistsList from '../components/TherapistsList.jsx'
+import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
 import ExitIntentModal from '../components/ExitIntentModal.jsx'
 import WhatsAppButton from '../components/WhatsAppButton.jsx'
 import PrivacyStrip from '../components/PrivacyStrip.jsx'
@@ -183,9 +183,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Therapists List Section */}
-      <section id="terapeutas" className="py-20 bg-white">
-        <TherapistsList />
+      {/* Therapists Finder Section */}
+      <section id="terapeutas" className="py-16 bg-white">
+        <TherapistFinder
+          heading="Encontre seu psicólogo"
+          subheading="Filtre por demanda. Sem paradoxo da escolha."
+          initialDisplay={3}
+          pageSize={6}
+        />
       </section>
 
       {/* Blog Preview Section */}

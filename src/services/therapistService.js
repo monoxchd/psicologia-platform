@@ -54,6 +54,30 @@ class TherapistService {
     return this.getAllTherapists({ specialty });
   }
 
+  async getFilteredTherapists(filters = {}) {
+    const params = {};
+    if (filters.gender) params.gender = filters.gender;
+    if (filters.audience) params.audience = filters.audience;
+    if (filters.modality) params.modality = filters.modality;
+    if (filters.theme_ids && filters.theme_ids.length) params.theme_ids = filters.theme_ids.join(',');
+    if (filters.tag_ids && filters.tag_ids.length) params.tag_ids = filters.tag_ids.join(',');
+    if (filters.cep) params.cep = filters.cep.replace(/\D/g, '');
+    if (filters.radius_km) params.radius_km = filters.radius_km;
+    if (filters.specialty) params.specialty = filters.specialty;
+    if (filters.highly_rated) params.highly_rated = 'true';
+    return this.getAllTherapists(params);
+  }
+
+  async getPublicTags() {
+    const res = await api.get('/tags');
+    return res?.tags || [];
+  }
+
+  async getPublicThemes() {
+    const res = await api.get('/themes');
+    return res?.themes || [];
+  }
+
   formatTherapistForUI(therapist) {
     return {
       id: therapist.id,
@@ -70,7 +94,14 @@ class TherapistService {
       crpNumber: therapist.crp_number,
       personalSiteUrl: therapist.personal_site_url,
       calendlyUrl: therapist.calendly_url,
-      services: therapist.services || []
+      services: therapist.services || [],
+      gender: therapist.gender,
+      pronouns: therapist.pronouns,
+      audiences: therapist.audiences || { children: false, teens: false, adults: true },
+      modalities: therapist.modalities || { remote: true, presencial: false },
+      offices: therapist.offices || [],
+      nearestOffice: therapist.nearest_office || null,
+      tags: therapist.tags || []
     };
   }
 
