@@ -7,29 +7,22 @@ import { Calendar, Clock, Eye, ArrowLeft, Share2, CheckCircle, Loader2, Brain } 
 import { blogService } from '../services/blogService'
 import SEOHead from '../components/SEOHead'
 import StructuredData from '../components/StructuredData'
-import creditsService from '../services/creditsService.js'
 import authService from '../services/authService.js'
-import CreditEarnedPopup from '../components/CreditEarnedPopup.jsx'
 import EditorJSRenderer from '../components/EditorJSRenderer'
 import EnigmaQuizInline from '../components/EnigmaQuizInline'
 import activityService from '../services/activityService'
+import gamificationService from '../services/gamificationService.js'
 import ExitIntentModal from '../components/ExitIntentModal'
 import useExitIntent from '../hooks/useExitIntent'
+import { toast } from 'sonner'
 
 const ENIGMA_SLUG = 'quando-a-cadeira-ao-lado-fica-vazia'
-
-// Feature flag for credits system - set to true to re-enable
-const CREDITS_ENABLED = false
 
 const ArticlePage = () => {
   const { slug } = useParams()
   const [article, setArticle] = useState(null)
   const [relatedArticles, setRelatedArticles] = useState([])
   const [loading, setLoading] = useState(true)
-  const [hasReadArticle, setHasReadArticle] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [showCreditPopup, setShowCreditPopup] = useState(false)
-  const [userCredits, setUserCredits] = useState(0)
   const [hasTrackedRead, setHasTrackedRead] = useState(false)
   const [trackingRead, setTrackingRead] = useState(false)
 
@@ -41,22 +34,7 @@ const ArticlePage = () => {
 
   useEffect(() => {
     loadArticle()
-    loadUserData()
   }, [slug])
-
-  const loadUserData = async () => {
-    try {
-      if (authService.isLoggedIn()) {
-        // Load user's current credit balance
-        const balanceResponse = await creditsService.getBalance()
-        if (balanceResponse.success) {
-          setUserCredits(balanceResponse.data.current_balance || 0)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error)
-    }
-  }
 
   const loadArticle = async () => {
     try {
@@ -93,33 +71,6 @@ const ArticlePage = () => {
     }
   }
 
-  const handleFinishReading = async () => {
-    if (hasReadArticle || isProcessing || !authService.isLoggedIn()) return
-
-    setIsProcessing(true)
-
-    try {
-      // Call the REAL backend to earn credits
-      const result = await creditsService.earnCreditsForReading(article.id)
-
-      if (result.success) {
-        setHasReadArticle(true)
-        setUserCredits(result.data.new_balance)
-        setShowCreditPopup(true)
-      } else if (result.already_earned) {
-        setHasReadArticle(true)
-      } else {
-        console.error('Error earning credits:', result.error)
-        alert('Erro ao ganhar créditos. Tente novamente.')
-      }
-    } catch (error) {
-      console.error('Error marking article as read:', error)
-      alert('Erro ao processar leitura. Tente novamente.')
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
   const handleTrackRead = async () => {
     if (hasTrackedRead || trackingRead || !authService.isLoggedIn() || !article) return
     setTrackingRead(true)
@@ -130,6 +81,19 @@ const ArticlePage = () => {
         entry_date: new Date().toISOString().split('T')[0]
       })
       setHasTrackedRead(true)
+
+      const result = gamificationService.markArticleAsRead(article.id, article.title)
+      if (result.success && result.newAchievements?.length) {
+        result.newAchievements.forEach(achievementId => {
+          const details = gamificationService.getAchievementDetails(achievementId)
+          if (details) {
+            toast(`${details.icon} ${details.title}`, {
+              description: details.description,
+              duration: 5000,
+            })
+          }
+        })
+      }
     } catch (error) {
       console.error('Error tracking article read:', error)
     } finally {
@@ -343,48 +307,6 @@ const ArticlePage = () => {
                   </div>
                 )}
 
-                {/* Credit Earning Section */}
-                {CREDITS_ENABLED && authService.isLoggedIn() && (
-                  <div className="mt-8 pt-6 border-t">
-                    {!hasReadArticle ? (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-                        <h3 className="text-lg font-semibold text-green-800 mb-2">
-                          🎯 Complete a leitura para ganhar créditos!
-                        </h3>
-                        <p className="text-green-700 mb-4">
-                          Ganhe <strong>+5 créditos</strong> marcando este artigo como lido
-                        </p>
-                        <Button
-                          onClick={handleFinishReading}
-                          disabled={isProcessing}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {isProcessing ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Processando...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Marcar como Lido
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-                        <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                          ✅ Artigo concluído!
-                        </h3>
-                        <p className="text-blue-700">
-                          +5 créditos foram adicionados à sua conta
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Tags */}
                 {article.tags && article.tags.length > 0 && (
                   <div className="mt-8 pt-8 border-t">
@@ -448,15 +370,6 @@ const ArticlePage = () => {
           </div>
         </div>
       </div>
-
-      {/* Credit Earned Popup */}
-      <CreditEarnedPopup
-        isOpen={showCreditPopup}
-        onClose={() => setShowCreditPopup(false)}
-        creditsEarned={5}
-        activity="lendo um artigo"
-        totalCredits={userCredits}
-      />
 
       {/* Exit-intent modal (desktop, non-logged-in users) */}
       <ExitIntentModal

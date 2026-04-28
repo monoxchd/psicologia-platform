@@ -1,210 +1,152 @@
-import creditsService from './creditsService.js'
+// Reading-based gamification: streaks + badges, stored in localStorage.
+// Per-device only — clearing storage resets progress. Acceptable for V1.
+
+const ACHIEVEMENTS = {
+  first_article:    { title: 'Primeiro Artigo',          description: 'Leu seu primeiro artigo na plataforma', icon: '📖' },
+  streak_3:         { title: 'Três Dias Seguidos',       description: '3 dias consecutivos de leitura',         icon: '🔥' },
+  knowledge_seeker: { title: 'Buscador de Conhecimento', description: 'Leu 5 artigos',                          icon: '🎓' },
+  streak_7:         { title: 'Hábito Saudável',          description: '7 dias consecutivos de leitura',         icon: '🌱' },
+  avid_reader:      { title: 'Leitor Ávido',             description: 'Leu 10 artigos',                         icon: '📚' },
+  monthly_reader:   { title: 'Leitor Dedicado',          description: 'Leu 30 artigos',                         icon: '🏆' },
+}
+
+const ACHIEVEMENT_ORDER = [
+  'first_article',
+  'streak_3',
+  'knowledge_seeker',
+  'streak_7',
+  'avid_reader',
+  'monthly_reader',
+]
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function dayDiff(from, to) {
+  return Math.floor((startOfDay(to) - startOfDay(from)) / (1000 * 60 * 60 * 24))
+}
 
 class GamificationService {
   constructor() {
-    // Track user activities in localStorage for now
-    // In production, this should be stored in backend
     this.storageKey = 'user_gamification_data'
   }
 
-  // Get user's gamification data
   getUserData() {
-    const data = localStorage.getItem(this.storageKey)
-    return data ? JSON.parse(data) : {
+    const raw = localStorage.getItem(this.storageKey)
+    if (raw) {
+      try { return JSON.parse(raw) } catch { /* fall through to default */ }
+    }
+    return {
       articlesRead: [],
-      weeklyProgress: 0,
       currentStreak: 0,
-      totalCreditsEarned: 0,
+      longestStreak: 0,
       achievements: [],
-      lastActivity: null
+      lastActivity: null,
     }
   }
 
-  // Save user's gamification data
   saveUserData(data) {
     localStorage.setItem(this.storageKey, JSON.stringify(data))
   }
 
-  // Check if user has read an article
   hasReadArticle(articleId) {
-    const userData = this.getUserData()
-    return userData.articlesRead.includes(articleId.toString())
+    return this.getUserData().articlesRead.includes(String(articleId))
   }
 
-  // Mark article as read and award credits
-  async markArticleAsRead(articleId, articleTitle = '') {
+  markArticleAsRead(articleId, articleTitle = '') {
     const userData = this.getUserData()
+    const id = String(articleId)
 
-    // Check if already read
-    if (this.hasReadArticle(articleId)) {
-      return {
-        success: false,
-        message: 'Article already read',
-        alreadyRead: true
+    if (userData.articlesRead.includes(id)) {
+      return { success: false, alreadyRead: true, message: 'Article already read' }
+    }
+
+    userData.articlesRead.push(id)
+
+    const now = new Date()
+    if (!userData.lastActivity) {
+      userData.currentStreak = 1
+    } else {
+      const diff = dayDiff(new Date(userData.lastActivity), now)
+      if (diff === 0) {
+        userData.currentStreak = userData.currentStreak || 1
+      } else if (diff === 1) {
+        userData.currentStreak = (userData.currentStreak || 0) + 1
+      } else {
+        userData.currentStreak = 1
       }
     }
 
-    // Mark as read
-    userData.articlesRead.push(articleId.toString())
-    userData.weeklyProgress += 5 // 5 credits per article
-    userData.totalCreditsEarned += 5
-    userData.lastActivity = new Date().toISOString()
+    if (userData.currentStreak > (userData.longestStreak || 0)) {
+      userData.longestStreak = userData.currentStreak
+    }
 
-    // Check for achievements
-    const newAchievements = this.checkForAchievements(userData)
-    userData.achievements.push(...newAchievements)
+    userData.lastActivity = now.toISOString()
 
-    // Save data
+    const newAchievements = this._checkForAchievements(userData)
+    if (newAchievements.length) userData.achievements.push(...newAchievements)
+
     this.saveUserData(userData)
-
-    // Try to earn credits through the credits service
-    const creditResult = await creditsService.earnCreditsForReading(articleId, 5)
 
     return {
       success: true,
-      creditsEarned: 5,
-      totalCredits: userData.totalCreditsEarned,
       newAchievements,
-      message: `You earned 5 credits for reading "${articleTitle}"!`,
-      articleId,
-      userData
+      message: `Leitura registrada: "${articleTitle}"`,
+      articleId: id,
+      userData,
     }
   }
 
-  // Check for new achievements
-  checkForAchievements(userData) {
-    const achievements = []
-    const totalArticles = userData.articlesRead.length
+  _checkForAchievements(userData) {
+    const earned = new Set(userData.achievements)
+    const total = userData.articlesRead.length
+    const streak = userData.currentStreak
 
-    // First article achievement
-    if (totalArticles === 1 && !userData.achievements.includes('first_article')) {
-      achievements.push('first_article')
+    const conditions = {
+      first_article: total >= 1,
+      streak_3: streak >= 3,
+      knowledge_seeker: total >= 5,
+      streak_7: streak >= 7,
+      avid_reader: total >= 10,
+      monthly_reader: total >= 30,
     }
 
-    // Knowledge seeker (5 articles)
-    if (totalArticles === 5 && !userData.achievements.includes('knowledge_seeker')) {
-      achievements.push('knowledge_seeker')
-    }
-
-    // Avid reader (10 articles)
-    if (totalArticles === 10 && !userData.achievements.includes('avid_reader')) {
-      achievements.push('avid_reader')
-    }
-
-    // Credit earner milestones
-    if (userData.totalCreditsEarned >= 50 && !userData.achievements.includes('fifty_credits')) {
-      achievements.push('fifty_credits')
-    }
-
-    if (userData.totalCreditsEarned >= 100 && !userData.achievements.includes('hundred_credits')) {
-      achievements.push('hundred_credits')
-    }
-
-    return achievements
+    return ACHIEVEMENT_ORDER.filter(id => conditions[id] && !earned.has(id))
   }
 
-  // Get achievement details
-  getAchievementDetails(achievementId) {
-    const achievements = {
-      first_article: {
-        title: "Primeiro Artigo",
-        description: "Leu seu primeiro artigo na plataforma",
-        icon: "📖",
-        credits: 0
-      },
-      knowledge_seeker: {
-        title: "Buscador de Conhecimento",
-        description: "Leu 5 artigos",
-        icon: "🎓",
-        credits: 10
-      },
-      avid_reader: {
-        title: "Leitor Ávido",
-        description: "Leu 10 artigos",
-        icon: "📚",
-        credits: 20
-      },
-      fifty_credits: {
-        title: "Primeira Meta",
-        description: "Ganhou 50 créditos",
-        icon: "🎯",
-        credits: 5
-      },
-      hundred_credits: {
-        title: "Colecionador de Créditos",
-        description: "Ganhou 100 créditos",
-        icon: "💰",
-        credits: 10
-      }
-    }
-
-    return achievements[achievementId] || null
-  }
-
-  // Get user's weekly progress
-  getWeeklyProgress() {
-    const userData = this.getUserData()
-    return {
-      current: userData.weeklyProgress,
-      goal: 50, // Default weekly goal
-      percentage: Math.min((userData.weeklyProgress / 50) * 100, 100)
-    }
-  }
-
-  // Reset weekly progress (should be called weekly)
-  resetWeeklyProgress() {
-    const userData = this.getUserData()
-    userData.weeklyProgress = 0
-    this.saveUserData(userData)
-  }
-
-  // Get reading streak (simplified version)
+  // Decays to 0 if last activity was 2+ days ago.
   getReadingStreak() {
     const userData = this.getUserData()
-    // For now, return a simple streak based on recent activity
-    const lastActivity = userData.lastActivity ? new Date(userData.lastActivity) : null
-    const now = new Date()
-
-    if (!lastActivity) return 0
-
-    const daysDiff = Math.floor((now - lastActivity) / (1000 * 60 * 60 * 24))
-
-    // If last activity was today or yesterday, maintain streak
-    if (daysDiff <= 1) {
-      return userData.currentStreak || 1
-    } else {
-      // Reset streak if more than 1 day gap
-      userData.currentStreak = 0
-      this.saveUserData(userData)
-      return 0
-    }
+    if (!userData.lastActivity || !userData.currentStreak) return 0
+    const diff = dayDiff(new Date(userData.lastActivity), new Date())
+    return diff <= 1 ? userData.currentStreak : 0
   }
 
-  // Get user level based on articles read
+  getAchievementDetails(id) {
+    return ACHIEVEMENTS[id] || null
+  }
+
+  getAllAchievementDefinitions() {
+    return ACHIEVEMENT_ORDER.map(id => ({ id, ...ACHIEVEMENTS[id] }))
+  }
+
   getUserLevel() {
-    const userData = this.getUserData()
-    const articlesRead = userData.articlesRead.length
-
-    if (articlesRead < 5) return { level: 1, title: "Novato" }
-    if (articlesRead < 15) return { level: 2, title: "Explorador" }
-    if (articlesRead < 30) return { level: 3, title: "Defensor" }
-    return { level: 4, title: "Campeão" }
+    const total = this.getUserData().articlesRead.length
+    if (total < 5) return { level: 1, title: 'Novato' }
+    if (total < 15) return { level: 2, title: 'Explorador' }
+    if (total < 30) return { level: 3, title: 'Defensor' }
+    return { level: 4, title: 'Campeão' }
   }
 
-  // Get all user stats for dashboard
   getAllStats() {
     const userData = this.getUserData()
-    const weeklyProgress = this.getWeeklyProgress()
-    const userLevel = this.getUserLevel()
-
     return {
-      ...userData,
-      weeklyProgress: weeklyProgress.current,
-      weeklyGoal: weeklyProgress.goal,
-      progressPercentage: weeklyProgress.percentage,
-      userLevel,
+      articlesRead: userData.articlesRead.length,
       readingStreak: this.getReadingStreak(),
-      totalArticles: userData.articlesRead.length
+      longestStreak: userData.longestStreak || 0,
+      achievements: userData.achievements,
+      userLevel: this.getUserLevel(),
     }
   }
 }
