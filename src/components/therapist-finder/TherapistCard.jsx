@@ -2,9 +2,10 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Star, User, ExternalLink, Brain, Clock, LogIn, Video, MapPin } from 'lucide-react'
+import { Star, User, ExternalLink, Brain, Clock, LogIn, Video, MapPin, MessageCircle } from 'lucide-react'
 import authService from '../../services/authService'
 import { track } from '../../services/analytics'
+import { appendSourceTag, openWhatsApp } from '../../utils/whatsapp'
 
 function getLowestPrice(therapist) {
   if (!therapist.services || therapist.services.length === 0) return null
@@ -88,9 +89,22 @@ export default function TherapistCard({ therapist, index }) {
     })
     if (loggedIn) {
       navigate('/scheduling', { state: { therapistId: therapist.id } })
-    } else {
-      navigate('/form')
+      return
     }
+    if (therapist.acolhimentoPrice) {
+      track('WhatsApp Click', {
+        source: 'therapist_card',
+        path: window.location.pathname,
+        therapist: therapist.name,
+      })
+      const message = appendSourceTag(
+        `Olá, gostaria de agendar uma sessão de acolhimento com ${therapist.name}.`,
+        { therapist: therapist.name }
+      )
+      openWhatsApp({ message })
+      return
+    }
+    navigate('/form')
   }
 
   return (
@@ -166,9 +180,19 @@ export default function TherapistCard({ therapist, index }) {
         )}
 
         <div className="space-y-2 pt-2 mt-auto">
+          {!loggedIn && therapist.acolhimentoPrice && (
+            <div className="text-xs text-emerald-700 bg-emerald-50 rounded-md px-2 py-1.5 text-center">
+              Sessão de Acolhimento: R$ {therapist.acolhimentoPrice.toFixed(0)} · via WhatsApp
+            </div>
+          )}
           <Button className="w-full" onClick={handleScheduleClick}>
-            {loggedIn ? <Clock className="h-4 w-4 mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
-            Agendar Sessão
+            {loggedIn ? (
+              <><Clock className="h-4 w-4 mr-2" />Agendar Sessão</>
+            ) : therapist.acolhimentoPrice ? (
+              <><MessageCircle className="h-4 w-4 mr-2" />Conversar no WhatsApp</>
+            ) : (
+              <><LogIn className="h-4 w-4 mr-2" />Agendar Sessão</>
+            )}
           </Button>
           {therapist.personalSiteUrl && (
             <Button

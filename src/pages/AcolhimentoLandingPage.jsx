@@ -7,7 +7,7 @@ import { useParams } from 'react-router-dom'
 import therapistService from '../services/therapistService'
 import SEOHead from '../components/SEOHead'
 import horizontalLogo from '../assets/horizontal-logo.png'
-import { openWhatsApp } from '../utils/whatsapp'
+import { appendSourceTag, openWhatsApp } from '../utils/whatsapp'
 import { track } from '../services/analytics'
 
 export default function AcolhimentoLandingPage() {
@@ -44,13 +44,10 @@ export default function AcolhimentoLandingPage() {
   }, [slug])
 
   const handleWhatsAppClick = () => {
-    let message
-    if (therapist) {
-      const priceRef = therapist.acolhimento_price ? `R$${therapist.acolhimento_price}` : ''
-      message = `Olá, vi a página da ${therapist.name} e gostaria de saber mais sobre a Sessão de Acolhimento. [ref: ${slug || 'acolhimento'}/${priceRef}]`
-    } else {
-      message = 'Olá, gostaria de saber mais sobre a Sessão de Acolhimento.'
-    }
+    const baseMessage = therapist
+      ? `Olá, vi a página da ${therapist.name} e gostaria de saber mais sobre a Sessão de Acolhimento.`
+      : 'Olá, gostaria de saber mais sobre a Sessão de Acolhimento.'
+    const message = appendSourceTag(baseMessage, { therapist: therapist?.name })
     track('WhatsApp Click', {
       source: 'acolhimento',
       path: window.location.pathname,

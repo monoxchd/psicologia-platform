@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Star, User, ExternalLink, Brain, Clock, LogIn } from 'lucide-react'
+import { Star, User, ExternalLink, Brain, Clock, LogIn, MessageCircle } from 'lucide-react'
 import therapistService from '../services/therapistService'
 import authService from '../services/authService'
+import { appendSourceTag, openWhatsApp } from '../utils/whatsapp'
+import { track } from '../services/analytics'
 
 function TherapistsList() {
   const navigate = useNavigate()
@@ -35,9 +37,22 @@ function TherapistsList() {
   const handleScheduleClick = (therapist) => {
     if (authService.isLoggedIn()) {
       navigate('/scheduling', { state: { therapistId: therapist.id } })
-    } else {
-      navigate('/form')
+      return
     }
+    if (therapist.acolhimentoPrice) {
+      track('WhatsApp Click', {
+        source: 'therapists_list',
+        path: window.location.pathname,
+        therapist: therapist.name,
+      })
+      const message = appendSourceTag(
+        `Olá, gostaria de agendar uma sessão de acolhimento com ${therapist.name}.`,
+        { therapist: therapist.name }
+      )
+      openWhatsApp({ message })
+      return
+    }
+    navigate('/form')
   }
 
   const getLowestPrice = (therapist) => {
@@ -134,6 +149,11 @@ function TherapistsList() {
                 )}
 
                 <div className="space-y-2 pt-2 mt-auto">
+                  {!authService.isLoggedIn() && therapist.acolhimentoPrice && (
+                    <div className="text-xs text-emerald-700 bg-emerald-50 rounded-md px-2 py-1.5 text-center">
+                      Sessão de Acolhimento: R$ {therapist.acolhimentoPrice.toFixed(0)} · via WhatsApp
+                    </div>
+                  )}
                   <Button
                     className="w-full"
                     onClick={() => handleScheduleClick(therapist)}
@@ -142,6 +162,11 @@ function TherapistsList() {
                       <>
                         <Clock className="h-4 w-4 mr-2" />
                         Agendar Sessão
+                      </>
+                    ) : therapist.acolhimentoPrice ? (
+                      <>
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Conversar no WhatsApp
                       </>
                     ) : (
                       <>

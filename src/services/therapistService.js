@@ -81,11 +81,11 @@ class TherapistService {
   formatTherapistForUI(therapist) {
     return {
       id: therapist.id,
+      slug: therapist.slug,
       name: therapist.name,
       specialty: therapist.specialty,
       experience: `${therapist.experience_years} ${therapist.experience_years === 1 ? 'ano' : 'anos'}`,
       rating: therapist.rating,
-      creditsPerMinute: therapist.credits_per_minute,
       available: therapist.next_available
         ? `${therapist.next_available} às ${therapist.next_available_time}`
         : 'Verificar disponibilidade',
@@ -101,7 +101,8 @@ class TherapistService {
       modalities: therapist.modalities || { remote: true, presencial: false },
       offices: therapist.offices || [],
       nearestOffice: therapist.nearest_office || null,
-      tags: therapist.tags || []
+      tags: therapist.tags || [],
+      acolhimentoPrice: therapist.acolhimento_price ? parseFloat(therapist.acolhimento_price) : null,
     };
   }
 
