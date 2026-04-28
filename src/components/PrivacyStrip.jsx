@@ -3,7 +3,7 @@ import { ShieldCheck, BarChart3, Handshake } from 'lucide-react'
 const PROMISES = [
   {
     icon: ShieldCheck,
-    title: 'Sem ads no seu sofrimento',
+    title: 'Sem anúncios no seu sofrimento',
     body: 'Você não vê anúncios de depressão depois de ler sobre depressão. Aqui não tem isso.',
   },
   {
@@ -33,7 +33,7 @@ export default function PrivacyStrip() {
             id="privacy-strip-heading"
             className="text-2xl sm:text-3xl font-semibold text-gray-900"
           >
-            Buscar ajuda é um ato íntimo — e a gente trata assim.
+            Buscar ajuda é um ato íntimo, e a gente trata assim.
           </h2>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
