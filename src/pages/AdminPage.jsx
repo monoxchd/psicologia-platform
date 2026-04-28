@@ -960,7 +960,6 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
         experience_years: therapist.experience_years || '',
         bio: therapist.bio || '',
         crp_number: therapist.crp_number || '',
-        credits_per_minute: therapist.credits_per_minute || '',
         personal_site_url: therapist.personal_site_url || '',
         calendly_url: therapist.calendly_url || '',
         acolhimento_price: therapist.acolhimento_price || '',
@@ -979,7 +978,7 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
         password_confirmation: '',
       } : {
         email: '', name: '', specialty: '', experience_years: '', bio: '',
-        crp_number: '', credits_per_minute: '', personal_site_url: '', calendly_url: '',
+        crp_number: '', personal_site_url: '', calendly_url: '',
         acolhimento_price: '', acolhimento_quote: '', position: 0,
         gender: '', pronouns: '',
         serves_children: false, serves_teens: false, serves_adults: true,
@@ -1067,7 +1066,6 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
     try {
       const data = { ...form }
       if (data.experience_years) data.experience_years = parseInt(data.experience_years)
-      if (data.credits_per_minute) data.credits_per_minute = parseFloat(data.credits_per_minute)
       if (data.acolhimento_price) data.acolhimento_price = parseFloat(data.acolhimento_price)
       if (!data.acolhimento_price) delete data.acolhimento_price
       if (!data.password) { delete data.password; delete data.password_confirmation }
@@ -1128,14 +1126,10 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
               <Input id="therapist-crp" name="crp_number" value={form.crp_number || ''} onChange={handleChange} placeholder="XX/XXXXX" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="therapist-exp">Anos de experiência</Label>
               <Input id="therapist-exp" name="experience_years" type="number" min="0" value={form.experience_years || ''} onChange={handleChange} />
-            </div>
-            <div>
-              <Label htmlFor="therapist-credits">Valor por sessão (R$)</Label>
-              <Input id="therapist-credits" name="credits_per_minute" type="number" min="0" step="0.01" value={form.credits_per_minute || ''} onChange={handleChange} />
             </div>
             <div>
               <Label htmlFor="therapist-position">Posição</Label>

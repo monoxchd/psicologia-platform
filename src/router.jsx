@@ -1,14 +1,11 @@
 import { createBrowserRouter } from 'react-router-dom'
 import LandingPage from './pages/LandingPage.jsx'
 import FormPage from './pages/FormPage.jsx'
-import SimpleCreditsPage from './pages/SimpleCreditsPage.jsx'
 import MatchingPage from './pages/MatchingPage.jsx'
 import SchedulingPage from './pages/SchedulingPage.jsx'
 import ConfirmationPage from './pages/ConfirmationPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 
-import DashboardPage from './pages/DashboardPage.jsx'
-import SimpleDashboardPage from './pages/SimpleDashboardPage.jsx'
 import ClientDashboardPage from './pages/ClientDashboardPage.jsx'
 import ActivityFormPage from './pages/ActivityFormPage.jsx'
 import BlogPage from './pages/BlogPage.jsx'
@@ -38,16 +35,8 @@ export const router = createBrowserRouter([
     element: <LandingPage />
   },
   {
-    path: "/simple-dashboard",
-    element: <SimpleDashboardPage />
-  },
-  {
     path: "/dashboard",
     element: <ClientDashboardPage />
-  },
-  {
-    path: "/dashboard-old",
-    element: <DashboardPage />
   },
   {
     path: "/atividades/:slug",
@@ -56,10 +45,6 @@ export const router = createBrowserRouter([
   {
     path: "/form",
     element: <FormPage />
-  },
-  {
-    path: "/credits",
-    element: <SimpleCreditsPage />
   },
   {
     path: "/matching",

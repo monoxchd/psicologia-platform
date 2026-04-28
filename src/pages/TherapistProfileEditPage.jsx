@@ -13,7 +13,6 @@ import {
   Globe,
   Briefcase,
   Award,
-  DollarSign,
   Camera,
   Trash2,
   Heart
@@ -36,7 +35,6 @@ const TherapistProfileEditPage = () => {
     experience_years: '',
     bio: '',
     crp_number: '',
-    credits_per_minute: '',
     personal_site_url: '',
     acolhimento_quote: ''
   })
@@ -64,7 +62,6 @@ const TherapistProfileEditPage = () => {
         experience_years: currentUser.experience_years || '',
         bio: currentUser.bio || '',
         crp_number: currentUser.crp_number || '',
-        credits_per_minute: currentUser.credits_per_minute || '',
         personal_site_url: currentUser.personal_site_url || '',
         acolhimento_quote: currentUser.acolhimento_quote || ''
       })
@@ -148,7 +145,6 @@ const TherapistProfileEditPage = () => {
           experience_years: parseInt(formData.experience_years) || 0,
           bio: formData.bio,
           crp_number: formData.crp_number,
-          credits_per_minute: parseFloat(formData.credits_per_minute) || 0,
           personal_site_url: formData.personal_site_url,
           acolhimento_quote: formData.acolhimento_quote
         }
@@ -291,25 +287,6 @@ const TherapistProfileEditPage = () => {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="credits_per_minute" className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" />
-                  Valor por Sessão (R$)
-                </Label>
-                <Input
-                  id="credits_per_minute"
-                  name="credits_per_minute"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.credits_per_minute}
-                  onChange={handleChange}
-                  placeholder="Ex: 150"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Valor cobrado por sessão de atendimento
-                </p>
-              </div>
             </CardContent>
           </Card>
 
