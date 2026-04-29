@@ -151,7 +151,7 @@ function TherapistsList() {
                 <div className="space-y-2 pt-2 mt-auto">
                   {!authService.isLoggedIn() && therapist.acolhimentoPrice && (
                     <div className="text-xs text-emerald-700 bg-emerald-50 rounded-md px-2 py-1.5 text-center">
-                      Sessão de Acolhimento: R$ {therapist.acolhimentoPrice.toFixed(0)} · via WhatsApp
+                      Sessão de Acolhimento: R$ {therapist.acolhimentoPrice.toFixed(2).replace('.', ',')} · via WhatsApp
                     </div>
                   )}
                   <Button
