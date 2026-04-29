@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Heart, Clock, ShieldCheck, Users, ArrowRight, BookOpen, Filter, Calendar, MessageCircle, User } from 'lucide-react'
+import { Heart, Clock, ShieldCheck, Users, ArrowRight, BookOpen, Filter, Calendar, MessageCircle, User, Menu } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet.jsx'
 import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
 import ExitIntentModal from '../components/ExitIntentModal.jsx'
 import WhatsAppButton from '../components/WhatsAppButton.jsx'
@@ -58,14 +59,57 @@ export default function LandingPage() {
                 Login
               </Link>
             </div>
-            <Link
-              to="/login"
-              className="md:hidden flex items-center gap-1.5 text-gray-600 hover:text-blue-600 text-sm"
-              aria-label="Login"
-            >
-              <User className="h-5 w-5" />
-              <span>Login</span>
-            </Link>
+            <Sheet>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  className="md:hidden p-2 -mr-2 text-gray-600 hover:text-blue-600"
+                  aria-label="Abrir menu"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72">
+                <SheetHeader className="text-left">
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col gap-1 px-4 mt-2">
+                  <SheetClose asChild>
+                    <a
+                      href="#como-funciona"
+                      className="py-3 px-2 text-gray-700 hover:text-blue-600 border-b border-gray-100"
+                    >
+                      Como Funciona
+                    </a>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <a
+                      href="#terapeutas"
+                      className="py-3 px-2 text-gray-700 hover:text-blue-600 border-b border-gray-100"
+                    >
+                      Terapeutas
+                    </a>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      to="/blog"
+                      className="py-3 px-2 text-gray-700 hover:text-blue-600 border-b border-gray-100"
+                    >
+                      Blog
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      to="/login"
+                      className="py-3 px-2 text-gray-700 hover:text-blue-600 inline-flex items-center gap-2"
+                    >
+                      <User className="h-4 w-4" />
+                      Login
+                    </Link>
+                  </SheetClose>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>

@@ -1347,11 +1347,11 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
           <div className="border-t pt-4">
             <p className="text-sm font-medium mb-1">Temas / Especializações</p>
             <p className="text-xs text-gray-500 mb-3">Selecione as tags que aparecem no filtro de busca.</p>
-            {availableTags.length === 0 ? (
+            {availableTags.filter(t => t.kind == null).length === 0 ? (
               <p className="text-xs text-gray-400">Nenhuma tag cadastrada.</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
-                {availableTags.map(tag => {
+                {availableTags.filter(t => t.kind == null).map(tag => {
                   const selected = (form.tag_ids || []).includes(tag.id)
                   return (
                     <button
@@ -1362,6 +1362,36 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
                         "px-2.5 py-1 rounded-full text-xs border transition-colors " +
                         (selected
                           ? "bg-primary text-white border-primary"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-400")
+                      }
+                    >
+                      {tag.name}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Abordagens terapêuticas */}
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium mb-1">Abordagens terapêuticas</p>
+            <p className="text-xs text-gray-500 mb-3">Linhas teóricas que o profissional pratica. Aparecem no filtro de busca e no ranking da triagem.</p>
+            {availableTags.filter(t => t.kind === 'abordagem').length === 0 ? (
+              <p className="text-xs text-gray-400">Nenhuma abordagem cadastrada. Rode <code className="text-[11px]">rake tags:seed_abordagens</code>.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {availableTags.filter(t => t.kind === 'abordagem').map(tag => {
+                  const selected = (form.tag_ids || []).includes(tag.id)
+                  return (
+                    <button
+                      type="button"
+                      key={tag.id}
+                      onClick={() => toggleTagId(tag.id)}
+                      className={
+                        "px-2.5 py-1 rounded-full text-xs border transition-colors " +
+                        (selected
+                          ? "bg-emerald-600 text-white border-emerald-600"
                           : "bg-white text-gray-700 border-gray-200 hover:border-gray-400")
                       }
                     >

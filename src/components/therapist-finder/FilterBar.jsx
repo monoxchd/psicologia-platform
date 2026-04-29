@@ -44,11 +44,15 @@ function Chip({ active, onClick, children, title }) {
 
 export default function FilterBar({ filters, onChange, onClear, totalCount }) {
   const [availableThemes, setAvailableThemes] = useState([])
+  const [availableAbordagens, setAvailableAbordagens] = useState([])
 
   useEffect(() => {
     let cancelled = false
     therapistService.getPublicThemes()
       .then(themes => { if (!cancelled) setAvailableThemes(themes) })
+      .catch(() => {})
+    therapistService.getAbordagens()
+      .then(abordagens => { if (!cancelled) setAvailableAbordagens(abordagens) })
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
@@ -63,9 +67,14 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
     const next = current.includes(id) ? current.filter(x => x !== id) : [...current, id]
     onChange({ ...filters, theme_ids: next })
   }
+  const toggleAbordagem = (slug) => {
+    const current = filters.abordagem_slugs || []
+    const next = current.includes(slug) ? current.filter(x => x !== slug) : [...current, slug]
+    onChange({ ...filters, abordagem_slugs: next })
+  }
 
   const hasAnyFilter = Object.entries(filters).some(([k, v]) => {
-    if (k === 'theme_ids' || k === 'tag_ids') return Array.isArray(v) && v.length > 0
+    if (k === 'theme_ids' || k === 'tag_ids' || k === 'abordagem_slugs') return Array.isArray(v) && v.length > 0
     if (k === 'radius_km') return false
     return v != null && v !== ''
   })
@@ -155,6 +164,21 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
                 title={theme.description || undefined}
               >
                 {theme.name}
+              </Chip>
+            ))}
+          </FilterRow>
+        )}
+
+        {availableAbordagens.length > 0 && (
+          <FilterRow label="Abordagem terapêutica">
+            {availableAbordagens.map(abordagem => (
+              <Chip
+                key={abordagem.slug}
+                active={(filters.abordagem_slugs || []).includes(abordagem.slug)}
+                onClick={() => toggleAbordagem(abordagem.slug)}
+                title={abordagem.name}
+              >
+                {abordagem.name}
               </Chip>
             ))}
           </FilterRow>

@@ -50,20 +50,34 @@ export default function TriageResultMatch({ result }) {
         const data = await therapistService.getFilteredTherapists({ theme_ids: themeIds })
         const formatted = therapistService.formatTherapistsForUI(data)
 
-        // Backend returns the union of therapists matching principal OR
-        // secondary theme. Shuffle with jitter for equity and slice. Full
-        // per-theme scoring lands with the P3 ranking follow-up.
-        const ranked = shuffleForEquity(formatted).slice(0, MAX_RESULTS)
+        // Backend returns the union of theme-matched therapists. We re-rank
+        // here by abordagem overlap (P3 preference): shuffle for equity first,
+        // then sort by overlap count (stable sort preserves the shuffled order
+        // among ties). Don't filter — therapists without a preferred abordagem
+        // still belong in the result set, just lower in priority.
+        const preferredAbordagens = result.abordagensPreferenciais || []
+        const overlapCount = (t) => {
+          if (preferredAbordagens.length === 0) return 0
+          const slugs = (t.abordagens || []).map(a => a.slug)
+          return preferredAbordagens.reduce((acc, slug) => acc + (slugs.includes(slug) ? 1 : 0), 0)
+        }
+        const shuffled = shuffleForEquity(formatted)
+        const ranked = preferredAbordagens.length > 0
+          ? [...shuffled].sort((a, b) => overlapCount(b) - overlapCount(a))
+          : shuffled
+        const top = ranked.slice(0, MAX_RESULTS)
 
         if (!cancelled) {
-          setTherapists(ranked)
+          setTherapists(top)
           setTotalMatches(formatted.length)
           setPrincipalThemeId(principalId)
           track('Triage Result Shown', {
             tema_principal: result.temaPrincipal,
             tema_secundario: result.temaSecundario || null,
-            result_count: ranked.length,
+            abordagens_pref: preferredAbordagens.join(',') || null,
+            result_count: top.length,
             total_matches: formatted.length,
+            top_overlap: top.length > 0 ? overlapCount(top[0]) : 0,
           })
         }
       } catch (e) {

@@ -13,6 +13,7 @@ const EMPTY_FILTERS = {
   audience: null,
   modality: null,
   theme_ids: [],
+  abordagem_slugs: [],
   cep: '',
   radius_km: 5,
 }
@@ -23,6 +24,7 @@ function cleanFilters(filters) {
   if (filters.audience) out.audience = filters.audience
   if (filters.modality) out.modality = filters.modality
   if (filters.theme_ids && filters.theme_ids.length) out.theme_ids = filters.theme_ids
+  if (filters.abordagem_slugs && filters.abordagem_slugs.length) out.abordagem_slugs = filters.abordagem_slugs
   if (filters.modality === 'presencial' && filters.cep && /^\d{8}$/.test(filters.cep.replace(/\D/g, ''))) {
     out.cep = filters.cep
     out.radius_km = filters.radius_km || 5
@@ -92,6 +94,7 @@ export default function TherapistFinder({
         track('Filter Applied', {
           ...appliedFilters,
           theme_count: appliedFilters.theme_ids ? appliedFilters.theme_ids.length : 0,
+          abordagem_count: appliedFilters.abordagem_slugs ? appliedFilters.abordagem_slugs.length : 0,
           result_count: formatted.length,
           path: window.location.pathname,
         })
@@ -102,6 +105,7 @@ export default function TherapistFinder({
         track('Empty Results', {
           ...appliedFilters,
           theme_count: appliedFilters.theme_ids ? appliedFilters.theme_ids.length : 0,
+          abordagem_count: appliedFilters.abordagem_slugs ? appliedFilters.abordagem_slugs.length : 0,
           path: window.location.pathname,
         })
       }

@@ -133,14 +133,14 @@ export const MATRIZ_TEMAS = {
   'machucado+todo_lugar':      { redirecionar_whatsapp: 1.0 },
 }
 
-// P3 → preferred therapeutic approaches. Collected but NOT used in MVP
-// ranking (requires abordagens field on Therapist model — deferred).
+// P3 → preferred therapeutic approach slugs (kind=abordagem on Tag).
+// Slugs match seed data in backend/lib/tasks/seed_abordagens.rake.
 export const MODIFICADOR_ABORDAGEM = {
-  lidar_melhor:  ['TCC', 'ACT', 'breve_focal'],
+  lidar_melhor:  ['tcc', 'act', 'breve-focal'],
   entender:      ['psicanalitica', 'psicodinamica'],
-  atravessar:    ['breve_focal', 'centrada_pessoa'],
+  atravessar:    ['breve-focal', 'centrada-pessoa'],
   mudar_padroes: ['psicanalitica', 'psicodinamica', 'esquemas'],
-  falar_espaco:  ['centrada_pessoa', 'humanista', 'gestaltica'],
+  falar_espaco:  ['centrada-pessoa', 'humanista', 'gestaltica'],
 }
 
 /**

@@ -2,17 +2,10 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Star, User, ExternalLink, Brain, Clock, LogIn, Video, MapPin, MessageCircle } from 'lucide-react'
+import { ExternalLink, Brain, Clock, LogIn, Video, MapPin, MessageCircle } from 'lucide-react'
 import authService from '../../services/authService'
 import { track } from '../../services/analytics'
 import { appendSourceTag, openWhatsApp } from '../../utils/whatsapp'
-
-function getLowestPrice(therapist) {
-  if (!therapist.services || therapist.services.length === 0) return null
-  const prices = therapist.services.map(s => parseFloat(s.price)).filter(n => !Number.isNaN(n))
-  if (prices.length === 0) return null
-  return Math.min(...prices)
-}
 
 function ModalityBadges({ modalities }) {
   if (!modalities) return null
@@ -79,7 +72,6 @@ function OfficesLine({ offices, nearestOffice }) {
 export default function TherapistCard({ therapist, index }) {
   const navigate = useNavigate()
   const loggedIn = authService.isLoggedIn()
-  const lowestPrice = getLowestPrice(therapist)
 
   const handleScheduleClick = () => {
     track('Therapist Card Click', {
@@ -110,28 +102,22 @@ export default function TherapistCard({ therapist, index }) {
   return (
     <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
       <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center space-x-3 min-w-0">
-            {therapist.image && therapist.image !== '👨‍⚕️' ? (
-              <img
-                src={therapist.image}
-                alt={therapist.name}
-                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <Brain className="h-7 w-7 text-purple-600" />
-              </div>
-            )}
-            <div className="min-w-0">
-              <CardTitle className="text-lg truncate">{therapist.name}</CardTitle>
-              <CardDescription className="truncate">{therapist.specialty}</CardDescription>
+        <div className="flex items-center space-x-3 min-w-0">
+          {therapist.image && therapist.image !== '👨‍⚕️' ? (
+            <img
+              src={therapist.image}
+              alt={therapist.name}
+              className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+              <Brain className="h-7 w-7 text-purple-600" />
             </div>
+          )}
+          <div className="min-w-0">
+            <CardTitle className="text-lg truncate">{therapist.name}</CardTitle>
+            <CardDescription className="truncate">{therapist.specialty}</CardDescription>
           </div>
-          <Badge variant="secondary" className="ml-2 flex-shrink-0">
-            <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-            {therapist.rating}
-          </Badge>
         </div>
       </CardHeader>
 
@@ -139,17 +125,22 @@ export default function TherapistCard({ therapist, index }) {
         <ModalityBadges modalities={therapist.modalities} />
         <OfficesLine offices={therapist.offices} nearestOffice={therapist.nearestOffice} />
 
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center text-gray-600">
-            <User className="h-4 w-4 mr-1" />
-            <span>{therapist.experience}</span>
+        {therapist.abordagens && therapist.abordagens.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {therapist.abordagens.slice(0, 3).map(abordagem => (
+              <span
+                key={abordagem.id}
+                className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"
+                title={abordagem.name}
+              >
+                {abordagem.name}
+              </span>
+            ))}
+            {therapist.abordagens.length > 3 && (
+              <span className="text-[10px] text-gray-400 px-1">+{therapist.abordagens.length - 3}</span>
+            )}
           </div>
-          {lowestPrice != null && (
-            <div className="flex items-center text-green-600 font-medium">
-              <span>a partir de R$ {lowestPrice.toFixed(0)}</span>
-            </div>
-          )}
-        </div>
+        )}
 
         {therapist.tags && therapist.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">

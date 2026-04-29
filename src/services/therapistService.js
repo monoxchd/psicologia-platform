@@ -61,6 +61,7 @@ class TherapistService {
     if (filters.modality) params.modality = filters.modality;
     if (filters.theme_ids && filters.theme_ids.length) params.theme_ids = filters.theme_ids.join(',');
     if (filters.tag_ids && filters.tag_ids.length) params.tag_ids = filters.tag_ids.join(',');
+    if (filters.abordagem_slugs && filters.abordagem_slugs.length) params.abordagem_slugs = filters.abordagem_slugs.join(',');
     if (filters.cep) params.cep = filters.cep.replace(/\D/g, '');
     if (filters.radius_km) params.radius_km = filters.radius_km;
     if (filters.specialty) params.specialty = filters.specialty;
@@ -76,6 +77,11 @@ class TherapistService {
   async getPublicThemes() {
     const res = await api.get('/themes');
     return res?.themes || [];
+  }
+
+  async getAbordagens() {
+    const res = await api.get('/tags', { kind: 'abordagem' });
+    return res?.tags || [];
   }
 
   formatTherapistForUI(therapist) {
@@ -102,6 +108,7 @@ class TherapistService {
       offices: therapist.offices || [],
       nearestOffice: therapist.nearest_office || null,
       tags: therapist.tags || [],
+      abordagens: therapist.abordagens || [],
       acolhimentoPrice: therapist.acolhimento_price ? parseFloat(therapist.acolhimento_price) : null,
     };
   }
