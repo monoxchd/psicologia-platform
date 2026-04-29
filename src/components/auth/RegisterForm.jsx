@@ -102,9 +102,7 @@ export default function RegisterForm({ onSubmit, isLoading = false }) {
       name: `${firstName} ${lastName}`,
       user_type: values.userType,
       password_confirmation: confirmPassword, // Add password confirmation for has_secure_password
-      // Set default values for therapist fields required by backend
       rating: 4.0, // Default rating for new therapists
-      credits_per_minute: 1.0, // Default cost for new therapists
     }
 
     // Add therapist-specific fields

@@ -10,7 +10,6 @@ import {
   Star,
   Eye,
   Calendar,
-  TrendingUp,
   Edit,
   LogOut,
   ClipboardList,
@@ -184,22 +183,6 @@ const TherapistDashboardPage = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Valor da Sessão
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                R$ {user?.credits_per_minute || 0}
-              </div>
-              <p className="text-xs text-gray-600 mt-1">
-                {user?.experience_years || 0} anos de experiência
-              </p>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

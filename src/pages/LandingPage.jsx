@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Heart, Clock, ShieldCheck, Users, ArrowRight, BookOpen, Filter, Calendar, MessageCircle } from 'lucide-react'
+import { Heart, Clock, ShieldCheck, Users, ArrowRight, BookOpen, Filter, Calendar, MessageCircle, User } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
@@ -43,7 +43,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <img 
+              <img
+                class="h-6" 
                 src={horizontalLogo} 
                 alt="Terapia Conecta Logo"
               />
@@ -52,7 +53,19 @@ export default function LandingPage() {
               <a href="#como-funciona" className="text-gray-600 hover:text-blue-600">Como Funciona</a>
               <a href="#terapeutas" className="text-gray-600 hover:text-blue-600">Terapeutas</a>
               <Link to="/blog" className="text-gray-600 hover:text-blue-600">Blog</Link>
+              <Link to="/login" className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600">
+                <User className="h-4 w-4" />
+                Login
+              </Link>
             </div>
+            <Link
+              to="/login"
+              className="md:hidden flex items-center gap-1.5 text-gray-600 hover:text-blue-600 text-sm"
+              aria-label="Login"
+            >
+              <User className="h-5 w-5" />
+              <span>Login</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -63,7 +76,7 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-bold text-gray-900 mb-6">
-                Encontre o psicólogo certo — com <span className="text-blue-600">privacidade</span> de verdade.
+                Encontre o psicólogo certo, com <span className="text-blue-600">privacidade</span> de verdade.
               </h1>
               <p className="text-xl text-gray-600 mb-8">
                 Sem anúncios baseados no seu sofrimento, sem rastreio invasivo.
@@ -115,7 +128,7 @@ export default function LandingPage() {
                   <Heart className="h-6 w-6 text-blue-600" />
                   <div>
                     <p className="font-semibold text-gray-900">Cuidado Profissional</p>
-                    <p className="text-sm text-gray-500">Quando você precisa</p>
+                    <p className="text-sm text-gray-500">Onde precisar</p>
                   </div>
                 </div>
               </div>
@@ -132,7 +145,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Como Funciona</h2>
-            <p className="text-xl text-gray-600">Três passos simples para encontrar cuidado psicológico</p>
+            <p className="text-xl text-gray-600">3 passos simples para encontrar cuidado psicológico</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="text-center p-6">
@@ -144,7 +157,7 @@ export default function LandingPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Diga o que você está buscando — tipo de atendimento, gênero do profissional,
+                  Diga o que você está buscando: tipo de atendimento, gênero do profissional,
                   temas ou localização. A gente filtra pra você.
                 </p>
               </CardContent>
@@ -160,7 +173,7 @@ export default function LandingPage() {
               <CardContent>
                 <p className="text-gray-600">
                   Conheça os profissionais que combinam com você: perfis, especialidades
-                  e abordagem. Sem overwhelm, sem paradoxo da escolha.
+                  e abordagem. Sem ficar confuso por dezenas de opções.
                 </p>
               </CardContent>
             </Card>
@@ -175,7 +188,7 @@ export default function LandingPage() {
               <CardContent>
                 <p className="text-gray-600">
                   Agende direto na plataforma ou fale com a gente no WhatsApp.
-                  Primeiro contato humano, sempre.
+                  Valorizamos a sua busca e o primeiro contato é humano, sempre!
                 </p>
               </CardContent>
             </Card>
@@ -187,7 +200,7 @@ export default function LandingPage() {
       <section id="terapeutas" className="py-16 bg-white">
         <TherapistFinder
           heading="Encontre seu psicólogo"
-          subheading="Filtre por demanda. Sem paradoxo da escolha."
+          subheading="Filtre por demanda. O match perfeito pra você."
           pageSize={3}
         />
       </section>
@@ -282,15 +295,15 @@ export default function LandingPage() {
           <p className="text-xl text-blue-100 mb-8">
             Junte-se a milhares de pessoas que já transformaram suas vidas com nossa plataforma flexível.
           </p>
-          <Button 
-            size="lg" 
+          <WhatsAppButton
+            source="cta_section"
+            label="Falar com um Especialista"
+            message="Oi, cheguei pelo site e gostaria de começar uma conversa sobre terapia."
             variant="secondary"
+            size="lg"
             className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg"
-            onClick={() => navigate('/form')}
-          >
-            Começar Minha Avaliação Gratuita
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          />
+
         </div>
       </section>
 

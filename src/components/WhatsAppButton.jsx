@@ -1,12 +1,13 @@
 import { Button } from '@/components/ui/button.jsx'
 import { MessageCircle } from 'lucide-react'
-import { buildWhatsAppUrl } from '../utils/whatsapp'
+import { appendSourceTag, buildWhatsAppUrl } from '../utils/whatsapp'
 import { track } from '../services/analytics'
 
 export default function WhatsAppButton({
   message,
   label = 'Falar no WhatsApp',
   source,
+  therapist,
   variant = 'default',
   size = 'default',
   className = '',
@@ -14,6 +15,8 @@ export default function WhatsAppButton({
   children,
   onClick,
 }) {
+  const taggedMessage = appendSourceTag(message, { therapist })
+
   const handleClick = (event) => {
     // Skip analytics for right-click, middle-click, or modifier clicks —
     // those open in new tab / copy link, not a primary WhatsApp intent.
@@ -23,6 +26,7 @@ export default function WhatsAppButton({
       track('WhatsApp Click', {
         source: source || 'unknown',
         path: typeof window !== 'undefined' ? window.location.pathname : '',
+        therapist: therapist || null,
       })
     }
     if (onClick) onClick(event)
@@ -37,7 +41,7 @@ export default function WhatsAppButton({
       onClick={handleClick}
     >
       <a
-        href={buildWhatsAppUrl({ message })}
+        href={buildWhatsAppUrl({ message: taggedMessage })}
         target="_blank"
         rel="noopener noreferrer"
       >

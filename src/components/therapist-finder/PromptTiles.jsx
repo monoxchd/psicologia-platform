@@ -60,7 +60,7 @@ export default function PromptTiles({ onSelect, onSeeAll }) {
           O que você está procurando?
         </h2>
         <p className="text-gray-600">
-          Começa por aqui — a gente afina o resultado com você.
+          Comece por aqui, aí gente afina o resultado com você.
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -25,6 +25,7 @@ import authService from '../services/authService'
 import appointmentService from '../services/appointmentService'
 import activityService from '../services/activityService'
 import { blogService } from '../services/blogService'
+import gamificationService from '../services/gamificationService'
 import horizontalLogo from '../assets/horizontal-logo.png'
 import ClientBottomNav from '../components/ClientBottomNav'
 import { openWhatsApp } from '../utils/whatsapp'
@@ -80,12 +81,14 @@ export default function ClientDashboardPage() {
   const [activities, setActivities] = useState([])
   const [articles, setArticles] = useState([])
   const [todayEntries, setTodayEntries] = useState([])
+  const [readingStats, setReadingStats] = useState(() => gamificationService.getAllStats())
 
   useEffect(() => {
     if (!authService.isLoggedIn()) {
       navigate('/login')
       return
     }
+    setReadingStats(gamificationService.getAllStats())
 
     async function loadDashboard() {
       try {
@@ -630,6 +633,57 @@ export default function ClientDashboardPage() {
                 </Link>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Sua Jornada de Leitura */}
+        {readingStats.articlesRead > 0 && (
+          <div>
+            <h2 className="text-lg font-bold text-gray-800 mb-3 px-1">Sua Jornada de Leitura</h2>
+            <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 p-3 text-center">
+                    <Flame className="h-5 w-5 text-orange-500 mx-auto mb-1" />
+                    <div className="text-2xl font-bold text-orange-600 leading-none">{readingStats.readingStreak}</div>
+                    <div className="text-[11px] text-gray-500 mt-1">
+                      {readingStats.readingStreak === 1 ? 'dia seguido' : 'dias seguidos'}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50 p-3 text-center">
+                    <BookMarked className="h-5 w-5 text-indigo-600 mx-auto mb-1" />
+                    <div className="text-2xl font-bold text-indigo-700 leading-none">{readingStats.articlesRead}</div>
+                    <div className="text-[11px] text-gray-500 mt-1">
+                      {readingStats.articlesRead === 1 ? 'artigo lido' : 'artigos lidos'}
+                    </div>
+                  </div>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="text-xs font-semibold text-gray-600 mb-2.5">Conquistas</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {gamificationService.getAllAchievementDefinitions().map(ach => {
+                      const earned = readingStats.achievements.includes(ach.id)
+                      return (
+                        <div
+                          key={ach.id}
+                          className={`text-center p-2 rounded-lg transition-all ${
+                            earned ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-gray-50 opacity-40 grayscale'
+                          }`}
+                          title={ach.description}
+                        >
+                          <div className="text-xl leading-none">{ach.icon}</div>
+                          <div className={`text-[10px] mt-1.5 font-medium leading-tight ${
+                            earned ? 'text-gray-700' : 'text-gray-500'
+                          }`}>
+                            {ach.title}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
