@@ -132,6 +132,18 @@ Central WhatsApp number `5511914214449` is the single contact entry point for gu
 - LocalStorage gate per page (`storageKey`) to avoid re-triggering for the same visitor
 - Used on `LandingPage` and `ArticlePage` (logged-out users)
 
+## Article → Activity Preview Funnel
+
+Articles can embed a static preview of a wellness activity at the bottom (`<ActivityPreview />` after the article body). The pattern is a marketing funnel: blog readers (typically logged out) see a real tool that addresses what they just read, then click a WhatsApp CTA.
+
+- Pairings live in `ARTICLE_ACTIVITY_PREVIEWS` map at the top of `pages/ArticlePage.jsx`. To pair a new article with an activity, add an entry — no other code changes
+- `<ActivityPreview />` is read-only: faux text/scale fields, never interactive (avoids the "fill it then hit a login wall" trap)
+- Activities endpoint `/api/v1/activities/:slug` is intentionally public (`skip_before_action :authorize_request, only: [:show]`) so logged-out blog readers can fetch it
+- Two Plausible events form the funnel:
+  - `Article Activity Preview View` — fires once via IntersectionObserver when ≥50% of the preview enters the viewport. Props: `article_slug`, `activity_slug`, `source`
+  - `WhatsApp Click` — already fired by `WhatsAppButton` on click; share the `source` tag with the View event so the funnel ratio is computable
+- Reach rate = Views ÷ article pageviews; CTR = Clicks ÷ Views; end-to-end = Clicks ÷ pageviews
+
 ## Gamification (Reading Streaks)
 
 - `gamificationService.js` is **localStorage-only** (per-device, no backend). Acceptable for V1

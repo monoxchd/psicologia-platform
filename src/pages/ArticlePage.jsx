@@ -10,6 +10,7 @@ import StructuredData from '../components/StructuredData'
 import authService from '../services/authService.js'
 import EditorJSRenderer from '../components/EditorJSRenderer'
 import EnigmaQuizInline from '../components/EnigmaQuizInline'
+import ActivityPreview from '../components/ActivityPreview'
 import activityService from '../services/activityService'
 import gamificationService from '../services/gamificationService.js'
 import ExitIntentModal from '../components/ExitIntentModal'
@@ -17,6 +18,21 @@ import useExitIntent from '../hooks/useExitIntent'
 import { toast } from 'sonner'
 
 const ENIGMA_SLUG = 'quando-a-cadeira-ao-lado-fica-vazia'
+
+// Per-article activity preview pairings. Add a new entry when publishing an
+// article that should embed an activity preview at the bottom.
+const ARTICLE_ACTIVITY_PREVIEWS = {
+  'capitulo-1-o-segundo-pedreiro': {
+    activity_slug: 'reflexao-do-dia',
+    whatsapp_message: 'Oi! Acabei de ler "O Segundo Pedreiro" e quero experimentar o diário das três perguntas.',
+    source: 'article_segundo_pedreiro',
+  },
+  'pensamentos-automaticos-nao-esperam-a-proxima-sessao': {
+    activity_slug: 'registro-modelo-cognitivo',
+    whatsapp_message: 'Oi! Acabei de ler o artigo sobre pensamentos automáticos e quero experimentar o Registro do Modelo Cognitivo.',
+    source: 'article_pensamentos_automaticos',
+  },
+}
 
 const ArticlePage = () => {
   const { slug } = useParams()
@@ -268,6 +284,14 @@ const ArticlePage = () => {
 
                 {/* Enigma Quiz — only on the grief article */}
                 {slug === ENIGMA_SLUG && <EnigmaQuizInline />}
+
+                {/* Activity preview — embedded for articles in the slug map */}
+                {ARTICLE_ACTIVITY_PREVIEWS[slug] && (
+                  <ActivityPreview
+                    {...ARTICLE_ACTIVITY_PREVIEWS[slug]}
+                    articleSlug={slug}
+                  />
+                )}
 
                 {/* Read Tracking */}
                 {authService.isLoggedIn() && (

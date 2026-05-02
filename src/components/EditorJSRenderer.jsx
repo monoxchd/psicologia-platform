@@ -2,6 +2,17 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
+// Editor.js link tool emits plain <a href="..."> with no target. Open links in
+// a new tab so readers don't lose the article they're on. Skip if the author
+// already set target explicitly (forward-compatible with future link tools).
+const withExternalLinks = (html) => {
+  if (!html || typeof html !== 'string') return html;
+  return html.replace(/<a\s+([^>]*?)>/gi, (match, attrs) => {
+    if (/\btarget\s*=/i.test(attrs)) return match;
+    return `<a ${attrs} target="_blank" rel="noopener noreferrer">`;
+  });
+};
+
 /**
  * Inline CTA Component for therapist matching
  */
@@ -125,7 +136,7 @@ const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false, prio
       <Tag
         key={index}
         className={levelClasses[level] || levelClasses[2]}
-        dangerouslySetInnerHTML={{ __html: text }}
+        dangerouslySetInnerHTML={{ __html: withExternalLinks(text) }}
       />
     );
   };
@@ -137,7 +148,7 @@ const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false, prio
       <p
         key={index}
         className="mb-4 leading-relaxed text-gray-700"
-        dangerouslySetInnerHTML={{ __html: text }}
+        dangerouslySetInnerHTML={{ __html: withExternalLinks(text) }}
       />
     );
   };
@@ -161,7 +172,7 @@ const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false, prio
             <li
               key={itemIndex}
               className="text-gray-700"
-              dangerouslySetInnerHTML={{ __html: content }}
+              dangerouslySetInnerHTML={{ __html: withExternalLinks(content) }}
             />
           );
         })}
@@ -179,7 +190,7 @@ const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false, prio
       >
         <p
           className="text-gray-800 mb-1"
-          dangerouslySetInnerHTML={{ __html: text }}
+          dangerouslySetInnerHTML={{ __html: withExternalLinks(text) }}
         />
         {caption && (
           <cite className="text-sm text-gray-600 not-italic">
@@ -281,7 +292,7 @@ const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false, prio
                   <th
                     key={cellIndex}
                     className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800"
-                    dangerouslySetInnerHTML={{ __html: cell }}
+                    dangerouslySetInnerHTML={{ __html: withExternalLinks(cell) }}
                   />
                 ))}
               </tr>
@@ -294,7 +305,7 @@ const EditorJSRenderer = ({ data, className = '', showTherapistCTA = false, prio
                   <td
                     key={cellIndex}
                     className="border border-gray-300 px-4 py-2 text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: cell }}
+                    dangerouslySetInnerHTML={{ __html: withExternalLinks(cell) }}
                   />
                 ))}
               </tr>
