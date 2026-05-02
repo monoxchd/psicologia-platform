@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import {
   ArrowLeft, Loader2, CheckCircle2, BookOpen, Lightbulb, BookMarked,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Brain, Lock, Share2
 } from 'lucide-react'
 import activityService from '../services/activityService'
 import authService from '../services/authService'
@@ -13,21 +13,46 @@ import ClientBottomNav from '../components/ClientBottomNav'
 const MOOD_EMOJIS = ['', '😞', '😕', '😐', '🙂', '😄']
 const MOOD_LABELS = ['', 'Muito mal', 'Mal', 'Neutro', 'Bem', 'Muito bem']
 
+// Scales with range > 5 (e.g. 0–10) render compact numeric buttons without
+// emoji defaults — typically clinical intensity scales.
+function isWideScale(question) {
+  const config = question.config || {}
+  const min = config.min ?? 1
+  const max = config.max ?? 5
+  return (max - min) >= 6
+}
+
+function renderScaleAnswer(question, answer) {
+  const config = question.config || {}
+  const max = config.max ?? 5
+  if (isWideScale(question)) {
+    return <p className="text-base font-semibold text-gray-700">{answer}<span className="text-xs text-gray-400">/{max}</span></p>
+  }
+  return (
+    <p className="text-2xl">
+      {MOOD_EMOJIS[answer]} <span className="text-sm text-gray-600">{MOOD_LABELS[answer]}</span>
+    </p>
+  )
+}
+
 function getActivityIcon(type) {
   switch (type) {
     case 'journal': return BookOpen
     case 'reflection': return Lightbulb
     case 'reading': return BookMarked
+    case 'cognitive_record': return Brain
     default: return BookOpen
   }
 }
 
 function ScaleInput({ question, value, onChange }) {
   const config = question.config || {}
-  const min = config.min || 1
-  const max = config.max || 5
+  const min = config.min ?? 1
+  const max = config.max ?? 5
+  const wide = isWideScale(question)
   const labels = config.labels || []
-  const emojis = config.emojis || MOOD_EMOJIS.slice(min, max + 1)
+  const emojis = wide ? [] : (config.emojis || MOOD_EMOJIS.slice(min, max + 1))
+  const anchors = config.anchors || {}
 
   const options = []
   for (let i = min; i <= max; i++) {
@@ -40,11 +65,28 @@ function ScaleInput({ question, value, onChange }) {
         {question.text}
         {question.required && <span className="text-rose-400 ml-1">*</span>}
       </label>
-      <div className="flex justify-between gap-2">
+      <div className={wide ? 'flex justify-between gap-1' : 'flex justify-between gap-2'}>
         {options.map((opt, idx) => {
           const selected = value === opt
           const emoji = emojis[idx] || ''
           const label = labels[idx] || ''
+
+          if (wide) {
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => onChange(opt)}
+                className={`flex-1 flex items-center justify-center min-w-0 h-10 rounded-lg border-2 text-sm font-semibold transition-all ${
+                  selected
+                    ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm scale-105'
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-200 hover:bg-indigo-50/30'
+                }`}
+              >
+                {opt}
+              </button>
+            )
+          }
 
           return (
             <button
@@ -67,6 +109,12 @@ function ScaleInput({ question, value, onChange }) {
           )
         })}
       </div>
+      {wide && (anchors.min || anchors.max) && (
+        <div className="flex justify-between text-[11px] text-gray-400 px-1">
+          <span>{anchors.min || min}</span>
+          <span>{anchors.max || max}</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -115,6 +163,8 @@ export default function ActivityFormPage() {
   const [pastEntries, setPastEntries] = useState([])
   const [showHistory, setShowHistory] = useState(false)
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [shareWithTherapist, setShareWithTherapist] = useState(false)
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false)
 
   useEffect(() => {
     if (!authService.isLoggedIn()) {
@@ -134,11 +184,15 @@ export default function ActivityFormPage() {
           })
         ])
 
-        if (activityRes.status === 'fulfilled') {
-          setActivity(activityRes.value?.activity)
+        const loadedActivity = activityRes.status === 'fulfilled' ? activityRes.value?.activity : null
+        if (loadedActivity) {
+          setActivity(loadedActivity)
         }
 
-        if (entriesRes.status === 'fulfilled') {
+        // As-needed activities (e.g., the CBT thought record) can be filled
+        // multiple times per day, so skip the "already done today" gate.
+        const isAsNeeded = loadedActivity?.frequency === 'as_needed'
+        if (entriesRes.status === 'fulfilled' && !isAsNeeded) {
           const entries = entriesRes.value?.entries || []
           if (entries.length > 0) {
             setExistingEntry(entries[0])
@@ -201,7 +255,8 @@ export default function ActivityFormPage() {
       await activityService.createEntry({
         activity_slug: slug,
         answers,
-        entry_date: new Date().toISOString().split('T')[0]
+        entry_date: new Date().toISOString().split('T')[0],
+        ...(shareWithTherapist ? { visibility: 'therapist' } : {})
       })
       setSubmitted(true)
     } catch (error) {
@@ -275,9 +330,7 @@ export default function ActivityFormPage() {
                             {question.text}
                           </p>
                           {question.type === 'scale' ? (
-                            <p className="text-lg">
-                              {MOOD_EMOJIS[answer]} <span className="text-xs text-gray-500">{MOOD_LABELS[answer]}</span>
-                            </p>
+                            renderScaleAnswer(question, answer)
                           ) : (
                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{answer}</p>
                           )}
@@ -358,9 +411,7 @@ export default function ActivityFormPage() {
                       {question.text}
                     </p>
                     {question.type === 'scale' ? (
-                      <p className="text-2xl">
-                        {MOOD_EMOJIS[answer]} <span className="text-sm text-gray-600">{MOOD_LABELS[answer]}</span>
-                      </p>
+                      renderScaleAnswer(question, answer)
                     ) : (
                       <p className="text-sm text-gray-700 whitespace-pre-wrap">{answer}</p>
                     )}
@@ -387,17 +438,33 @@ export default function ActivityFormPage() {
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
 
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
             <Icon className="h-5 w-5 text-indigo-700" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-800">{activity.title}</h1>
-            {activity.description && (
-              <p className="text-xs text-gray-400 mt-0.5">{activity.description}</p>
-            )}
-          </div>
+          <h1 className="text-xl font-bold text-gray-800">{activity.title}</h1>
         </div>
+
+        {activity.description && (
+          <div className="mb-6 rounded-xl bg-white/70 border border-indigo-100/70 px-4 py-3">
+            <p
+              className={`text-sm text-gray-600 ${descriptionExpanded ? 'whitespace-pre-line' : 'line-clamp-2'}`}
+            >
+              {activity.description}
+            </p>
+            <button
+              type="button"
+              onClick={() => setDescriptionExpanded(v => !v)}
+              className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+            >
+              {descriptionExpanded ? (
+                <>Ver menos <ChevronUp className="h-3 w-3" /></>
+              ) : (
+                <>Ver mais <ChevronDown className="h-3 w-3" /></>
+              )}
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <Card className="border-0 shadow-md bg-white/90 mb-6">
@@ -425,6 +492,30 @@ export default function ActivityFormPage() {
               })}
             </CardContent>
           </Card>
+
+          {activity.activity_type === 'cognitive_record' && (
+            <label className="flex items-start gap-3 mb-6 px-1 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={shareWithTherapist}
+                onChange={e => setShareWithTherapist(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="flex-1 text-sm text-gray-700">
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  {shareWithTherapist
+                    ? <Share2 className="h-3.5 w-3.5 text-indigo-600" />
+                    : <Lock className="h-3.5 w-3.5 text-gray-400" />}
+                  Compartilhar este registro com meu psicólogo
+                </span>
+                <span className="block text-xs text-gray-400 mt-0.5">
+                  {shareWithTherapist
+                    ? 'Seu psicólogo poderá ver este registro.'
+                    : 'Apenas você pode ver este registro.'}
+                </span>
+              </span>
+            </label>
+          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-center">

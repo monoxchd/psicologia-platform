@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge.jsx'
 import {
   LogOut, Calendar, Clock, Video, MapPin, ArrowRight,
   BookOpen, Lightbulb, BookMarked, CheckCircle2, Flame,
-  Loader2, Sparkles, ChevronRight, Sun, X, MessageCircle
+  Loader2, Sparkles, ChevronRight, Sun, X, MessageCircle,
+  Brain, LifeBuoy
 } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -39,6 +40,7 @@ function getActivityIcon(type) {
     case 'journal': return BookOpen
     case 'reflection': return Lightbulb
     case 'reading': return BookMarked
+    case 'cognitive_record': return Brain
     default: return BookOpen
   }
 }
@@ -191,6 +193,7 @@ export default function ClientDashboardPage() {
   const streak = stats?.current_streak || 0
   const moodTrend = stats?.mood_trend || []
   const dailyActivities = activities.filter(a => a.frequency === 'daily')
+  const asNeededActivities = activities.filter(a => a.frequency === 'as_needed')
 
   const isActivityDoneToday = (slug) =>
     todayEntries.some(e => e.activity_slug === slug)
@@ -505,7 +508,7 @@ export default function ClientDashboardPage() {
                             Humor: {MOOD_EMOJIS[moodEntry.mood_score]} {['', 'Muito mal', 'Mal', 'Neutro', 'Bem', 'Muito bem'][moodEntry.mood_score]}
                           </p>
                         ) : !done ? (
-                          <p className="text-xs text-gray-400 mt-0.5">{activity.description}</p>
+                          <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{activity.description}</p>
                         ) : (
                           <p className="text-xs text-emerald-600 mt-0.5">Concluído</p>
                         )}
@@ -529,6 +532,47 @@ export default function ClientDashboardPage() {
             )}
           </div>
         </div>
+
+        {/* As-needed activities — tools to use when you need them, not daily habits */}
+        {asNeededActivities.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div>
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <LifeBuoy className="h-5 w-5 text-emerald-500" />
+                  Quando precisar
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">Ferramentas para momentos de emoção forte</p>
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              {asNeededActivities.map(activity => {
+                const Icon = getActivityIcon(activity.activity_type)
+                return (
+                  <Card
+                    key={activity.slug}
+                    className="border-0 shadow-sm bg-white/90 hover:shadow-md hover:ring-1 hover:ring-emerald-200/60 active:scale-[0.99] transition-all cursor-pointer"
+                    onClick={() => navigate(`/atividades/${activity.slug}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-100/80">
+                          <Icon className="h-5 w-5 text-emerald-700" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-gray-800">{activity.title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{activity.description}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Mood Chart */}
         <Card className="border-0 shadow-md bg-white/90 backdrop-blur-sm">

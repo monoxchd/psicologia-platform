@@ -12,11 +12,13 @@ const activityService = {
   },
 
   async createEntry(data) {
-    const response = await apiService.post('/activity_entries', {
+    const payload = {
       activity_slug: data.activity_slug,
       answers: data.answers,
       entry_date: data.entry_date
-    })
+    }
+    if (data.visibility) payload.visibility = data.visibility
+    const response = await apiService.post('/activity_entries', payload)
     return response.data
   },
 
