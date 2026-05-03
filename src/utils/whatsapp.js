@@ -23,3 +23,16 @@ export function buildWhatsAppUrl({ message } = {}) {
 export function openWhatsApp({ message } = {}) {
   window.open(buildWhatsAppUrl({ message }), '_blank')
 }
+
+// Build a wa.me URL pointing to a specific phone (not the central number).
+// Strips non-digits and prepends '55' (Brazil) if missing. Returns null if
+// the phone doesn't have enough digits to be a real number.
+export function buildWhatsAppUrlForPhone(phone, message) {
+  if (!phone) return null
+  const digits = String(phone).replace(/\D/g, '')
+  if (digits.length < 10) return null
+  const withCountry = digits.startsWith('55') ? digits : `55${digits}`
+  const base = `https://wa.me/${withCountry}`
+  if (!message) return base
+  return `${base}?text=${encodeURIComponent(message)}`
+}

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Building2, Users, UserCog, Plus, Search, Edit, Power, Loader2,
-  Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye, Briefcase, ClipboardList, Tag as TagIcon
+  Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye, Briefcase, ClipboardList, Tag as TagIcon,
+  Calendar, MessageCircle, Phone
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
@@ -30,6 +31,7 @@ import {
 import authService from '@/services/authService.js'
 import adminService from '@/services/adminService.js'
 import { formatCep } from '@/utils/cep'
+import { buildWhatsAppUrlForPhone } from '@/utils/whatsapp'
 
 const ADMIN_EMAIL = 'dneves.junior@gmail.com'
 
@@ -94,6 +96,10 @@ export default function AdminPage() {
               <Mail className="h-4 w-4" />
               Leads
             </TabsTrigger>
+            <TabsTrigger value="appointments" className="gap-1.5">
+              <Calendar className="h-4 w-4" />
+              Agendamentos
+            </TabsTrigger>
             <TabsTrigger value="services" className="gap-1.5">
               <Briefcase className="h-4 w-4" />
               Serviços
@@ -119,6 +125,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="leads">
             <LeadsTab />
+          </TabsContent>
+          <TabsContent value="appointments">
+            <AppointmentsTab />
           </TabsContent>
           <TabsContent value="services">
             <ServicesTab />
@@ -2799,5 +2808,248 @@ function ThemeFormDialog({ open, onOpenChange, theme, onSave }) {
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// =============================================================================
+// AppointmentsTab — operational view of all bookings, with WhatsApp confirmation
+// =============================================================================
+
+const APPOINTMENT_STATUS_OPTIONS = [
+  { value: 'pending_confirmation', label: 'Pendente' },
+  { value: 'confirmed',            label: 'Confirmado' },
+  { value: 'completed',            label: 'Realizado' },
+  { value: 'cancelled',            label: 'Cancelado' },
+  { value: 'no_show',              label: 'Não compareceu' },
+]
+
+const APPOINTMENT_STATUS_LABEL = Object.fromEntries(
+  APPOINTMENT_STATUS_OPTIONS.map(o => [o.value, o.label])
+)
+
+const APPOINTMENT_STATUS_BADGE = {
+  pending_confirmation: 'bg-amber-100 text-amber-800 border-amber-200',
+  confirmed:            'bg-emerald-100 text-emerald-800 border-emerald-200',
+  completed:            'bg-blue-100 text-blue-800 border-blue-200',
+  cancelled:            'bg-gray-100 text-gray-600 border-gray-200',
+  no_show:              'bg-rose-100 text-rose-800 border-rose-200',
+}
+
+const APPOINTMENT_SCOPES = [
+  { value: 'upcoming', label: 'Próximos' },
+  { value: 'today',    label: 'Hoje' },
+  { value: 'past',     label: 'Passados' },
+  { value: 'all',      label: 'Todos' },
+]
+
+function formatScheduledAt(iso) {
+  if (!iso) return { date: '', time: '', weekday: '' }
+  const d = new Date(iso)
+  const date = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const weekday = d.toLocaleDateString('pt-BR', { weekday: 'short' })
+  return { date, time, weekday }
+}
+
+function buildConfirmationMessage(appointment) {
+  const clientFirstName = (appointment.client?.name || '').split(' ')[0]
+  const therapistName = appointment.therapist?.name || 'seu psicólogo'
+  const { date, time } = formatScheduledAt(appointment.scheduled_at)
+  return `Olá ${clientFirstName}, passando para confirmar nosso encontro em ${date} às ${time} com ${therapistName}. Tudo certo?`
+}
+
+function AppointmentsTab() {
+  const [appointments, setAppointments] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [scope, setScope] = useState('upcoming')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [search, setSearch] = useState('')
+  const [updatingId, setUpdatingId] = useState(null)
+
+  const load = async () => {
+    setLoading(true)
+    try {
+      const filters = { scope }
+      if (statusFilter !== 'all') filters.status = statusFilter
+      if (search.trim()) filters.q = search.trim()
+      const data = await adminService.getAppointments(filters)
+      setAppointments(Array.isArray(data) ? data : [])
+    } catch (err) {
+      toast.error(err?.errors?.[0] || 'Não foi possível carregar os agendamentos')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope, statusFilter])
+
+  const onSearchSubmit = (e) => {
+    e.preventDefault()
+    load()
+  }
+
+  const updateStatus = async (id, newStatus) => {
+    setUpdatingId(id)
+    try {
+      const updated = await adminService.updateAppointmentStatus(id, newStatus)
+      setAppointments(prev => prev.map(a => a.id === id ? updated : a))
+      toast.success('Status atualizado')
+    } catch (err) {
+      toast.error(err?.errors?.[0] || err?.error || 'Erro ao atualizar status')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  const openWhatsAppFor = (appointment) => {
+    const url = buildWhatsAppUrlForPhone(
+      appointment.client?.phone,
+      buildConfirmationMessage(appointment)
+    )
+    if (!url) {
+      toast.error('Cliente sem telefone cadastrado')
+      return
+    }
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Calendar className="h-5 w-5" />
+          Agendamentos
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={scope} onValueChange={setScope}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {APPOINTMENT_SCOPES.map(s => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos status</SelectItem>
+              {APPOINTMENT_STATUS_OPTIONS.map(s => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <form onSubmit={onSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[220px]">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar cliente por nome ou email..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Button type="submit" variant="outline" size="sm">Buscar</Button>
+          </form>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="text-center py-12 text-sm text-gray-500">
+            Nenhum agendamento encontrado.
+          </div>
+        ) : (
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Terapeuta</TableHead>
+                  <TableHead>Quando</TableHead>
+                  <TableHead>Serviço</TableHead>
+                  <TableHead className="text-right">Custo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {appointments.map(a => {
+                  const sched = formatScheduledAt(a.scheduled_at)
+                  const hasPhone = !!a.client?.phone
+                  return (
+                    <TableRow key={a.id}>
+                      <TableCell>
+                        <div className="font-medium text-gray-800">{a.client?.name || '—'}</div>
+                        <div className="text-xs text-gray-500 flex items-center gap-2">
+                          {a.client?.phone ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {a.client.phone}
+                            </span>
+                          ) : (
+                            <span className="text-rose-500">sem telefone</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{a.therapist?.name || '—'}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">
+                        <div className="font-medium">{sched.date} · {sched.time}</div>
+                        <div className="text-xs text-gray-500 capitalize">{sched.weekday}</div>
+                      </TableCell>
+                      <TableCell className="text-sm">{a.service?.name || <span className="text-gray-400">—</span>}</TableCell>
+                      <TableCell className="text-right text-sm tabular-nums">
+                        {a.cost > 0 ? `R$ ${Number(a.cost).toFixed(2)}` : <span className="text-gray-400">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={a.status}
+                          onValueChange={val => updateStatus(a.id, val)}
+                          disabled={updatingId === a.id}
+                        >
+                          <SelectTrigger className={`h-8 text-xs w-36 ${APPOINTMENT_STATUS_BADGE[a.status] || ''}`}>
+                            <SelectValue>{APPOINTMENT_STATUS_LABEL[a.status] || a.status}</SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {APPOINTMENT_STATUS_OPTIONS.map(s => (
+                              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!hasPhone}
+                          onClick={() => openWhatsAppFor(a)}
+                          className="gap-1.5"
+                          title={hasPhone ? 'Abrir WhatsApp com mensagem de confirmação' : 'Cliente sem telefone'}
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          WhatsApp
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

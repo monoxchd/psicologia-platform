@@ -192,6 +192,20 @@ class AdminService {
   async toggleQuestionnaireActive(id) {
     return api.request(`/admin/questionnaires/${id}/toggle_active`, { method: 'PATCH' })
   }
+
+  // Appointments
+  async getAppointments(filters = {}) {
+    const params = {}
+    if (filters.scope) params.scope = filters.scope
+    if (filters.status) params.status = filters.status
+    if (filters.therapist_id) params.therapist_id = filters.therapist_id
+    if (filters.q) params.q = filters.q
+    return api.get('/admin/appointments', params)
+  }
+
+  async updateAppointmentStatus(id, status) {
+    return api.put(`/admin/appointments/${id}`, { appointment: { status } })
+  }
 }
 
 export default new AdminService()
