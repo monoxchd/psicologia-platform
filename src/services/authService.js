@@ -78,6 +78,20 @@ class AuthService {
     }
   }
 
+  async changePassword(currentPassword, newPassword, confirmPassword) {
+    try {
+      const response = await apiService.put('/auth/change-password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      })
+      return { success: true, message: response.message }
+    } catch (error) {
+      const message = error.errors?.filter(Boolean).join(', ') || error.message || 'Falha ao alterar senha'
+      return { success: false, error: message }
+    }
+  }
+
   logout() {
     apiService.setAuthToken(null)
     this.user = null

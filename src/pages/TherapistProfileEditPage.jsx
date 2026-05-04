@@ -15,7 +15,8 @@ import {
   Award,
   Camera,
   Trash2,
-  Heart
+  Heart,
+  Lock
 } from 'lucide-react'
 import authService from '../services/authService'
 import apiService from '../services/api'
@@ -38,6 +39,12 @@ const TherapistProfileEditPage = () => {
     personal_site_url: '',
     acolhimento_quote: ''
   })
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: ''
+  })
+  const [changingPassword, setChangingPassword] = useState(false)
 
   useEffect(() => {
     loadUserData()
@@ -164,6 +171,49 @@ const TherapistProfileEditPage = () => {
       toast.error(errorMessage)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target
+    setPasswordData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password) {
+      toast.error('Preencha todos os campos de senha')
+      return
+    }
+    if (passwordData.new_password.length < 6) {
+      toast.error('A nova senha deve ter pelo menos 6 caracteres')
+      return
+    }
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      toast.error('A confirmação não coincide com a nova senha')
+      return
+    }
+
+    try {
+      setChangingPassword(true)
+      const result = await authService.changePassword(
+        passwordData.current_password,
+        passwordData.new_password,
+        passwordData.confirm_password
+      )
+
+      if (result.success) {
+        toast.success('Senha alterada com sucesso!')
+        setPasswordData({ current_password: '', new_password: '', confirm_password: '' })
+      } else {
+        toast.error(result.error)
+      }
+    } catch (error) {
+      console.error('Error changing password:', error)
+      toast.error('Erro ao alterar senha')
+    } finally {
+      setChangingPassword(false)
     }
   }
 
@@ -431,6 +481,72 @@ const TherapistProfileEditPage = () => {
               )}
             </Button>
           </div>
+        </form>
+
+        {/* Security Card */}
+        <form onSubmit={handlePasswordSubmit} className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Segurança
+              </CardTitle>
+              <CardDescription>
+                Altere sua senha de acesso
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="current_password">Senha atual</Label>
+                <Input
+                  id="current_password"
+                  name="current_password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={passwordData.current_password}
+                  onChange={handlePasswordChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="new_password">Nova senha</Label>
+                <Input
+                  id="new_password"
+                  name="new_password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={passwordData.new_password}
+                  onChange={handlePasswordChange}
+                />
+                <p className="text-sm text-gray-500 mt-1">Mínimo de 6 caracteres</p>
+              </div>
+              <div>
+                <Label htmlFor="confirm_password">Confirmar nova senha</Label>
+                <Input
+                  id="confirm_password"
+                  name="confirm_password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={passwordData.confirm_password}
+                  onChange={handlePasswordChange}
+                />
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={changingPassword}>
+                  {changingPassword ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Alterando...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4 mr-2" />
+                      Alterar Senha
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </form>
       </div>
     </div>

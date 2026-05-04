@@ -8,7 +8,7 @@ import {
   LogOut, Calendar, Clock, Video, MapPin, ArrowRight,
   BookOpen, Lightbulb, BookMarked, CheckCircle2, Flame,
   Loader2, Sparkles, ChevronRight, Sun, X, MessageCircle,
-  Brain, LifeBuoy
+  Brain, LifeBuoy, Settings, Lock
 } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -16,8 +16,12 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog.jsx'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog.jsx'
+import { Input } from '@/components/ui/input.jsx'
+import { Label } from '@/components/ui/label.jsx'
+import { toast } from 'sonner'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
@@ -84,6 +88,13 @@ export default function ClientDashboardPage() {
   const [articles, setArticles] = useState([])
   const [todayEntries, setTodayEntries] = useState([])
   const [readingStats, setReadingStats] = useState(() => gamificationService.getAllStats())
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: ''
+  })
+  const [changingPassword, setChangingPassword] = useState(false)
 
   useEffect(() => {
     if (!authService.isLoggedIn()) {
@@ -168,6 +179,50 @@ export default function ClientDashboardPage() {
     navigate('/login')
   }
 
+  const handlePasswordFieldChange = (e) => {
+    const { name, value } = e.target
+    setPasswordData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password) {
+      toast.error('Preencha todos os campos de senha')
+      return
+    }
+    if (passwordData.new_password.length < 6) {
+      toast.error('A nova senha deve ter pelo menos 6 caracteres')
+      return
+    }
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      toast.error('A confirmação não coincide com a nova senha')
+      return
+    }
+
+    try {
+      setChangingPassword(true)
+      const result = await authService.changePassword(
+        passwordData.current_password,
+        passwordData.new_password,
+        passwordData.confirm_password
+      )
+
+      if (result.success) {
+        toast.success('Senha alterada com sucesso!')
+        setPasswordData({ current_password: '', new_password: '', confirm_password: '' })
+        setPasswordDialogOpen(false)
+      } else {
+        toast.error(result.error)
+      }
+    } catch (error) {
+      console.error('Error changing password:', error)
+      toast.error('Erro ao alterar senha')
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50/80 via-slate-50/40 to-white">
@@ -239,15 +294,27 @@ export default function ClientDashboardPage() {
                 </h1>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-gray-500 hover:text-gray-700 hover:bg-white/50 mt-1"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline ml-1.5">Sair</span>
-            </Button>
+            <div className="flex items-center gap-1 mt-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPasswordDialogOpen(true)}
+                className="text-gray-500 hover:text-gray-700 hover:bg-white/50"
+                aria-label="Configurações"
+                title="Configurações"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-gray-500 hover:text-gray-700 hover:bg-white/50"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1.5">Sair</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -775,6 +842,79 @@ export default function ClientDashboardPage() {
       </div>
 
       <ClientBottomNav />
+
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Alterar senha
+            </DialogTitle>
+            <DialogDescription>
+              Atualize a senha que você usa para entrar na sua conta.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="current_password">Senha atual</Label>
+              <Input
+                id="current_password"
+                name="current_password"
+                type="password"
+                autoComplete="current-password"
+                value={passwordData.current_password}
+                onChange={handlePasswordFieldChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new_password">Nova senha</Label>
+              <Input
+                id="new_password"
+                name="new_password"
+                type="password"
+                autoComplete="new-password"
+                value={passwordData.new_password}
+                onChange={handlePasswordFieldChange}
+              />
+              <p className="text-sm text-gray-500 mt-1">Mínimo de 6 caracteres</p>
+            </div>
+            <div>
+              <Label htmlFor="confirm_password">Confirmar nova senha</Label>
+              <Input
+                id="confirm_password"
+                name="confirm_password"
+                type="password"
+                autoComplete="new-password"
+                value={passwordData.confirm_password}
+                onChange={handlePasswordFieldChange}
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPasswordDialogOpen(false)}
+                disabled={changingPassword}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={changingPassword}>
+                {changingPassword ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Alterando...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-4 w-4 mr-2" />
+                    Alterar Senha
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
