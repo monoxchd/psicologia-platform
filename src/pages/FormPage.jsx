@@ -165,7 +165,7 @@ export default function FormPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 notranslate" translate="no">
       <div className="max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

@@ -844,7 +844,7 @@ export default function ClientDashboardPage() {
       <ClientBottomNav />
 
       <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md notranslate" translate="no">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="h-5 w-5" />

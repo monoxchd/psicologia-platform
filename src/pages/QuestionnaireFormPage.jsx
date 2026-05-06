@@ -471,7 +471,7 @@ export default function QuestionnaireFormPage() {
     }
 
     return (
-      <div className="min-h-screen bg-gray-50" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
+      <div className="min-h-screen bg-gray-50 notranslate" translate="no" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
         <CompanyHeader company={company} slug={slug} />
         <div className="flex items-center justify-center py-16 px-4">
           <Card className="w-full max-w-md text-center">
@@ -507,7 +507,7 @@ export default function QuestionnaireFormPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
+      <div className="min-h-screen bg-gray-50 notranslate" translate="no" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
         <CompanyHeader company={company} slug={slug} />
 
         <div className="flex items-center justify-center py-16 px-4">
@@ -535,7 +535,7 @@ export default function QuestionnaireFormPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
+    <div className="min-h-screen bg-gray-50 notranslate" translate="no" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
       <CompanyHeader company={company} slug={slug} />
 
       <div className="max-w-2xl mx-auto py-8 px-4">

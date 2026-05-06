@@ -19,7 +19,7 @@ export default function SchedulingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-12 notranslate" translate="no">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <SchedulingSystem
           selectedTherapistId={therapistId}

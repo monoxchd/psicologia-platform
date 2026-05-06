@@ -429,7 +429,7 @@ export default function ActivityFormPage() {
 
   // Form view
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/80 via-slate-50/40 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50/80 via-slate-50/40 to-white notranslate" translate="no">
       <div className="max-w-lg mx-auto px-4 sm:px-6 pt-8 pb-24">
         <Link
           to="/dashboard"

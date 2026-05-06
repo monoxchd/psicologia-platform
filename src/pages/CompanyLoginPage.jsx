@@ -68,7 +68,7 @@ export default function CompanyLoginPage() {
   const primaryColor = company?.primary_color || '#4f46e5'
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 notranslate" translate="no">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

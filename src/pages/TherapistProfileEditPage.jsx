@@ -484,7 +484,7 @@ const TherapistProfileEditPage = () => {
         </form>
 
         {/* Security Card */}
-        <form onSubmit={handlePasswordSubmit} className="mt-6">
+        <form onSubmit={handlePasswordSubmit} className="mt-6 notranslate" translate="no">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
