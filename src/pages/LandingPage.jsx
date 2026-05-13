@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Heart, Clock, ShieldCheck, Users, ArrowRight, BookOpen, Filter, Calendar, MessageCircle, User, Menu } from 'lucide-react'
+import { Heart, Clock, ShieldCheck, Users, ArrowRight, BookOpen, Filter, Calendar, MessageCircle, User, Menu, LayoutDashboard } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet.jsx'
@@ -20,9 +20,15 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const [latestArticles, setLatestArticles] = useState([])
 
+  const isLoggedIn = authService.isLoggedIn()
+  const dashboardPath = authService.isTherapist() ? '/therapist/dashboard' : '/dashboard'
+  const accountLinkTo = isLoggedIn ? dashboardPath : '/login'
+  const accountLinkLabel = isLoggedIn ? 'Meu painel' : 'Login'
+  const AccountIcon = isLoggedIn ? LayoutDashboard : User
+
   const { isOpen: exitIntentOpen, close: closeExitIntent } = useExitIntent({
     storageKey: 'tc_exit_intent_landing',
-    enabled: !authService.isLoggedIn(),
+    enabled: !isLoggedIn,
     scrollThreshold: 0.7,
   })
 
@@ -59,9 +65,9 @@ export default function LandingPage() {
               <a href="#como-funciona" className="text-gray-600 hover:text-blue-600">Como Funciona</a>
               <a href="#terapeutas" className="text-gray-600 hover:text-blue-600">Terapeutas</a>
               <Link to="/blog" className="text-gray-600 hover:text-blue-600">Blog</Link>
-              <Link to="/login" className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600">
-                <User className="h-4 w-4" />
-                Login
+              <Link to={accountLinkTo} className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600">
+                <AccountIcon className="h-4 w-4" />
+                {accountLinkLabel}
               </Link>
             </div>
             <Sheet>
@@ -105,11 +111,11 @@ export default function LandingPage() {
                   </SheetClose>
                   <SheetClose asChild>
                     <Link
-                      to="/login"
+                      to={accountLinkTo}
                       className="py-3 px-2 text-gray-700 hover:text-blue-600 inline-flex items-center gap-2"
                     >
-                      <User className="h-4 w-4" />
-                      Login
+                      <AccountIcon className="h-4 w-4" />
+                      {accountLinkLabel}
                     </Link>
                   </SheetClose>
                 </nav>
