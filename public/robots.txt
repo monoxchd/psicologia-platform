@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /blog-admin
+Disallow: /dashboard
+Disallow: /scheduling
+Disallow: /confirmation
+Disallow: /matching
+Disallow: /therapist/
+Disallow: /atividades/
+Disallow: /enigma
+Disallow: /empresa/
+Disallow: /api/
+
+Sitemap: https://terapiaconecta.com.br/sitemap.xml

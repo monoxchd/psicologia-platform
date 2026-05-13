@@ -99,8 +99,8 @@ const BlogPage = () => {
   return (
     <div className={`min-h-screen bg-gray-50 ${isClient ? 'pb-20' : ''}`}>
       <SEOHead
-        title="Blog de Saúde Mental - MindCredits"
-        description="Artigos especializados sobre saúde mental escritos por terapeutas licenciados. Encontre insights e orientações profissionais."
+        title="Blog de Saúde Mental"
+        description="Artigos sobre saúde mental escritos por psicólogos licenciados. Insights, reflexões e orientações profissionais para o seu dia a dia."
         type="website"
       />
 

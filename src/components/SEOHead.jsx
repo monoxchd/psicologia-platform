@@ -1,50 +1,41 @@
-import { useEffect } from 'react'
+const SITE_NAME = 'Terapia Conecta'
+const SITE_URL = 'https://terapiaconecta.com.br'
+const DEFAULT_DESCRIPTION =
+  'Plataforma de atendimento psicológico online. Encontre o terapeuta certo para você, em poucos passos.'
 
-const SEOHead = ({ title, description, image, url, type = 'website' }) => {
-  useEffect(() => {
-    // Update document title
-    document.title = title
+const SEOHead = ({
+  title,
+  description = DEFAULT_DESCRIPTION,
+  image,
+  url,
+  type = 'website',
+  noindex = false,
+}) => {
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME
+  const canonical = url || (typeof window !== 'undefined' ? window.location.href.split('?')[0] : SITE_URL)
+  const ogImage = image || `${SITE_URL}/apple-touch-icon.png`
 
-    // Update meta tags
-    const metaTags = [
-      { name: 'description', content: description },
-      { property: 'og:title', content: title },
-      { property: 'og:description', content: description },
-      { property: 'og:type', content: type },
-      { property: 'og:url', content: url || window.location.href },
-      { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: title },
-      { name: 'twitter:description', content: description }
-    ]
+  return (
+    <>
+      <title>{fullTitle}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href={canonical} />
+      {noindex && <meta name="robots" content="noindex,nofollow" />}
 
-    if (image) {
-      metaTags.push(
-        { property: 'og:image', content: image },
-        { name: 'twitter:image', content: image }
-      )
-    }
+      <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={description} />
+      <meta property="og:type" content={type} />
+      <meta property="og:url" content={canonical} />
+      <meta property="og:image" content={ogImage} />
+      <meta property="og:locale" content="pt_BR" />
 
-    metaTags.forEach(({ name, property, content }) => {
-      const selector = name ? `meta[name="${name}"]` : `meta[property="${property}"]`
-      let meta = document.querySelector(selector)
-
-      if (!meta) {
-        meta = document.createElement('meta')
-        if (name) meta.name = name
-        if (property) meta.property = property
-        document.head.appendChild(meta)
-      }
-
-      meta.content = content
-    })
-
-    // Cleanup function to reset title when component unmounts
-    return () => {
-      document.title = 'MindCredits Platform'
-    }
-  }, [title, description, image, url, type])
-
-  return null
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={ogImage} />
+    </>
+  )
 }
 
 export default SEOHead

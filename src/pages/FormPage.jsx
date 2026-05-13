@@ -9,6 +9,7 @@ import { Loader2, CheckCircle, ArrowLeft } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import leadService from '../services/leadService'
+import SEOHead from '../components/SEOHead.jsx'
 import horizontalLogo from '../assets/horizontal-logo.png'
 
 function FieldError({ message }) {
@@ -166,6 +167,10 @@ export default function FormPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 notranslate" translate="no">
+      <SEOHead
+        title="Encontre o psicólogo certo para você"
+        description="Conte um pouco sobre o que você procura e te apresentamos psicólogos que combinam com a sua história. Atendimento humano, sem pressão."
+      />
       <div className="max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

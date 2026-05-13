@@ -9,6 +9,7 @@ import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
 import ExitIntentModal from '../components/ExitIntentModal.jsx'
 import WhatsAppButton from '../components/WhatsAppButton.jsx'
 import PrivacyStrip from '../components/PrivacyStrip.jsx'
+import SEOHead from '../components/SEOHead.jsx'
 import useExitIntent from '../hooks/useExitIntent.js'
 import authService from '../services/authService.js'
 import { blogService } from '../services/blogService.js'
@@ -39,6 +40,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      <SEOHead
+        title="O seu hub de atendimento psicológico"
+        description="Encontre o psicólogo certo para você em poucos passos. Atendimento online ou presencial, profissionais licenciados (CRP), filtros por abordagem, gênero e modalidade."
+      />
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

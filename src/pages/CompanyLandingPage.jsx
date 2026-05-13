@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.j
 import { ClipboardList, UserCheck, HeartHandshake, ArrowRight, Star, Loader2 } from 'lucide-react'
 import companyService from '@/services/companyService'
 import CompanyHeader from '@/components/CompanyHeader.jsx'
+import SEOHead from '@/components/SEOHead.jsx'
 
 export default function CompanyLandingPage() {
   const { slug } = useParams()
@@ -52,6 +53,11 @@ export default function CompanyLandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEOHead
+        title={`Programa de Saúde Mental ${company.name}`}
+        description={company.description || `Acesso ao programa de bem-estar e saúde mental da ${company.name}: atendimento psicológico online, prático e confidencial.`}
+        image={company.logo_url}
+      />
       <CompanyHeader company={company} slug={slug} />
 
       {/* Hero */}
