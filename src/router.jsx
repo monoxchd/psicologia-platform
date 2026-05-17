@@ -28,122 +28,128 @@ import CompanyAuthGate from './components/CompanyAuthGate.jsx'
 import EnigmaQuizPage from './pages/EnigmaQuizPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import TriagePage from './pages/TriagePage.jsx'
+import RouteTracker from './components/RouteTracker.jsx'
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <LandingPage />
-  },
-  {
-    path: "/dashboard",
-    element: <ClientDashboardPage />
-  },
-  {
-    path: "/atividades/:slug",
-    element: <ActivityFormPage />
-  },
-  {
-    path: "/form",
-    element: <FormPage />
-  },
-  {
-    path: "/matching",
-    element: <MatchingPage />
-  },
-  {
-    path: "/scheduling",
-    element: <SchedulingPage />
-  },
-  {
-    path: "/confirmation",
-    element: <ConfirmationPage />
-  },
-  {
-    path: "/login",
-    element: <LoginPage />
-  },
-{
-    path: "/blog",
-    element: <BlogPage />
-  },
-  {
-    path: "/blog/:slug",
-    element: <ArticlePage />
-  },
-  {
-    path: "/blog-admin",
-    element: <BlogAdminPage />
-  },
-  {
-    path: "/blog-admin/new",
-    element: <ArticleEditorPage />
-  },
-  {
-    path: "/blog-admin/:slug/edit",
-    element: <ArticleEditorPage />
-  },
-  {
-    path: "/therapist/dashboard",
-    element: <TherapistDashboardPage />
-  },
-  {
-    path: "/therapist/profile/edit",
-    element: <TherapistProfileEditPage />
-  },
-  {
-    path: "/acolhimento",
-    element: <AcolhimentoLandingPage />
-  },
-  {
-    path: "/acolhimento/:slug",
-    element: <AcolhimentoLandingPage />
-  },
-  {
-    path: "/empresa/:slug",
-    element: <CompanyLandingPage />
-  },
-  {
-    path: "/empresa/:slug/login",
-    element: <CompanyLoginPage />
-  },
-  {
-    path: "/empresa/:slug/cadastro",
-    element: <CompanyRegisterPage />
-  },
-  {
-    path: "/empresa/:slug/psicologos",
-    element: <CompanyAuthGate><CompanyMatchingPage /></CompanyAuthGate>
-  },
-  {
-    path: "/empresa/:slug/agendar/:therapistId",
-    element: <CompanyAuthGate><CompanySchedulingPage /></CompanyAuthGate>
-  },
-  {
-    path: "/empresa/:slug/rh",
-    element: <CompanyAuthGate><HrDashboardPage /></CompanyAuthGate>
-  },
-  {
-    path: "/empresa/:slug/questionario/:questionnaire_slug",
-    element: <QuestionnaireFormPage />
-  },
-  {
-    path: "/therapist/questionarios/:slug/respostas",
-    element: <QuestionnaireResponsesPage />
-  },
-  {
-    path: "/therapist/respostas/:id",
-    element: <QuestionnaireResponseDetailPage />
-  },
-  {
-    path: "/enigma",
-    element: <EnigmaQuizPage />
-  },
-  {
-    path: "/admin",
-    element: <AdminPage />
-  },
-  {
-    path: "/triagem",
-    element: <TriagePage />
+    element: <RouteTracker />,
+    children: [
+      {
+        path: "/",
+        element: <LandingPage />
+      },
+      {
+        path: "/dashboard",
+        element: <ClientDashboardPage />
+      },
+      {
+        path: "/atividades/:slug",
+        element: <ActivityFormPage />
+      },
+      {
+        path: "/form",
+        element: <FormPage />
+      },
+      {
+        path: "/matching",
+        element: <MatchingPage />
+      },
+      {
+        path: "/scheduling",
+        element: <SchedulingPage />
+      },
+      {
+        path: "/confirmation",
+        element: <ConfirmationPage />
+      },
+      {
+        path: "/login",
+        element: <LoginPage />
+      },
+      {
+        path: "/blog",
+        element: <BlogPage />
+      },
+      {
+        path: "/blog/:slug",
+        element: <ArticlePage />
+      },
+      {
+        path: "/blog-admin",
+        element: <BlogAdminPage />
+      },
+      {
+        path: "/blog-admin/new",
+        element: <ArticleEditorPage />
+      },
+      {
+        path: "/blog-admin/:slug/edit",
+        element: <ArticleEditorPage />
+      },
+      {
+        path: "/therapist/dashboard",
+        element: <TherapistDashboardPage />
+      },
+      {
+        path: "/therapist/profile/edit",
+        element: <TherapistProfileEditPage />
+      },
+      {
+        path: "/acolhimento",
+        element: <AcolhimentoLandingPage />
+      },
+      {
+        path: "/acolhimento/:slug",
+        element: <AcolhimentoLandingPage />
+      },
+      {
+        path: "/empresa/:slug",
+        element: <CompanyLandingPage />
+      },
+      {
+        path: "/empresa/:slug/login",
+        element: <CompanyLoginPage />
+      },
+      {
+        path: "/empresa/:slug/cadastro",
+        element: <CompanyRegisterPage />
+      },
+      {
+        path: "/empresa/:slug/psicologos",
+        element: <CompanyAuthGate><CompanyMatchingPage /></CompanyAuthGate>
+      },
+      {
+        path: "/empresa/:slug/agendar/:therapistId",
+        element: <CompanyAuthGate><CompanySchedulingPage /></CompanyAuthGate>
+      },
+      {
+        path: "/empresa/:slug/rh",
+        element: <CompanyAuthGate><HrDashboardPage /></CompanyAuthGate>
+      },
+      {
+        path: "/empresa/:slug/questionario/:questionnaire_slug",
+        element: <QuestionnaireFormPage />
+      },
+      {
+        path: "/therapist/questionarios/:slug/respostas",
+        element: <QuestionnaireResponsesPage />
+      },
+      {
+        path: "/therapist/respostas/:id",
+        element: <QuestionnaireResponseDetailPage />
+      },
+      {
+        path: "/enigma",
+        element: <EnigmaQuizPage />
+      },
+      {
+        path: "/admin",
+        element: <AdminPage />
+      },
+      {
+        path: "/triagem",
+        element: <TriagePage />
+      }
+    ]
   }
 ])

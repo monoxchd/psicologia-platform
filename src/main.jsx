@@ -6,6 +6,9 @@ import { Toaster } from '@/components/ui/sonner.jsx'
 import './index.css'
 import './App.css'
 import { router } from './router.jsx'
+import CookieConsent from './components/CookieConsent.jsx'
+import { readConsent, CONSENT_ACCEPTED } from './utils/cookieConsent.js'
+import { loadGA4 } from './services/googleAnalytics.js'
 
 // Sentry — only in production AND when DSN is configured. Quiet in dev.
 // PII is off by default to avoid capturing sensitive client data on a
@@ -44,6 +47,12 @@ if (import.meta.env.PROD) {
   document.head.appendChild(script)
 }
 
+// GA4 — loaded only when the user has already consented in a prior visit.
+// First-time visitors load GA4 from the CookieConsent banner after Aceitar.
+if (import.meta.env.PROD && readConsent() === CONSENT_ACCEPTED) {
+  loadGA4()
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Sentry.ErrorBoundary
@@ -57,6 +66,7 @@ createRoot(document.getElementById('root')).render(
       }
     >
       <RouterProvider router={router} />
+      <CookieConsent />
       <Toaster />
     </Sentry.ErrorBoundary>
   </StrictMode>,

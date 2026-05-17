@@ -8,7 +8,6 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle 
 import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
 import ExitIntentModal from '../components/ExitIntentModal.jsx'
 import WhatsAppButton from '../components/WhatsAppButton.jsx'
-import PrivacyStrip from '../components/PrivacyStrip.jsx'
 import SEOHead from '../components/SEOHead.jsx'
 import useExitIntent from '../hooks/useExitIntent.js'
 import authService from '../services/authService.js'
@@ -131,11 +130,11 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-bold text-gray-900 mb-6">
-                Encontre o psicólogo certo, com <span className="text-blue-600">privacidade</span> de verdade.
+                Encontre o psicólogo <span className="text-blue-600">certo</span> para você.
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                Sem anúncios baseados no seu sofrimento, sem rastreio invasivo.
-                Só cuidado profissional, no seu ritmo.
+                Suas sessões, anotações e registros de humor ficam entre você e seu psicólogo.
+                Cuidado profissional, no seu ritmo.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
@@ -160,7 +159,7 @@ export default function LandingPage() {
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
                 <div className="flex items-center">
                   <ShieldCheck className="h-4 w-4 mr-1 text-emerald-600" />
-                  100% privado
+                  Terapia confidencial
                 </div>
                 <div className="flex items-center">
                   <Users className="h-4 w-4 mr-1 text-blue-600" />
@@ -191,9 +190,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Privacy Strip */}
-      <PrivacyStrip />
 
       {/* How It Works */}
       <section id="como-funciona" className="py-20 bg-white">
