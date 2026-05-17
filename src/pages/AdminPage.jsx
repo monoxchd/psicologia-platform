@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import {
   Building2, Users, UserCog, Plus, Search, Edit, Power, Loader2,
   Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye, Briefcase, ClipboardList, Tag as TagIcon,
-  Calendar, MessageCircle, Phone
+  Calendar, MessageCircle, Phone, PlusCircle
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
@@ -30,6 +30,7 @@ import {
 
 import authService from '@/services/authService.js'
 import adminService from '@/services/adminService.js'
+import therapistService from '@/services/therapistService.js'
 import { formatCep } from '@/utils/cep'
 import { buildWhatsAppUrlForPhone } from '@/utils/whatsapp'
 
@@ -2865,6 +2866,7 @@ function AppointmentsTab() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -2919,12 +2921,23 @@ function AppointmentsTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Agendamentos
-        </CardTitle>
+        <div className="flex items-center justify-between gap-4">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Agendamentos
+          </CardTitle>
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+            <PlusCircle className="h-4 w-4" />
+            Novo agendamento
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        <CreateAppointmentDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          onCreated={() => { setCreateOpen(false); load() }}
+        />
         <div className="flex flex-wrap items-center gap-3">
           <Select value={scope} onValueChange={setScope}>
             <SelectTrigger className="w-40">
@@ -3051,5 +3064,221 @@ function AppointmentsTab() {
         )}
       </CardContent>
     </Card>
+  )
+}
+
+function CreateAppointmentDialog({ open, onOpenChange, onCreated }) {
+  const [therapists, setTherapists] = useState([])
+  const [clients, setClients] = useState([])
+  const [services, setServices] = useState([])
+  const [loadingLists, setLoadingLists] = useState(false)
+  const [loadingServices, setLoadingServices] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+
+  const [therapistId, setTherapistId] = useState('')
+  const [clientId, setClientId] = useState('')
+  const [serviceId, setServiceId] = useState('')
+  const [date, setDate] = useState('')
+  const [time, setTime] = useState('')
+  const [duration, setDuration] = useState(50)
+  const [mode, setMode] = useState('online')
+  const [status, setStatus] = useState('confirmed')
+  const [notes, setNotes] = useState('')
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (!open) return
+    setTherapistId(''); setClientId(''); setServiceId('')
+    setDate(''); setTime(''); setDuration(50); setMode('online'); setStatus('confirmed'); setNotes('')
+    setServices([])
+    setLoadingLists(true)
+    Promise.all([adminService.getTherapists(), adminService.getClients()])
+      .then(([ts, cs]) => {
+        setTherapists(Array.isArray(ts) ? ts : (ts?.therapists || []))
+        setClients(Array.isArray(cs) ? cs : (cs?.clients || []))
+      })
+      .catch(() => toast.error('Erro ao carregar terapeutas e clientes'))
+      .finally(() => setLoadingLists(false))
+  }, [open])
+
+  // Load services when therapist changes
+  useEffect(() => {
+    if (!therapistId) { setServices([]); setServiceId(''); return }
+    setLoadingServices(true)
+    therapistService.getTherapistServices(therapistId)
+      .then(list => setServices(Array.isArray(list) ? list : []))
+      .catch(() => { setServices([]); toast.error('Erro ao carregar serviços do terapeuta') })
+      .finally(() => setLoadingServices(false))
+    // Reset service selection when therapist changes
+    setServiceId('')
+  }, [therapistId])
+
+  // When a service is picked, sync the duration from the service
+  useEffect(() => {
+    if (!serviceId) return
+    const s = services.find(s => String(s.id) === String(serviceId))
+    if (s?.duration) setDuration(s.duration)
+  }, [serviceId, services])
+
+  const canSubmit = therapistId && clientId && date && time && duration > 0 && !submitting
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!canSubmit) return
+    setSubmitting(true)
+    try {
+      const scheduledAt = `${date}T${time}`
+      const payload = {
+        therapist_id: Number(therapistId),
+        client_id:    Number(clientId),
+        scheduled_at: scheduledAt,
+        duration:     Number(duration),
+        mode,
+        status,
+        notes: notes.trim() || null,
+      }
+      if (serviceId) payload.service_id = Number(serviceId)
+      await adminService.createAppointment(payload)
+      toast.success('Agendamento criado')
+      onCreated?.()
+    } catch (err) {
+      toast.error(err?.errors?.[0] || err?.error || 'Erro ao criar agendamento')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Novo agendamento</DialogTitle>
+          <DialogDescription>
+            Criar um agendamento manualmente. As regras de disponibilidade do terapeuta são ignoradas, mas conflitos diretos são bloqueados.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="appt-therapist">Terapeuta</Label>
+            <Select value={therapistId} onValueChange={setTherapistId} disabled={loadingLists}>
+              <SelectTrigger id="appt-therapist">
+                <SelectValue placeholder={loadingLists ? 'Carregando...' : 'Selecione um terapeuta'} />
+              </SelectTrigger>
+              <SelectContent>
+                {therapists.map(t => (
+                  <SelectItem key={t.id} value={String(t.id)}>
+                    {t.name} {t.email ? `· ${t.email}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="appt-client">Cliente</Label>
+            <Select value={clientId} onValueChange={setClientId} disabled={loadingLists}>
+              <SelectTrigger id="appt-client">
+                <SelectValue placeholder={loadingLists ? 'Carregando...' : 'Selecione um cliente'} />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map(c => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name} {c.email ? `· ${c.email}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="appt-date">Data</Label>
+              <Input id="appt-date" type="date" value={date} onChange={e => setDate(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="appt-time">Horário</Label>
+              <Input id="appt-time" type="time" value={time} onChange={e => setTime(e.target.value)} required />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="appt-duration">Duração (min)</Label>
+              <Input
+                id="appt-duration" type="number" min="10" max="180" step="5"
+                value={duration} onChange={e => setDuration(e.target.value)} required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="appt-mode">Modalidade</Label>
+              <Select value={mode} onValueChange={setMode}>
+                <SelectTrigger id="appt-mode"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="presential">Presencial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="appt-service">Serviço (opcional)</Label>
+            <Select
+              value={serviceId || 'none'}
+              onValueChange={val => setServiceId(val === 'none' ? '' : val)}
+              disabled={!therapistId || loadingServices}
+            >
+              <SelectTrigger id="appt-service">
+                <SelectValue placeholder={
+                  !therapistId ? 'Selecione um terapeuta primeiro'
+                  : loadingServices ? 'Carregando...'
+                  : 'Sem serviço (custo R$ 0)'
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem serviço (custo R$ 0)</SelectItem>
+                {services.map(s => (
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.name} · {s.duration}min · R$ {Number(s.price).toFixed(2)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="appt-status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger id="appt-status"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {APPOINTMENT_STATUS_OPTIONS.map(s => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="appt-notes">Observações (opcional)</Label>
+            <Textarea
+              id="appt-notes" rows={3} value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Notas internas, link da sessão, etc."
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!canSubmit}>
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Criar agendamento
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

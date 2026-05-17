@@ -15,6 +15,10 @@ const appointmentService = {
 
   async reschedule(id, date, time) {
     return api.put(`/appointments/${id}/reschedule`, { date, time })
+  },
+
+  async getTherapistAppointments() {
+    return api.get('/appointments/for_therapist')
   }
 }
 

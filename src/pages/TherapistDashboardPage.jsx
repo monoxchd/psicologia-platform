@@ -4,22 +4,57 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription
+} from '../components/ui/dialog'
+import {
   FileText,
   PlusCircle,
   User,
   Star,
   Eye,
   Calendar,
+  CalendarDays,
   Edit,
   LogOut,
   ClipboardList,
   Clock,
-  Loader2
+  Loader2,
+  Phone,
+  Mail,
+  Sun
 } from 'lucide-react'
 import AvailabilityGrid from '../components/AvailabilityGrid'
 import authService from '../services/authService'
+import appointmentService from '../services/appointmentService'
 import { blogService } from '../services/blogService'
 import horizontalLogo from '../assets/horizontal-logo.png'
+
+const APPOINTMENT_STATUS_LABEL = {
+  pending_confirmation: 'Pendente',
+  confirmed:            'Confirmado',
+  completed:            'Realizado',
+  cancelled:            'Cancelado',
+  no_show:              'Não compareceu',
+}
+
+const APPOINTMENT_STATUS_BADGE = {
+  pending_confirmation: 'bg-amber-100 text-amber-800 border-amber-200',
+  confirmed:            'bg-emerald-100 text-emerald-800 border-emerald-200',
+  completed:            'bg-blue-100 text-blue-800 border-blue-200',
+  cancelled:            'bg-gray-100 text-gray-600 border-gray-200',
+  no_show:              'bg-rose-100 text-rose-800 border-rose-200',
+}
+
+function formatUpcomingDate(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
+}
+
+function formatTime(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
 
 const TherapistDashboardPage = () => {
   const navigate = useNavigate()
@@ -31,6 +66,8 @@ const TherapistDashboardPage = () => {
     draftArticles: 0,
     totalViews: 0
   })
+  const [todayAppointments, setTodayAppointments] = useState([])
+  const [upcomingAppointments, setUpcomingAppointments] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -52,6 +89,14 @@ const TherapistDashboardPage = () => {
         return
       }
       setUser(currentUser)
+
+      // Fetch appointments (fire-and-forget — don't block dashboard if it fails)
+      appointmentService.getTherapistAppointments()
+        .then(res => {
+          setTodayAppointments(res?.today || [])
+          setUpcomingAppointments(res?.upcoming || [])
+        })
+        .catch(err => console.error('Error loading appointments:', err))
 
       // Get therapist's articles
       const token = localStorage.getItem('auth_token')
@@ -184,6 +229,12 @@ const TherapistDashboardPage = () => {
           </Card>
 
         </div>
+
+        {/* Appointments — Today highlighted + upcoming */}
+        <AppointmentsSection
+          todayAppointments={todayAppointments}
+          upcomingAppointments={upcomingAppointments}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -412,6 +463,158 @@ const TherapistDashboardPage = () => {
         </Card>
       </div>
     </div>
+  )
+}
+
+function AppointmentRow({ appointment, showDate = true }) {
+  const c = appointment.client
+  return (
+    <div className="flex items-center justify-between gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-semibold text-gray-900 truncate">{c?.name || 'Cliente'}</p>
+          <Badge
+            variant="outline"
+            className={`text-xs ${APPOINTMENT_STATUS_BADGE[appointment.status] || ''}`}
+          >
+            {APPOINTMENT_STATUS_LABEL[appointment.status] || appointment.status}
+          </Badge>
+        </div>
+        <div className="text-xs text-gray-500 mt-1 flex items-center gap-3 flex-wrap">
+          <span className="inline-flex items-center gap-1 capitalize">
+            <Clock className="h-3 w-3" />
+            {showDate ? `${formatUpcomingDate(appointment.scheduled_at)} · ` : ''}{formatTime(appointment.scheduled_at)}
+            {appointment.duration ? ` · ${appointment.duration}min` : ''}
+          </span>
+          {appointment.service?.name && (
+            <span className="truncate">{appointment.service.name}</span>
+          )}
+        </div>
+      </div>
+      <div className="hidden sm:flex flex-col items-end text-xs text-gray-500 gap-0.5">
+        {c?.phone && (
+          <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{c.phone}</span>
+        )}
+        {c?.email && (
+          <span className="inline-flex items-center gap-1 truncate max-w-[200px]" title={c.email}>
+            <Mail className="h-3 w-3" />{c.email}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function AppointmentsSection({ todayAppointments, upcomingAppointments }) {
+  const previewUpcoming = upcomingAppointments.slice(0, 5)
+  const hasMore = upcomingAppointments.length > previewUpcoming.length
+  const isEmpty = todayAppointments.length === 0 && upcomingAppointments.length === 0
+
+  return (
+    <Card className="mb-8">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Próximos Agendamentos
+            </CardTitle>
+            <CardDescription>
+              {todayAppointments.length > 0
+                ? `Você tem ${todayAppointments.length} ${todayAppointments.length === 1 ? 'sessão' : 'sessões'} hoje`
+                : 'Suas próximas sessões com pacientes'}
+            </CardDescription>
+          </div>
+          {upcomingAppointments.length > 0 && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  Ver todos ({upcomingAppointments.length + todayAppointments.length})
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Todos os agendamentos</DialogTitle>
+                  <DialogDescription>
+                    Suas sessões confirmadas e pendentes de confirmação
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {todayAppointments.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-2 flex items-center gap-1.5">
+                        <Sun className="h-3.5 w-3.5" />
+                        Hoje
+                      </h4>
+                      <div className="space-y-2">
+                        {todayAppointments.map(a => (
+                          <AppointmentRow key={a.id} appointment={a} showDate={false} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {upcomingAppointments.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
+                        Próximos
+                      </h4>
+                      <div className="space-y-2">
+                        {upcomingAppointments.map(a => (
+                          <AppointmentRow key={a.id} appointment={a} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isEmpty ? (
+          <div className="text-center py-8 text-sm text-gray-500">
+            <CalendarDays className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+            Você não tem agendamentos no momento.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {todayAppointments.length > 0 && (
+              <div className="rounded-lg border-2 border-amber-200 bg-amber-50/40 p-4">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-3 flex items-center gap-1.5">
+                  <Sun className="h-3.5 w-3.5" />
+                  Hoje
+                </h4>
+                <div className="space-y-2">
+                  {todayAppointments.map(a => (
+                    <AppointmentRow key={a.id} appointment={a} showDate={false} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {previewUpcoming.length > 0 && (
+              <div>
+                {todayAppointments.length > 0 && (
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
+                    Próximos
+                  </h4>
+                )}
+                <div className="space-y-2">
+                  {previewUpcoming.map(a => (
+                    <AppointmentRow key={a.id} appointment={a} />
+                  ))}
+                </div>
+                {hasMore && (
+                  <p className="text-xs text-gray-400 text-center mt-3">
+                    + {upcomingAppointments.length - previewUpcoming.length} mais — clique em "Ver todos"
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

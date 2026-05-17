@@ -206,6 +206,10 @@ class AdminService {
   async updateAppointmentStatus(id, status) {
     return api.put(`/admin/appointments/${id}`, { appointment: { status } })
   }
+
+  async createAppointment(data) {
+    return api.post('/admin/appointments', { appointment: data })
+  }
 }
 
 export default new AdminService()

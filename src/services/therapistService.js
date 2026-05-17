@@ -46,6 +46,15 @@ class TherapistService {
     }
   }
 
+  async getTherapistServices(id) {
+    try {
+      return await api.get(`/therapists/${id}/services`);
+    } catch (error) {
+      console.error(`Failed to fetch services for therapist ${id}:`, error);
+      throw error;
+    }
+  }
+
   async getHighlyRatedTherapists() {
     return this.getAllTherapists({ highly_rated: 'true' });
   }
