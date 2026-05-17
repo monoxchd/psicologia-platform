@@ -2843,12 +2843,14 @@ const APPOINTMENT_SCOPES = [
   { value: 'all',      label: 'Todos' },
 ]
 
+const BR_TZ = 'America/Sao_Paulo'
+
 function formatScheduledAt(iso) {
   if (!iso) return { date: '', time: '', weekday: '' }
   const d = new Date(iso)
-  const date = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  const weekday = d.toLocaleDateString('pt-BR', { weekday: 'short' })
+  const date = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: BR_TZ })
+  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: BR_TZ })
+  const weekday = d.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: BR_TZ })
   return { date, time, weekday }
 }
 

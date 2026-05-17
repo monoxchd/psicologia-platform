@@ -45,15 +45,17 @@ const APPOINTMENT_STATUS_BADGE = {
   no_show:              'bg-rose-100 text-rose-800 border-rose-200',
 }
 
+const BR_TZ = 'America/Sao_Paulo'
+
 function formatUpcomingDate(iso) {
   if (!iso) return ''
   const d = new Date(iso)
-  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
+  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', timeZone: BR_TZ })
 }
 
 function formatTime(iso) {
   if (!iso) return ''
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: BR_TZ })
 }
 
 const TherapistDashboardPage = () => {
