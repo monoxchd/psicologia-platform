@@ -39,10 +39,15 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
-        // Create error with backend validation errors
-        const error = new Error(`API Error: ${response.status} ${response.statusText}`);
+        // Prefer the backend's message (always Portuguese, user-facing) on
+        // error.message so any caller that uses err.message still shows a
+        // friendly string instead of "API Error: 401 Unauthorized".
+        const backendMessage = data.error
+          || (Array.isArray(data.errors) ? data.errors.filter(Boolean).join(', ') : null)
+          || 'Não foi possível concluir a operação. Tente novamente.';
+        const error = new Error(backendMessage);
         error.status = response.status;
-        error.errors = data.errors || [data.error]; // Backend errors array
+        error.errors = data.errors || (data.error ? [data.error] : []);
         throw error;
       }
 

@@ -21,12 +21,12 @@ class AuthService {
         return { success: true, user: response.user }
       }
 
-      return { success: false, error: 'Login failed' }
+      return { success: false, error: 'Falha no login. Por favor, tente novamente.' }
     } catch (error) {
       console.error('Login error:', error)
       return {
         success: false,
-        error: error.message || 'Login failed'
+        error: error.errors?.[0] || error.message || 'Falha no login. Por favor, tente novamente.'
       }
     }
   }
@@ -45,12 +45,12 @@ class AuthService {
         return { success: true, user: response.user }
       }
 
-      return { success: false, error: 'Registration failed' }
+      return { success: false, error: 'Não foi possível concluir o cadastro. Tente novamente.' }
     } catch (error) {
       console.error('Registration error:', error)
       return {
         success: false,
-        error: error.errors ? error.errors.join(', ') : (error.message || 'Registration failed'),
+        error: error.errors?.length ? error.errors.join(', ') : (error.message || 'Não foi possível concluir o cadastro. Tente novamente.'),
         errors: error.errors // Pass through backend validation errors
       }
     }

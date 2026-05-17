@@ -428,23 +428,6 @@ const TherapistDashboardPage = () => {
                 </Link>
               </CardContent>
             </Card>
-
-            {/* Help Card */}
-            <Card className="bg-indigo-50 border-indigo-200">
-              <CardHeader>
-                <CardTitle className="text-indigo-900">Precisa de Ajuda?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-indigo-800 mb-4">
-                  Confira nosso guia para terapeutas e aprenda a criar artigos impactantes.
-                </p>
-                <Link to="/blog">
-                  <Button variant="outline" className="w-full">
-                    Ver Blog
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
           </div>
         </div>
 
