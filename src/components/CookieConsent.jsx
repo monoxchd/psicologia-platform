@@ -22,31 +22,24 @@ export default function CookieConsent() {
       role="dialog"
       aria-live="polite"
       aria-label="Aviso de cookies"
-      className="fixed bottom-4 left-4 right-4 sm:right-auto sm:left-4 sm:max-w-md z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-5"
+      className="fixed bottom-4 left-4 right-4 sm:right-auto sm:left-4 sm:max-w-[260px] z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-3"
     >
-      <h2 className="text-base font-semibold text-gray-900 mb-2">
-        Cookies e medição
-      </h2>
-      <p className="text-sm text-gray-600 leading-relaxed mb-4">
-        Usamos cookies para entender como você chegou até a gente e melhorar a experiência no site.
-        Sua jornada de terapia continua privada — sessões, anotações e registros de humor
-        ficam fora dessas medições.
+      <p className="text-xs text-gray-600 leading-snug mb-3">
+        Usamos cookies para medir como você chegou ao site. Sua terapia segue privada.
       </p>
-      <div className="flex flex-col-reverse sm:flex-row gap-2">
+      <div className="flex flex-col gap-2">
         <Button
-          variant="outline"
-          size="sm"
-          onClick={rejectNonEssential}
-          className="flex-1"
-        >
-          Apenas essenciais
-        </Button>
-        <Button
-          size="sm"
           onClick={accept}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+          className="h-11 bg-blue-600 hover:bg-blue-700 text-white"
         >
           Aceitar
+        </Button>
+        <Button
+          variant="outline"
+          onClick={rejectNonEssential}
+          className="h-11"
+        >
+          Apenas essenciais
         </Button>
       </div>
     </div>
