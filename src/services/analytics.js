@@ -1,14 +1,15 @@
 /**
- * Thin wrapper around Plausible and GA4 so pages never reach into
- * `window.plausible` or `window.gtag` directly. Plausible fires on all routes
- * (cookieless, no consent needed). GA4 only fires when (a) user consented and
- * (b) current route is part of the marketing surface — therapy product pages
- * are intentionally excluded.
+ * Thin wrapper around Plausible and GTM so pages never reach into
+ * `window.plausible` or `window.dataLayer` directly. Plausible fires on all
+ * routes (cookieless, no consent needed). GTM pushes only happen when
+ * (a) user consented and (b) current route is part of the marketing surface
+ * — therapy product pages are intentionally excluded.
  *
- * Plausible loads in `main.jsx` (production). GA4 loads lazily on consent.
+ * Plausible loads in `main.jsx` (production). GTM loads lazily on consent.
+ * Marketing manages GA4 + other tags inside the GTM container.
  */
 
-import { ga4Track, isGA4Loaded } from './googleAnalytics.js'
+import { gtmPush, isGTMLoaded } from './gtm.js'
 import { isMarketingRoute } from '../utils/marketingRoutes.js'
 
 /**
@@ -27,7 +28,7 @@ export function track(name, props) {
     }
   }
 
-  if (isGA4Loaded() && isMarketingRoute(window.location.pathname)) {
-    ga4Track(name, props)
+  if (isGTMLoaded() && isMarketingRoute(window.location.pathname)) {
+    gtmPush(name, props)
   }
 }

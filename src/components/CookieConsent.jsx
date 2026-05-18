@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button.jsx'
 import useCookieConsent from '../hooks/useCookieConsent.js'
-import { loadGA4, ga4Pageview } from '../services/googleAnalytics.js'
+import { loadGTM, gtmPageview } from '../services/gtm.js'
 import { isMarketingRoute } from '../utils/marketingRoutes.js'
 
 export default function CookieConsent() {
@@ -9,9 +9,9 @@ export default function CookieConsent() {
 
   useEffect(() => {
     if (consent !== 'accepted') return
-    loadGA4()
+    loadGTM()
     if (isMarketingRoute(window.location.pathname)) {
-      ga4Pageview(window.location.pathname + window.location.search)
+      gtmPageview(window.location.pathname + window.location.search)
     }
   }, [consent])
 
