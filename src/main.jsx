@@ -29,24 +29,6 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
   })
 }
 
-// Plausible Analytics — production only, keeps dev traffic out of stats.
-if (import.meta.env.PROD) {
-  // Queue shim so `window.plausible(...)` calls made before the script loads
-  // (e.g. during the first render) are captured and flushed on init.
-  window.plausible =
-    window.plausible ||
-    function () {
-      ;(window.plausible.q = window.plausible.q || []).push(arguments)
-    }
-  window.plausible.init = window.plausible.init || function (i) { window.plausible.o = i || {} }
-
-  const script = document.createElement('script')
-  script.defer = true
-  script.src = 'https://plausible.io/js/pa-8XfqnrqJTaIkaJvOh9KdR.js'
-  script.onload = () => window.plausible.init()
-  document.head.appendChild(script)
-}
-
 // GTM — loaded only when the user has already consented in a prior visit.
 // First-time visitors load GTM from the CookieConsent banner after Aceitar.
 // Marketing manages GA4 + other tags inside the GTM container.

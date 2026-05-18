@@ -25,24 +25,6 @@ export function loadGTM() {
   loaded = true
 }
 
-function normalizeEventName(name) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 40)
-}
-
-export function gtmPush(eventName, params) {
-  if (!loaded) return
-  const dataLayer = ensureDataLayer()
-  if (!dataLayer) return
-  dataLayer.push({
-    event: normalizeEventName(eventName),
-    ...(params || {}),
-  })
-}
-
 export function gtmPageview(path) {
   if (!loaded) return
   const dataLayer = ensureDataLayer()
