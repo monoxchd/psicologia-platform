@@ -8,9 +8,11 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle 
 import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
 import ExitIntentModal from '../components/ExitIntentModal.jsx'
 import WhatsAppButton from '../components/WhatsAppButton.jsx'
+import WhatsAppLeadModal from '../components/WhatsAppLeadModal.jsx'
 import SEOHead from '../components/SEOHead.jsx'
 import useExitIntent from '../hooks/useExitIntent.js'
 import authService from '../services/authService.js'
+import { track } from '../services/analytics.js'
 import { blogService } from '../services/blogService.js'
 import horizontalLogo from '../assets/horizontal-logo.png'
 import heroImage from '../assets/hero-image.jpg'
@@ -18,6 +20,7 @@ import heroImage from '../assets/hero-image.jpg'
 export default function LandingPage() {
   const navigate = useNavigate()
   const [latestArticles, setLatestArticles] = useState([])
+  const [heroWhatsAppOpen, setHeroWhatsAppOpen] = useState(false)
 
   const isLoggedIn = authService.isLoggedIn()
   const dashboardPath = authService.isTherapist() ? '/therapist/dashboard' : '/dashboard'
@@ -147,14 +150,22 @@ export default function LandingPage() {
                   Encontrar meu psicólogo
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <WhatsAppButton
-                  source="hero"
-                  label="Falar no WhatsApp"
-                  message="Oi, cheguei pelo site e queria conversar antes de marcar uma sessão."
-                  variant="outline"
+                <Button
                   size="lg"
+                  variant="outline"
                   className="px-8 py-4 text-lg"
-                />
+                  onClick={() => {
+                    track('WhatsApp Click', {
+                      source: 'hero',
+                      path: window.location.pathname,
+                      therapist: null,
+                    })
+                    setHeroWhatsAppOpen(true)
+                  }}
+                >
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  Falar no WhatsApp
+                </Button>
               </div>
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
                 <div className="flex items-center">
@@ -406,6 +417,13 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <WhatsAppLeadModal
+        open={heroWhatsAppOpen}
+        onOpenChange={setHeroWhatsAppOpen}
+        source="landing_hero_whatsapp"
+        whatsappMessage="Oi, cheguei pelo site e queria conversar antes de marcar uma sessão."
+      />
 
       {/* Exit-intent modal (desktop, non-logged-in users) */}
       <ExitIntentModal

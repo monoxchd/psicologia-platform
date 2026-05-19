@@ -51,7 +51,7 @@ function buildLeadNotes(therapist) {
   return parts.join(' · ')
 }
 
-export default function WhatsAppLeadModal({ open, onOpenChange, therapist, source = 'whatsapp_modal' }) {
+export default function WhatsAppLeadModal({ open, onOpenChange, therapist, source = 'whatsapp_modal', whatsappMessage }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '' })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -136,7 +136,7 @@ export default function WhatsAppLeadModal({ open, onOpenChange, therapist, sourc
         therapist: therapist?.name,
       })
     } finally {
-      openWhatsApp({ message: buildWhatsAppMessage(therapist) })
+      openWhatsApp({ message: whatsappMessage || buildWhatsAppMessage(therapist) })
       resetAndClose()
     }
   }
