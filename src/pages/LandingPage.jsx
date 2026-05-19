@@ -346,14 +346,15 @@ export default function LandingPage() {
           <p className="text-xl text-blue-100 mb-8">
             Junte-se a milhares de pessoas que já transformaram suas vidas com nossa plataforma flexível.
           </p>
-          <WhatsAppButton
-            source="cta_section"
-            label="Falar com um Especialista"
-            message="Oi, cheguei pelo site e gostaria de começar uma conversa sobre terapia."
-            variant="secondary"
+          <Button
             size="lg"
+            variant="secondary"
             className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg"
-          />
+            onClick={() => navigate('/form')}
+          >
+            <Clock className="mr-2 h-5 w-5" />
+            Agendar Sessão
+          </Button>
 
         </div>
       </section>
