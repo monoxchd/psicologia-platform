@@ -1,8 +1,8 @@
 import api from './api'
 
 const appointmentService = {
-  async createAppointment(data) {
-    return api.post('/appointments', { appointment: data })
+  async createAppointment(data, extras = {}) {
+    return api.post('/appointments', { appointment: data, ...extras })
   },
 
   async getUpcoming() {

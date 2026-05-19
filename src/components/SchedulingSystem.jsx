@@ -8,6 +8,7 @@ import apiService from '../services/api.js'
 import authService from '../services/authService.js'
 import therapistService from '../services/therapistService.js'
 import appointmentService from '../services/appointmentService.js'
+import paymentService from '../services/paymentService.js'
 
 const formatPrice = (price) => {
   return parseFloat(price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -31,6 +32,14 @@ export default function SchedulingSystem({
   const [bookingError, setBookingError] = useState(null)
   const [availability, setAvailability] = useState({})
   const [loadingAvailability, setLoadingAvailability] = useState(false)
+  const [cpfInput, setCpfInput] = useState('')
+  // Holds the appointment id between the first (create-appointment) and second
+  // (create-payment) backend calls so we can retry payment without
+  // double-booking the slot.
+  const [pendingAppointmentId, setPendingAppointmentId] = useState(null)
+
+  const currentUser = authService.getUser()
+  const needsCpf = !currentUser?.cpf
 
   useEffect(() => {
     if (!isLoggedIn) return
@@ -167,19 +176,60 @@ export default function SchedulingSystem({
     setStep('datetime')
   }
 
+  const isPaidBooking = parseFloat(selectedService?.price) > 0
+  const showCpfInput = isPaidBooking && needsCpf
+
+  const validateCpf = (raw) => {
+    const digits = (raw || '').replace(/\D/g, '')
+    return digits.length === 11 ? digits : null
+  }
+
   const handleSchedule = async () => {
     setBooking(true)
     setBookingError(null)
 
     try {
-      await appointmentService.createAppointment({
-        therapist_id: therapist.id,
-        scheduled_at: `${selectedDate} ${selectedTime}`,
-        duration: selectedService.duration,
-        mode: 'online',
-        service_id: selectedService.id,
-      })
+      // Retry-only branch: appointment already created on a previous attempt,
+      // just re-request payment to get a fresh invoiceUrl.
+      if (pendingAppointmentId) {
+        const payment = await paymentService.createPayment(pendingAppointmentId)
+        window.location.href = payment.invoice_url
+        return
+      }
 
+      let normalizedCpf = null
+      if (showCpfInput) {
+        normalizedCpf = validateCpf(cpfInput)
+        if (!normalizedCpf) {
+          setBookingError('Informe um CPF válido (11 dígitos).')
+          setBooking(false)
+          return
+        }
+      }
+
+      const appointmentResp = await appointmentService.createAppointment(
+        {
+          therapist_id: therapist.id,
+          scheduled_at: `${selectedDate} ${selectedTime}`,
+          duration: selectedService.duration,
+          mode: 'online',
+          service_id: selectedService.id,
+        },
+        normalizedCpf ? { cpf: normalizedCpf } : {}
+      )
+
+      const appt = appointmentResp.appointment
+      setPendingAppointmentId(appt.id)
+      if (normalizedCpf) authService.updateCachedUser({ cpf: normalizedCpf })
+
+      if (appt.status === 'pending_payment') {
+        const payment = await paymentService.createPayment(appt.id)
+        window.location.href = payment.invoice_url
+        return
+      }
+
+      // Free booking (B2B / zero-cost): hand back to the existing
+      // ConfirmationPage navigation.
       onScheduleComplete({
         therapist: therapist.name,
         therapistId: therapist.id,
@@ -192,7 +242,7 @@ export default function SchedulingSystem({
         bookingConfirmed: true,
       })
     } catch (error) {
-      const msg = error.errors?.[0] || 'Erro ao agendar sessão. Tente novamente.'
+      const msg = error.errors?.[0] || error.error || 'Erro ao agendar sessão. Tente novamente.'
       setBookingError(msg)
     } finally {
       setBooking(false)
@@ -448,15 +498,45 @@ export default function SchedulingSystem({
               </div>
             </div>
 
+            {showCpfInput && (
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-2">
+                <label htmlFor="scheduling-cpf" className="block text-sm font-medium text-amber-900">
+                  CPF (para emissão do pagamento)
+                </label>
+                <input
+                  id="scheduling-cpf"
+                  type="text"
+                  inputMode="numeric"
+                  value={cpfInput}
+                  onChange={(e) => setCpfInput(e.target.value)}
+                  placeholder="000.000.000-00"
+                  className="w-full border border-amber-300 rounded-md px-3 py-2 text-sm bg-white"
+                />
+                <p className="text-xs text-amber-700">
+                  Usado apenas para gerar a cobrança no Asaas (Pix, cartão ou boleto). Salvamos para que você não precise digitar de novo.
+                </p>
+              </div>
+            )}
+
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="flex items-start gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                 <div className="text-sm">
                   <p className="font-medium text-green-800">O que acontece agora:</p>
                   <ul className="mt-2 space-y-1 text-green-700">
-                    <li>Você receberá um email de confirmação</li>
-                    <li>Link da videochamada será enviado 15 min antes</li>
-                    <li>Você pode cancelar até 24h antes sem cobrança</li>
+                    {isPaidBooking ? (
+                      <>
+                        <li>Você será redirecionado para o checkout do Asaas para pagar (Pix, cartão ou boleto)</li>
+                        <li>Após o pagamento, a sessão é confirmada automaticamente</li>
+                        <li>Você pode cancelar até 24h antes da sessão com reembolso integral</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>Você receberá um email de confirmação</li>
+                        <li>Link da videochamada será enviado 15 min antes</li>
+                        <li>Você pode cancelar até 24h antes sem cobrança</li>
+                      </>
+                    )}
                   </ul>
                 </div>
               </div>
@@ -477,10 +557,12 @@ export default function SchedulingSystem({
               {booking ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Agendando...
+                  {isPaidBooking ? 'Redirecionando...' : 'Agendando...'}
                 </>
               ) : (
-                'Confirmar e Agendar'
+                pendingAppointmentId
+                  ? 'Tentar pagamento novamente'
+                  : (isPaidBooking ? 'Confirmar e Pagar' : 'Confirmar e Agendar')
               )}
             </Button>
           </div>

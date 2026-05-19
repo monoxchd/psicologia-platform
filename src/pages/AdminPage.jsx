@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import {
   Building2, Users, UserCog, Plus, Search, Edit, Power, Loader2,
   Shield, X, UserPlus, Upload, Trash2, Mail, MessageSquare, Eye, Briefcase, ClipboardList, Tag as TagIcon,
-  Calendar, MessageCircle, Phone, PlusCircle
+  Calendar, MessageCircle, Phone, PlusCircle, CreditCard
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button.jsx'
@@ -330,6 +330,7 @@ function TherapistsTab() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [toggleTarget, setToggleTarget] = useState(null)
+  const [asaasTarget, setAsaasTarget] = useState(null)
 
   const loadTherapists = async () => {
     try {
@@ -418,6 +419,7 @@ function TherapistsTab() {
                   <TableHead className="text-center">Empresas</TableHead>
                   <TableHead className="text-center">Acolhimento</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Asaas</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -434,6 +436,9 @@ function TherapistsTab() {
                     </TableCell>
                     <TableCell>
                       <ActiveBadge active={therapist.active} />
+                    </TableCell>
+                    <TableCell>
+                      <AsaasOnboardingCell therapist={therapist} onCreate={() => setAsaasTarget(therapist)} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
@@ -452,6 +457,16 @@ function TherapistsTab() {
           )}
         </CardContent>
       </Card>
+
+      <AsaasOnboardingDialog
+        therapist={asaasTarget}
+        open={!!asaasTarget}
+        onOpenChange={(open) => { if (!open) setAsaasTarget(null) }}
+        onSuccess={(updated) => {
+          setTherapists(prev => prev.map(t => t.id === updated.id ? updated : t))
+          setAsaasTarget(null)
+        }}
+      />
 
       <TherapistFormDialog
         open={dialogOpen}
@@ -942,6 +957,135 @@ function CompanyDetailDialog({ open, onOpenChange, company, onUpdate }) {
 
 // ─── Therapist Form Dialog ───────────────────────────────────
 
+function AsaasOnboardingCell({ therapist, onCreate }) {
+  if (therapist.asaas_wallet_id) {
+    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Ativo</Badge>
+  }
+  return (
+    <Button variant="outline" size="sm" onClick={onCreate}>
+      <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+      Criar conta
+    </Button>
+  )
+}
+
+function AsaasOnboardingDialog({ therapist, open, onOpenChange, onSuccess }) {
+  const [form, setForm] = useState({})
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        cpf_cnpj: '', mobile_phone: '', birth_date: '', income_value: '',
+        postal_code: '', address: '', address_number: '', complement: '',
+        province: '', phone: '',
+      })
+    }
+  }, [open])
+
+  if (!therapist) return null
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const required = ['cpf_cnpj', 'mobile_phone', 'income_value', 'postal_code', 'address', 'address_number', 'province']
+    for (const f of required) {
+      if (!form[f]?.toString().trim()) {
+        toast.error(`Campo obrigatório: ${f.replace('_', ' ')}`)
+        return
+      }
+    }
+
+    setSaving(true)
+    try {
+      const payload = { ...form, income_value: parseFloat(form.income_value) }
+      const updated = await adminService.createTherapistAsaasAccount(therapist.id, payload)
+      toast.success('Conta Asaas criada com sucesso')
+      onSuccess(updated)
+    } catch (err) {
+      const msg = err.errors?.join(', ') || err.error || 'Erro ao criar conta Asaas'
+      toast.error(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Criar conta Asaas — {therapist.name}</DialogTitle>
+          <DialogDescription>
+            Dados pessoais do terapeuta para criar a subconta de pagamento (PF). Nome e e-mail são tirados do cadastro.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="asaas-cpf">CPF *</Label>
+              <Input id="asaas-cpf" name="cpf_cnpj" value={form.cpf_cnpj || ''} onChange={handleChange} placeholder="000.000.000-00" />
+            </div>
+            <div>
+              <Label htmlFor="asaas-mobile">Celular *</Label>
+              <Input id="asaas-mobile" name="mobile_phone" value={form.mobile_phone || ''} onChange={handleChange} placeholder="11999999999" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="asaas-birth">Data de nascimento</Label>
+              <Input id="asaas-birth" name="birth_date" type="date" value={form.birth_date || ''} onChange={handleChange} />
+            </div>
+            <div>
+              <Label htmlFor="asaas-income">Renda mensal (R$) *</Label>
+              <Input id="asaas-income" name="income_value" type="number" min="0" step="0.01" value={form.income_value || ''} onChange={handleChange} placeholder="5000" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="asaas-cep">CEP *</Label>
+              <Input id="asaas-cep" name="postal_code" value={form.postal_code || ''} onChange={handleChange} placeholder="01310-100" />
+            </div>
+            <div>
+              <Label htmlFor="asaas-phone">Telefone fixo</Label>
+              <Input id="asaas-phone" name="phone" value={form.phone || ''} onChange={handleChange} placeholder="(opcional)" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="asaas-address">Endereço (logradouro) *</Label>
+            <Input id="asaas-address" name="address" value={form.address || ''} onChange={handleChange} placeholder="Av. Paulista" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="asaas-number">Número *</Label>
+              <Input id="asaas-number" name="address_number" value={form.address_number || ''} onChange={handleChange} placeholder="1000" />
+            </div>
+            <div>
+              <Label htmlFor="asaas-complement">Complemento</Label>
+              <Input id="asaas-complement" name="complement" value={form.complement || ''} onChange={handleChange} placeholder="Sala 502" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="asaas-province">Bairro *</Label>
+            <Input id="asaas-province" name="province" value={form.province || ''} onChange={handleChange} placeholder="Bela Vista" />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Criando...</> : 'Criar conta Asaas'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
   const [form, setForm] = useState({})
   const [saving, setSaving] = useState(false)
@@ -974,6 +1118,7 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
         calendly_url: therapist.calendly_url || '',
         acolhimento_price: therapist.acolhimento_price || '',
         acolhimento_quote: therapist.acolhimento_quote || '',
+        commission_percentage: therapist.commission_percentage ?? '',
         position: therapist.position ?? 0,
         gender: therapist.gender || '',
         pronouns: therapist.pronouns || '',
@@ -989,7 +1134,9 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
       } : {
         email: '', name: '', specialty: '', experience_years: '', bio: '',
         crp_number: '', personal_site_url: '', calendly_url: '',
-        acolhimento_price: '', acolhimento_quote: '', position: 0,
+        acolhimento_price: '', acolhimento_quote: '',
+        commission_percentage: 20,
+        position: 0,
         gender: '', pronouns: '',
         serves_children: false, serves_teens: false, serves_adults: true,
         offers_remote: true, offers_presencial: false,
@@ -1078,6 +1225,11 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
       if (data.experience_years) data.experience_years = parseInt(data.experience_years)
       if (data.acolhimento_price) data.acolhimento_price = parseFloat(data.acolhimento_price)
       if (!data.acolhimento_price) delete data.acolhimento_price
+      if (data.commission_percentage === '' || data.commission_percentage == null) {
+        delete data.commission_percentage
+      } else {
+        data.commission_percentage = parseFloat(data.commission_percentage)
+      }
       if (!data.password) { delete data.password; delete data.password_confirmation }
       if (!data.gender) delete data.gender
 
@@ -1165,6 +1317,14 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
             <div>
               <Label htmlFor="therapist-acolhimento-quote">Frase de Acolhimento</Label>
               <Textarea id="therapist-acolhimento-quote" name="acolhimento_quote" value={form.acolhimento_quote || ''} onChange={handleChange} rows={2} placeholder="Frase que aparece na página de acolhimento" />
+            </div>
+          </div>
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium mb-2">Pagamento</p>
+            <div>
+              <Label htmlFor="therapist-commission">Comissão da plataforma (%)</Label>
+              <Input id="therapist-commission" name="commission_percentage" type="number" min="0" max="99.99" step="0.01" value={form.commission_percentage ?? ''} onChange={handleChange} placeholder="Padrão: 20" />
+              <p className="text-xs text-gray-500 mt-1">Porcentagem que a TerapiaConecta retém de cada sessão paga (o restante vai para o terapeuta).</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -2817,11 +2977,13 @@ function ThemeFormDialog({ open, onOpenChange, theme, onSave }) {
 // =============================================================================
 
 const APPOINTMENT_STATUS_OPTIONS = [
+  { value: 'pending_payment',      label: 'Aguardando pagamento' },
   { value: 'pending_confirmation', label: 'Pendente' },
   { value: 'confirmed',            label: 'Confirmado' },
   { value: 'completed',            label: 'Realizado' },
   { value: 'cancelled',            label: 'Cancelado' },
   { value: 'no_show',              label: 'Não compareceu' },
+  { value: 'expired',              label: 'Expirado' },
 ]
 
 const APPOINTMENT_STATUS_LABEL = Object.fromEntries(
@@ -2829,11 +2991,13 @@ const APPOINTMENT_STATUS_LABEL = Object.fromEntries(
 )
 
 const APPOINTMENT_STATUS_BADGE = {
+  pending_payment:      'bg-orange-100 text-orange-800 border-orange-200',
   pending_confirmation: 'bg-amber-100 text-amber-800 border-amber-200',
   confirmed:            'bg-emerald-100 text-emerald-800 border-emerald-200',
   completed:            'bg-blue-100 text-blue-800 border-blue-200',
   cancelled:            'bg-gray-100 text-gray-600 border-gray-200',
   no_show:              'bg-rose-100 text-rose-800 border-rose-200',
+  expired:              'bg-gray-100 text-gray-500 border-gray-200',
 }
 
 const APPOINTMENT_SCOPES = [
