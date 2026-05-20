@@ -28,6 +28,7 @@ import {
 } from 'recharts'
 import authService from '../services/authService'
 import appointmentService from '../services/appointmentService'
+import { openWhatsApp, appendSourceTag } from '../utils/whatsapp'
 import activityService from '../services/activityService'
 import { blogService } from '../services/blogService'
 import gamificationService from '../services/gamificationService'
@@ -163,12 +164,26 @@ export default function ClientDashboardPage() {
     if (!nextAppointment?.id) return
     setCancelling(true)
     try {
-      await appointmentService.cancel(nextAppointment.id)
+      const resp = await appointmentService.cancel(nextAppointment.id)
       const remaining = allAppointments.filter(a => a.id !== nextAppointment.id)
       setAllAppointments(remaining)
       setNextAppointment(remaining[0] || null)
+      toast.success(resp?.message || 'Agendamento cancelado.')
     } catch (err) {
       console.error('Error cancelling:', err)
+      const description = err.errors?.[0] || err.message || 'Tente novamente em alguns minutos.'
+      toast.error('Não foi possível cancelar', {
+        description,
+        // Refund failures often need human help (e.g. boleto payments can't be
+        // refunded via API). Give the client a one-tap path to support.
+        action: {
+          label: 'Falar com suporte',
+          onClick: () => openWhatsApp({
+            message: appendSourceTag('Olá, preciso de ajuda para cancelar uma sessão.')
+          })
+        },
+        duration: 10000,
+      })
     } finally {
       setCancelling(false)
     }
