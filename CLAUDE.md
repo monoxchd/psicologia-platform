@@ -24,7 +24,7 @@ src/
     auth/               # Auth-related components
     therapist-finder/   # Filter-first discovery surface (TherapistCard, etc.)
     *.jsx               # Feature components (SchedulingSystem, TherapistsList, WhatsAppButton, etc.)
-  services/             # API service layer (14 service files)
+  services/             # API service layer (15 service files)
   hooks/                # Custom hooks (use-mobile, useExitIntent)
   utils/
     whatsapp.js         # WHATSAPP_NUMBER + buildWhatsAppUrl + appendSourceTag + openWhatsApp
@@ -35,7 +35,7 @@ src/
 
 ## API Layer
 
-- `services/api.js` — `ApiService` singleton: base fetch wrapper with JWT auth
+- `services/api.js` — `ApiService` singleton: base fetch wrapper with JWT auth. Adds the `Authorization: Bearer` header automatically. Exposes `get/post/put/delete` (JSON) and `requestBlob` (binary, used for PDF receipt download). Backend's user-facing Portuguese message is surfaced on `error.message` — prefer `err.errors?.[0] || err.message || '<fallback>'` in callers
 - API base URL: `import.meta.env.VITE_API_URL` or `http://localhost:3000/api/v1`
 - Token stored in `localStorage` as `auth_token`
 - User object cached in `localStorage` as `user`
@@ -52,7 +52,8 @@ src/
 - `activityService.js` — wellness activities (journal/reflection/reading)
 - `leadService.js` — lead capture forms
 - `triageFeedbackService.js` — anonymous /triagem feedback
-- `adminService.js` — admin CRUD (companies, therapists, clients, services, leads, themes)
+- `adminService.js` — admin CRUD (companies, therapists, clients, services, leads, themes) + `createTherapistAsaasAccount` (sub-account onboarding)
+- `paymentService.js` — `createPayment(appointmentId)`, `getStatus(appointmentId)` (polled by ConfirmationPage), `downloadReceipt(appointmentId)` (returns Blob)
 - `gamificationService.js` — localStorage-only reading streaks + badges (no backend)
 - `analytics.js` — Plausible `track()` wrapper. Never import `window.plausible` directly — always use `track()`
 
@@ -65,8 +66,11 @@ authService.isTherapist()  // user.user_type === 'therapist'
 authService.isClient()     // user.user_type === 'client'
 authService.getUser()      // returns cached user or from localStorage
 
-// Login response sets token + user (incl. company_slug for B2B clients)
+// Login response sets token + user (incl. company_slug + cpf for B2C clients)
 const { success, user } = await authService.login(email, password)
+
+// Merge fields into cached user (e.g. after saving cpf at first paid booking)
+authService.updateCachedUser({ cpf: '12345678901' })
 ```
 
 No route guards — pages check auth internally and redirect if needed. The exception is `CompanyAuthGate`, which wraps B2B-gated routes and uses `user.company_slug` to block cross-company access.
@@ -115,6 +119,25 @@ No route guards — pages check auth internally and redirect if needed. The exce
 - Toasts: Sonner (`toast.success()`, `toast.error()`)
 - Icons: Lucide React
 - Pages are self-contained — each imports its own services and components
+
+## Payment Flow (B2C, Asaas)
+
+The paid B2C booking flow is anchored on three pages:
+
+- **`SchedulingSystem.jsx`** — confirm step shows an inline CPF input (Shadcn `<Input>` + `<Label>`) only when `isPaidBooking && !user.cpf`. Submit creates the appointment (with optional CPF), then if the response is `pending_payment`, calls `paymentService.createPayment` and does `window.location.href = invoice_url` to send the user to Asaas hosted checkout. Free / B2B bookings keep the old flow — straight to `ConfirmationPage` via location.state. A `pendingAppointmentId` ref guards against double-booking on retry: if payment creation fails after the appointment commits, clicking the button again re-attempts payment only.
+- **`ConfirmationPage.jsx`** — two modes:
+  - Free flow: reads `scheduledAppointment` from `location.state`, renders the legacy confirmed view.
+  - Paid flow: reads `appointment_id` from query string (Asaas redirect lands here), polls `paymentService.getStatus` every 3s for up to 2 minutes. Renders `processing | confirmed | expired | refunded | failed | timeout`. The `confirmed` view includes a "Baixar comprovante (PDF)" button that calls `paymentService.downloadReceipt`.
+- **`AdminPage.jsx`** — `AsaasOnboardingDialog` for therapist sub-account creation. Per-therapist Asaas status badge. `commission_percentage` field on the therapist edit form.
+
+### Conventions / footguns
+
+- The Asaas hosted checkout often doesn't auto-redirect after Pix payments (gesture context loss / Pix-specific UX). The webhook is the source of truth — clients can also navigate back to `/dashboard` and the session shows as confirmed.
+- The PDF receipt is fetched via `requestBlob` (auth-headers binary fetch), then opened in a new tab via `URL.createObjectURL`. On mobile Safari the post-await `window.open` may be popup-blocked; future hardening would use a synthetic `<a download>` click instead.
+- The cancel handler on `ClientDashboardPage` shows a Sonner toast on success/failure. On error it includes a "Falar com suporte" action that opens WhatsApp pre-filled (since some cancellations — e.g. boleto refunds — can't be processed via API and need human help).
+- Status labels for `pending_payment` ("Aguardando pagamento") and `expired` are defined in `TherapistDashboardPage.jsx` and `AdminPage.jsx` (appointments tab).
+
+See `docs/epic-payment-flow-v2.md` for the design.
 
 ## WhatsApp Fast-Lane
 
