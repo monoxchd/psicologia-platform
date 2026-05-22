@@ -100,6 +100,18 @@ class AuthService {
     localStorage.removeItem('auth_token')
   }
 
+  // Merges fields into the cached user (in-memory + localStorage). Useful
+  // after a side-effect updates user state without a full /auth/me round-trip
+  // — e.g., when the scheduling flow saves the client's CPF on first paid
+  // booking.
+  updateCachedUser(fields) {
+    const current = this.getUser() || {}
+    const next = { ...current, ...fields }
+    this.user = next
+    localStorage.setItem('user', JSON.stringify(next))
+    return next
+  }
+
   getUser() {
     if (!this.user) {
       const storedUser = localStorage.getItem('user')

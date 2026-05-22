@@ -78,6 +78,10 @@ class AdminService {
     return api.request(`/admin/therapists/${id}/toggle_active`, { method: 'PATCH' })
   }
 
+  async createTherapistAsaasAccount(id, payload) {
+    return api.post(`/admin/therapists/${id}/create_asaas_account`, { asaas: payload })
+  }
+
   async getTags() {
     // Public endpoint; returns { tags: [{id, name, slug, articles_count}] }
     const res = await api.get('/tags')

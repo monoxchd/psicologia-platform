@@ -30,19 +30,23 @@ import { blogService } from '../services/blogService'
 import horizontalLogo from '../assets/horizontal-logo.png'
 
 const APPOINTMENT_STATUS_LABEL = {
+  pending_payment:      'Aguardando pagamento',
   pending_confirmation: 'Pendente',
   confirmed:            'Confirmado',
   completed:            'Realizado',
   cancelled:            'Cancelado',
   no_show:              'Não compareceu',
+  expired:              'Expirado',
 }
 
 const APPOINTMENT_STATUS_BADGE = {
+  pending_payment:      'bg-orange-100 text-orange-800 border-orange-200',
   pending_confirmation: 'bg-amber-100 text-amber-800 border-amber-200',
   confirmed:            'bg-emerald-100 text-emerald-800 border-emerald-200',
   completed:            'bg-blue-100 text-blue-800 border-blue-200',
   cancelled:            'bg-gray-100 text-gray-600 border-gray-200',
   no_show:              'bg-rose-100 text-rose-800 border-rose-200',
+  expired:              'bg-gray-100 text-gray-500 border-gray-200',
 }
 
 const BR_TZ = 'America/Sao_Paulo'

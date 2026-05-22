@@ -86,6 +86,31 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // Fetches a binary response (e.g. a PDF) with auth headers and returns a
+  // Blob. JSON error bodies still surface as thrown errors.
+  async requestBlob(endpoint) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const headers = {};
+    const token = this.getAuthToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const response = await fetch(url, { method: 'GET', headers });
+
+    if (!response.ok) {
+      let backendMessage = 'Não foi possível baixar o arquivo. Tente novamente.';
+      try {
+        const data = await response.json();
+        backendMessage = data.error
+          || (Array.isArray(data.errors) ? data.errors.filter(Boolean).join(', ') : backendMessage);
+      } catch (_e) { /* non-JSON body */ }
+      const error = new Error(backendMessage);
+      error.status = response.status;
+      throw error;
+    }
+
+    return await response.blob();
+  }
 }
 
 export default new ApiService();
