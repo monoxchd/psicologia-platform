@@ -34,7 +34,6 @@ import { blogService } from '../services/blogService'
 import gamificationService from '../services/gamificationService'
 import horizontalLogo from '../assets/horizontal-logo.png'
 import ClientBottomNav from '../components/ClientBottomNav'
-import { openWhatsApp } from '../utils/whatsapp'
 import { track } from '../services/analytics'
 
 const MOOD_EMOJIS = ['', '😞', '😕', '😐', '🙂', '😄']
