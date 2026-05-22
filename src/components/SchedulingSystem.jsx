@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
+import { Input } from '@/components/ui/input.jsx'
+import { Label } from '@/components/ui/label.jsx'
 import { Calendar, Clock, CheckCircle, ArrowLeft, Loader2, Brain, LogIn } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import apiService from '../services/api.js'
@@ -242,7 +244,7 @@ export default function SchedulingSystem({
         bookingConfirmed: true,
       })
     } catch (error) {
-      const msg = error.errors?.[0] || error.error || 'Erro ao agendar sessão. Tente novamente.'
+      const msg = error.errors?.[0] || error.message || 'Erro ao agendar sessão. Tente novamente.'
       setBookingError(msg)
     } finally {
       setBooking(false)
@@ -500,17 +502,17 @@ export default function SchedulingSystem({
 
             {showCpfInput && (
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-2">
-                <label htmlFor="scheduling-cpf" className="block text-sm font-medium text-amber-900">
+                <Label htmlFor="scheduling-cpf" className="text-amber-900">
                   CPF (para emissão do pagamento)
-                </label>
-                <input
+                </Label>
+                <Input
                   id="scheduling-cpf"
                   type="text"
                   inputMode="numeric"
                   value={cpfInput}
                   onChange={(e) => setCpfInput(e.target.value)}
                   placeholder="000.000.000-00"
-                  className="w-full border border-amber-300 rounded-md px-3 py-2 text-sm bg-white"
+                  className="bg-white"
                 />
                 <p className="text-xs text-amber-700">
                   Usado apenas para gerar a cobrança no Asaas (Pix, cartão ou boleto). Salvamos para que você não precise digitar de novo.

@@ -1007,7 +1007,7 @@ function AsaasOnboardingDialog({ therapist, open, onOpenChange, onSuccess }) {
       toast.success('Conta Asaas criada com sucesso')
       onSuccess(updated)
     } catch (err) {
-      const msg = err.errors?.join(', ') || err.error || 'Erro ao criar conta Asaas'
+      const msg = err.errors?.join(', ') || err.message || 'Erro ao criar conta Asaas'
       toast.error(msg)
     } finally {
       setSaving(false)
