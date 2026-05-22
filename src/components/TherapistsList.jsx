@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Star, User, ExternalLink, Brain, Clock, LogIn, MessageCircle } from 'lucide-react'
+import { Star, User, Brain, Clock, MessageCircle } from 'lucide-react'
 import therapistService from '../services/therapistService'
 import authService from '../services/authService'
-import { appendSourceTag, openWhatsApp } from '../utils/whatsapp'
+import WhatsAppLeadModal from './WhatsAppLeadModal.jsx'
 import { track } from '../services/analytics'
 
 function TherapistsList() {
@@ -14,6 +14,7 @@ function TherapistsList() {
   const [therapists, setTherapists] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [whatsAppTherapist, setWhatsAppTherapist] = useState(null)
 
   useEffect(() => {
     fetchTherapists()
@@ -39,20 +40,20 @@ function TherapistsList() {
       navigate('/scheduling', { state: { therapistId: therapist.id } })
       return
     }
-    if (therapist.acolhimentoPrice) {
-      track('WhatsApp Click', {
-        source: 'therapists_list',
-        path: window.location.pathname,
-        therapist: therapist.name,
-      })
-      const message = appendSourceTag(
-        `Olá, gostaria de agendar uma sessão de acolhimento com ${therapist.name}.`,
-        { therapist: therapist.name }
-      )
-      openWhatsApp({ message })
-      return
-    }
     navigate('/form')
+  }
+
+  const handleWhatsAppClick = (therapist) => {
+    track('WhatsApp Click', {
+      source: 'therapists_list',
+      path: window.location.pathname,
+      therapist: therapist.name,
+    })
+    setWhatsAppTherapist({
+      id: therapist.id,
+      name: therapist.name,
+      acolhimentoPrice: therapist.acolhimentoPrice,
+    })
   }
 
   const getLowestPrice = (therapist) => {
@@ -158,31 +159,17 @@ function TherapistsList() {
                     className="w-full"
                     onClick={() => handleScheduleClick(therapist)}
                   >
-                    {authService.isLoggedIn() ? (
-                      <>
-                        <Clock className="h-4 w-4 mr-2" />
-                        Agendar Sessão
-                      </>
-                    ) : therapist.acolhimentoPrice ? (
-                      <>
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Conversar no WhatsApp
-                      </>
-                    ) : (
-                      <>
-                        <LogIn className="h-4 w-4 mr-2" />
-                        Agendar Sessão
-                      </>
-                    )}
+                    <Clock className="h-4 w-4 mr-2" />
+                    Agendar Sessão
                   </Button>
-                  {therapist.personalSiteUrl && (
+                  {!authService.isLoggedIn() && (
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => window.open(therapist.personalSiteUrl, '_blank')}
+                      onClick={() => handleWhatsAppClick(therapist)}
                     >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Ver Site
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Conversar por WhatsApp
                     </Button>
                   )}
                 </div>
@@ -191,6 +178,12 @@ function TherapistsList() {
           )
         })}
       </div>
+      <WhatsAppLeadModal
+        open={!!whatsAppTherapist}
+        onOpenChange={(next) => { if (!next) setWhatsAppTherapist(null) }}
+        therapist={whatsAppTherapist}
+        source="therapists_list_whatsapp"
+      />
     </div>
   )
 }

@@ -1,11 +1,12 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { ExternalLink, Brain, Clock, LogIn, Video, MapPin, MessageCircle } from 'lucide-react'
+import { Brain, Clock, Video, MapPin, MessageCircle } from 'lucide-react'
 import authService from '../../services/authService'
 import { track } from '../../services/analytics'
-import { appendSourceTag, openWhatsApp } from '../../utils/whatsapp'
+import WhatsAppLeadModal from '../WhatsAppLeadModal.jsx'
 
 function ModalityBadges({ modalities }) {
   if (!modalities) return null
@@ -72,6 +73,7 @@ function OfficesLine({ offices, nearestOffice }) {
 export default function TherapistCard({ therapist, index }) {
   const navigate = useNavigate()
   const loggedIn = authService.isLoggedIn()
+  const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false)
 
   const handleScheduleClick = () => {
     track('Therapist Card Click', {
@@ -83,20 +85,16 @@ export default function TherapistCard({ therapist, index }) {
       navigate('/scheduling', { state: { therapistId: therapist.id } })
       return
     }
-    if (therapist.acolhimentoPrice) {
-      track('WhatsApp Click', {
-        source: 'therapist_card',
-        path: window.location.pathname,
-        therapist: therapist.name,
-      })
-      const message = appendSourceTag(
-        `Olá, gostaria de agendar uma sessão de acolhimento com ${therapist.name}.`,
-        { therapist: therapist.name }
-      )
-      openWhatsApp({ message })
-      return
-    }
     navigate('/form')
+  }
+
+  const handleWhatsAppClick = () => {
+    track('WhatsApp Click', {
+      source: 'therapist_card',
+      path: window.location.pathname,
+      therapist: therapist.name,
+    })
+    setWhatsAppModalOpen(true)
   }
 
   return (
@@ -177,26 +175,27 @@ export default function TherapistCard({ therapist, index }) {
             </div>
           )}
           <Button className="w-full" onClick={handleScheduleClick}>
-            {loggedIn ? (
-              <><Clock className="h-4 w-4 mr-2" />Agendar Sessão</>
-            ) : therapist.acolhimentoPrice ? (
-              <><MessageCircle className="h-4 w-4 mr-2" />Conversar no WhatsApp</>
-            ) : (
-              <><LogIn className="h-4 w-4 mr-2" />Agendar Sessão</>
-            )}
+            <Clock className="h-4 w-4 mr-2" />
+            Agendar Sessão
           </Button>
-          {therapist.personalSiteUrl && (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => window.open(therapist.personalSiteUrl, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Ver Site
+          {!loggedIn && (
+            <Button variant="outline" className="w-full" onClick={handleWhatsAppClick}>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Conversar por WhatsApp
             </Button>
           )}
         </div>
       </CardContent>
+      <WhatsAppLeadModal
+        open={whatsAppModalOpen}
+        onOpenChange={setWhatsAppModalOpen}
+        therapist={{
+          id: therapist.id,
+          name: therapist.name,
+          acolhimentoPrice: therapist.acolhimentoPrice,
+        }}
+        source="therapist_card_whatsapp"
+      />
     </Card>
   )
 }

@@ -1,23 +1,23 @@
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Badge } from '@/components/ui/badge.jsx'
-import { Heart, Clock, ShieldCheck, Users, ArrowRight, BookOpen, Filter, Calendar, MessageCircle, User, Menu, LayoutDashboard } from 'lucide-react'
+import { Heart, Clock, ShieldCheck, Users, ArrowRight, Filter, Calendar, MessageCircle, User, Menu, LayoutDashboard } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet.jsx'
 import TherapistFinder from '../components/therapist-finder/TherapistFinder.jsx'
 import ExitIntentModal from '../components/ExitIntentModal.jsx'
 import WhatsAppButton from '../components/WhatsAppButton.jsx'
+import WhatsAppLeadModal from '../components/WhatsAppLeadModal.jsx'
 import SEOHead from '../components/SEOHead.jsx'
 import useExitIntent from '../hooks/useExitIntent.js'
 import authService from '../services/authService.js'
-import { blogService } from '../services/blogService.js'
+import { track } from '../services/analytics.js'
 import horizontalLogo from '../assets/horizontal-logo.png'
 import heroImage from '../assets/hero-image.jpg'
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const [latestArticles, setLatestArticles] = useState([])
+  const [heroWhatsAppOpen, setHeroWhatsAppOpen] = useState(false)
 
   const isLoggedIn = authService.isLoggedIn()
   const dashboardPath = authService.isTherapist() ? '/therapist/dashboard' : '/dashboard'
@@ -30,18 +30,6 @@ export default function LandingPage() {
     enabled: !isLoggedIn,
     scrollThreshold: 0.7,
   })
-
-  useEffect(() => {
-    const fetchLatestArticles = async () => {
-      try {
-        const data = await blogService.getArticles({ page: 1 })
-        setLatestArticles(data.articles?.slice(0, 3) || [])
-      } catch (error) {
-        console.error('Failed to fetch latest articles:', error)
-      }
-    }
-    fetchLatestArticles()
-  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -147,14 +135,22 @@ export default function LandingPage() {
                   Encontrar meu psicólogo
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <WhatsAppButton
-                  source="hero"
-                  label="Falar no WhatsApp"
-                  message="Oi, cheguei pelo site e queria conversar antes de marcar uma sessão."
-                  variant="outline"
+                <Button
                   size="lg"
+                  variant="outline"
                   className="px-8 py-4 text-lg"
-                />
+                  onClick={() => {
+                    track('WhatsApp Click', {
+                      source: 'hero',
+                      path: window.location.pathname,
+                      therapist: null,
+                    })
+                    setHeroWhatsAppOpen(true)
+                  }}
+                >
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  Falar no WhatsApp
+                </Button>
               </div>
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
                 <div className="flex items-center">
@@ -256,87 +252,6 @@ export default function LandingPage() {
         />
       </section>
 
-      {/* Blog Preview Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="flex items-center justify-center mb-4">
-              <BookOpen className="h-8 w-8 text-blue-600 mr-3" />
-              <h2 className="text-4xl font-bold text-gray-900">Recursos e Conteúdo</h2>
-            </div>
-            <p className="text-xl text-gray-600">
-              Artigos e guias sobre saúde mental, bem-estar e autoconhecimento
-            </p>
-          </div>
-
-          {latestArticles.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
-              {latestArticles.map((article) => (
-                <Card
-                  key={article.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/blog/${article.slug}`)}
-                >
-                  {article.featured_image_url && (
-                    <div className="h-48 overflow-hidden">
-                      <img
-                        src={article.featured_image_url}
-                        alt={article.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <CardHeader>
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      {article.categories?.map((category) => (
-                        <Badge
-                          key={category.id}
-                          style={{ backgroundColor: category.color }}
-                          className="text-white text-xs"
-                        >
-                          {category.name}
-                        </Badge>
-                      ))}
-                      {article.read_time_minutes && (
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {article.read_time_minutes} min
-                        </span>
-                      )}
-                    </div>
-                    <CardTitle className="text-xl hover:text-blue-600 transition-colors line-clamp-2">
-                      {article.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 line-clamp-3">
-                      {article.excerpt}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center text-gray-500 py-8">
-              <BookOpen className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <p>Em breve, novos artigos sobre saúde mental e bem-estar</p>
-            </div>
-          )}
-
-          <div className="text-center">
-            <Button
-              size="lg"
-              variant="outline"
-              className="px-8 py-4 text-lg"
-              onClick={() => navigate('/blog')}
-            >
-              Ver Mais Artigos
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-20 bg-blue-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
@@ -346,14 +261,15 @@ export default function LandingPage() {
           <p className="text-xl text-blue-100 mb-8">
             Junte-se a milhares de pessoas que já transformaram suas vidas com nossa plataforma flexível.
           </p>
-          <WhatsAppButton
-            source="cta_section"
-            label="Falar com um Especialista"
-            message="Oi, cheguei pelo site e gostaria de começar uma conversa sobre terapia."
-            variant="secondary"
+          <Button
             size="lg"
+            variant="secondary"
             className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg"
-          />
+            onClick={() => navigate('/form')}
+          >
+            <Clock className="mr-2 h-5 w-5" />
+            Agendar Sessão
+          </Button>
 
         </div>
       </section>
@@ -361,11 +277,11 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <img 
-                  src={horizontalLogo} 
+                <img
+                  src={horizontalLogo}
                   alt="Terapia Conecta Logo"
                 />
               </div>
@@ -374,37 +290,26 @@ export default function LandingPage() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Plataforma</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>Como Funciona</li>
-                <li>Psicólogos</li>
-                <li>Segurança</li>
-              </ul>
-            </div>
-            <div>
               <h3 className="font-semibold mb-4">Suporte</h3>
               <ul className="space-y-2 text-gray-400">
-                <li>Central de Ajuda</li>
-                <li>Contato</li>
-                <li>FAQ</li>
                 <li><Link to="/blog" className="hover:text-gray-300">Blog</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>Privacidade</li>
-                <li>Termos de Uso</li>
-                <li>LGPD</li>
-                <li>Ética</li>
+                <li><Link to="/form" className="hover:text-gray-300">Contato</Link></li>
+                <li><Link to="/acolhimento" className="hover:text-gray-300">Sessão de Acolhimento</Link></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 TerapiaConecta. Todos os direitos reservados.</p>
+            <p>&copy; 2026 TerapiaConecta. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>
+
+      <WhatsAppLeadModal
+        open={heroWhatsAppOpen}
+        onOpenChange={setHeroWhatsAppOpen}
+        source="landing_hero_whatsapp"
+        whatsappMessage="Oi, cheguei pelo site e queria conversar antes de marcar uma sessão."
+      />
 
       {/* Exit-intent modal (desktop, non-logged-in users) */}
       <ExitIntentModal
