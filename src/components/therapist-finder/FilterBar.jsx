@@ -89,14 +89,6 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
       </div>
 
       <div className="space-y-4">
-        <FilterRow label="Gênero do profissional">
-          {GENDER_OPTIONS.map(opt => (
-            <Chip key={opt.value} active={filters.gender === opt.value} onClick={() => toggleField('gender', opt.value)}>
-              {opt.label}
-            </Chip>
-          ))}
-        </FilterRow>
-
         <FilterRow label="Atende">
           {AUDIENCE_OPTIONS.map(opt => (
             <Chip key={opt.value} active={filters.audience === opt.value} onClick={() => toggleField('audience', opt.value)}>
@@ -144,6 +136,14 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
             </div>
           </FilterRow>
         )}
+
+        <FilterRow label="Gênero do profissional">
+          {GENDER_OPTIONS.map(opt => (
+            <Chip key={opt.value} active={filters.gender === opt.value} onClick={() => toggleField('gender', opt.value)}>
+              {opt.label}
+            </Chip>
+          ))}
+        </FilterRow>
 
         {availableThemes.length > 0 && (
           <FilterRow label="O que te trouxe aqui">

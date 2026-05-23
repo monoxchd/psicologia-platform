@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Input } from '@/components/ui/input.jsx'
 import { Label } from '@/components/ui/label.jsx'
-import { Calendar, Clock, CheckCircle, ArrowLeft, Loader2, Brain, LogIn } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx'
+import { Calendar, Clock, CheckCircle, ArrowLeft, Loader2, Brain } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import apiService from '../services/api.js'
 import authService from '../services/authService.js'
@@ -22,7 +23,7 @@ export default function SchedulingSystem({
   onScheduleComplete
 }) {
   const navigate = useNavigate()
-  const isLoggedIn = authService.isLoggedIn()
+  const [isLoggedIn, setIsLoggedIn] = useState(authService.isLoggedIn())
 
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
@@ -35,17 +36,30 @@ export default function SchedulingSystem({
   const [availability, setAvailability] = useState({})
   const [loadingAvailability, setLoadingAvailability] = useState(false)
   const [cpfInput, setCpfInput] = useState('')
+  // Guest checkout fields — only used when the user reaches the confirm step
+  // without an account. On submit we create the Client via
+  // /auth/guest_checkout, then continue with the existing booking flow.
+  const [guestName, setGuestName] = useState('')
+  const [guestEmail, setGuestEmail] = useState('')
+  const [guestPhone, setGuestPhone] = useState('')
+  const [guestPassword, setGuestPassword] = useState('')
+  // Inline login modal — opens from the "Já tenho conta" link in the guest
+  // block. Logging in here preserves the user's service/date/time selections
+  // (which would be lost by navigating away to /login).
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginSubmitting, setLoginSubmitting] = useState(false)
+  const [loginError, setLoginError] = useState(null)
   // Holds the appointment id between the first (create-appointment) and second
   // (create-payment) backend calls so we can retry payment without
   // double-booking the slot.
   const [pendingAppointmentId, setPendingAppointmentId] = useState(null)
 
-  const currentUser = authService.getUser()
+  const currentUser = isLoggedIn ? authService.getUser() : null
   const needsCpf = !currentUser?.cpf
 
   useEffect(() => {
-    if (!isLoggedIn) return
-
     const fetchTherapists = async () => {
       try {
         const response = await apiService.get('/therapists')
@@ -58,7 +72,7 @@ export default function SchedulingSystem({
     }
 
     fetchTherapists()
-  }, [isLoggedIn])
+  }, [])
 
   const therapist = selectedTherapistId
     ? therapists.find(t => t.id === selectedTherapistId)
@@ -77,48 +91,6 @@ export default function SchedulingSystem({
     if (!selectedDate || !availability[selectedDate]) return []
     return availability[selectedDate]
   }, [selectedDate, availability])
-
-  if (!isLoggedIn) {
-    return (
-      <Card className="max-w-2xl mx-auto">
-        <CardContent className="p-8 text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
-            <LogIn className="h-8 w-8 text-blue-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Por favor, crie o seu cadastro para agendar</h2>
-            <p className="text-gray-600">
-              Para agendar uma sessão online, você precisa ter uma conta na TerapiaConecta.
-              Preencha nosso formulário e entraremos em contato para finalizar seu cadastro.
-            </p>
-          </div>
-          <div className="space-y-3">
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={() => navigate('/form')}
-            >
-              Quero me cadastrar
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              size="lg"
-              onClick={() => navigate('/login', { state: { from: '/scheduling' } })}
-            >
-              Já tenho conta — Entrar
-            </Button>
-          </div>
-          {onBack && (
-            <Button variant="link" onClick={onBack} className="text-gray-500">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Voltar
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-    )
-  }
 
   if (loading) {
     return (
@@ -179,11 +151,35 @@ export default function SchedulingSystem({
   }
 
   const isPaidBooking = parseFloat(selectedService?.price) > 0
-  const showCpfInput = isPaidBooking && needsCpf
+  // Logged-in clients with a CPF on file skip the CPF input; guests fill it
+  // in the guest block below.
+  const showCpfInput = isPaidBooking && isLoggedIn && needsCpf
+  const showGuestFields = !isLoggedIn
 
   const validateCpf = (raw) => {
     const digits = (raw || '').replace(/\D/g, '')
     return digits.length === 11 ? digits : null
+  }
+
+  const validateEmail = (raw) => /\S+@\S+\.\S+/.test((raw || '').trim())
+
+  const handleLoginSubmit = async (e) => {
+    e?.preventDefault?.()
+    setLoginError(null)
+    if (!validateEmail(loginEmail) || !loginPassword) {
+      setLoginError('Informe email e senha.')
+      return
+    }
+    setLoginSubmitting(true)
+    const result = await authService.login(loginEmail.trim().toLowerCase(), loginPassword)
+    setLoginSubmitting(false)
+    if (result.success) {
+      setLoginModalOpen(false)
+      setLoginPassword('')
+      setIsLoggedIn(true)
+    } else {
+      setLoginError(result.error || 'Falha no login.')
+    }
   }
 
   const handleSchedule = async () => {
@@ -200,7 +196,62 @@ export default function SchedulingSystem({
       }
 
       let normalizedCpf = null
-      if (showCpfInput) {
+
+      // Guest checkout: create the Client first, then continue with the same
+      // booking flow as a logged-in user. The token is stored by guestCheckout
+      // so subsequent requests carry the Authorization header.
+      if (showGuestFields) {
+        if (!guestName.trim()) {
+          setBookingError('Informe seu nome completo.')
+          setBooking(false)
+          return
+        }
+        if (!validateEmail(guestEmail)) {
+          setBookingError('Informe um email válido.')
+          setBooking(false)
+          return
+        }
+        if (!guestPhone.trim() || guestPhone.replace(/\D/g, '').length < 10) {
+          setBookingError('Informe um telefone com DDD.')
+          setBooking(false)
+          return
+        }
+        if (guestPassword.length < 6) {
+          setBookingError('A senha deve ter pelo menos 6 caracteres.')
+          setBooking(false)
+          return
+        }
+        if (isPaidBooking) {
+          normalizedCpf = validateCpf(cpfInput)
+          if (!normalizedCpf) {
+            setBookingError('Informe um CPF válido (11 dígitos).')
+            setBooking(false)
+            return
+          }
+        }
+
+        const result = await authService.guestCheckout({
+          name: guestName.trim(),
+          email: guestEmail.trim().toLowerCase(),
+          phone: guestPhone.trim(),
+          cpf: normalizedCpf,
+          password: guestPassword,
+        })
+
+        if (!result.success) {
+          if (result.status === 409) {
+            setBookingError(`${result.error} Acesse /login para continuar.`)
+          } else {
+            setBookingError(result.error)
+          }
+          setBooking(false)
+          return
+        }
+
+        setIsLoggedIn(true)
+        // Logged-in clients with no CPF yet still need to fill it inline. We
+        // already collected it above for paid bookings, so feed it in.
+      } else if (showCpfInput) {
         normalizedCpf = validateCpf(cpfInput)
         if (!normalizedCpf) {
           setBookingError('Informe um CPF válido (11 dígitos).')
@@ -500,6 +551,89 @@ export default function SchedulingSystem({
               </div>
             </div>
 
+            {showGuestFields && (
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-3">
+                <div>
+                  <h4 className="font-semibold text-amber-900">Seus dados</h4>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Sua conta é criada agora e fica pronta no painel após o pagamento.
+                    {' '}
+                    <button
+                      type="button"
+                      className="underline hover:text-amber-900"
+                      onClick={() => { setLoginError(null); setLoginModalOpen(true) }}
+                    >
+                      Já tenho conta
+                    </button>
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label htmlFor="guest-name" className="text-amber-900">Nome completo</Label>
+                    <Input
+                      id="guest-name"
+                      type="text"
+                      autoComplete="name"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="guest-email" className="text-amber-900">Email</Label>
+                    <Input
+                      id="guest-email"
+                      type="email"
+                      autoComplete="email"
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="guest-phone" className="text-amber-900">Telefone (DDD)</Label>
+                    <Input
+                      id="guest-phone"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      value={guestPhone}
+                      onChange={(e) => setGuestPhone(e.target.value)}
+                      placeholder="(11) 98765-4321"
+                      className="bg-white"
+                    />
+                  </div>
+                  {isPaidBooking && (
+                    <div className="space-y-1">
+                      <Label htmlFor="guest-cpf" className="text-amber-900">CPF</Label>
+                      <Input
+                        id="guest-cpf"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        value={cpfInput}
+                        onChange={(e) => setCpfInput(e.target.value)}
+                        placeholder="000.000.000-00"
+                        className="bg-white"
+                      />
+                    </div>
+                  )}
+                  <div className={isPaidBooking ? 'space-y-1' : 'sm:col-span-2 space-y-1'}>
+                    <Label htmlFor="guest-password" className="text-amber-900">Crie uma senha</Label>
+                    <Input
+                      id="guest-password"
+                      type="password"
+                      autoComplete="new-password"
+                      value={guestPassword}
+                      onChange={(e) => setGuestPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      className="bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {showCpfInput && (
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-2">
                 <Label htmlFor="scheduling-cpf" className="text-amber-900">
@@ -569,6 +703,53 @@ export default function SchedulingSystem({
             </Button>
           </div>
         </CardContent>
+
+        <Dialog open={loginModalOpen} onOpenChange={setLoginModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Entrar na sua conta</DialogTitle>
+              <DialogDescription>
+                Você continua de onde parou — seu horário e serviço seguem selecionados.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleLoginSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="login-modal-email">Email</Label>
+                <Input
+                  id="login-modal-email"
+                  type="email"
+                  autoComplete="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="login-modal-password">Senha</Label>
+                <Input
+                  id="login-modal-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                />
+              </div>
+              {loginError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                  <p className="text-red-800 text-sm">{loginError}</p>
+                </div>
+              )}
+              <Button type="submit" className="w-full" disabled={loginSubmitting}>
+                {loginSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Entrando...
+                  </>
+                ) : 'Entrar'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </Card>
     )
   }

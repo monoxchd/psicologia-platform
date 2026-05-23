@@ -10,7 +10,6 @@ import {
   FileText,
   PlusCircle,
   User,
-  Star,
   Eye,
   Calendar,
   CalendarDays,
@@ -21,8 +20,11 @@ import {
   Loader2,
   Phone,
   Mail,
-  Sun
+  Sun,
+  Wallet,
+  Video
 } from 'lucide-react'
+import { getMeetingProvider } from '../utils/meetingProvider'
 import AvailabilityGrid from '../components/AvailabilityGrid'
 import authService from '../services/authService'
 import appointmentService from '../services/appointmentService'
@@ -186,55 +188,11 @@ const TherapistDashboardPage = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total de Artigos
-              </CardTitle>
-              <FileText className="h-4 w-4 text-gray-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalArticles}</div>
-              <p className="text-xs text-gray-600 mt-1">
-                {stats.publishedArticles} publicados, {stats.draftArticles} rascunhos
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total de Visualizações
-              </CardTitle>
-              <Eye className="h-4 w-4 text-gray-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalViews}</div>
-              <p className="text-xs text-gray-600 mt-1">
-                Em {stats.publishedArticles} artigos
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Avaliação
-              </CardTitle>
-              <Star className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {user?.rating || 4.0} <span className="text-sm font-normal text-gray-600">/5.0</span>
-              </div>
-              <p className="text-xs text-gray-600 mt-1">
-                Avaliação profissional
-              </p>
-            </CardContent>
-          </Card>
-
-        </div>
+        <DashboardStats
+          stats={stats}
+          todayAppointments={todayAppointments}
+          upcomingAppointments={upcomingAppointments}
+        />
 
         {/* Appointments — Today highlighted + upcoming */}
         <AppointmentsSection
@@ -447,10 +405,109 @@ const TherapistDashboardPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <AvailabilityGrid />
+            <AvailabilityGrid appointments={[...todayAppointments, ...upcomingAppointments]} />
           </CardContent>
         </Card>
       </div>
+    </div>
+  )
+}
+
+function DashboardStats({ stats, todayAppointments, upcomingAppointments }) {
+  const allUpcoming = [...todayAppointments, ...upcomingAppointments]
+  const upcomingCount = allUpcoming.length
+  // Receita prevista: agendamentos pagos (cost > 0) ainda não cancelados.
+  // Exclui B2B (cost = 0) e ignora bookings em pending_payment que ainda
+  // podem expirar não contar nenhum valor garantido — só confirmed entram.
+  const expectedRevenue = allUpcoming
+    .filter(a => a.status === 'confirmed' && parseFloat(a.cost) > 0)
+    .reduce((sum, a) => sum + parseFloat(a.cost || 0), 0)
+  const pendingPaymentCount = allUpcoming.filter(a => a.status === 'pending_payment').length
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Próximos Atendimentos</CardTitle>
+          <CalendarDays className="h-4 w-4 text-gray-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{upcomingCount}</div>
+          <p className="text-xs text-gray-600 mt-1">
+            {todayAppointments.length > 0
+              ? `${todayAppointments.length} hoje · ${upcomingAppointments.length} adiante`
+              : 'sessões agendadas'}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Receita Prevista</CardTitle>
+          <Wallet className="h-4 w-4 text-emerald-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {expectedRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </div>
+          <p className="text-xs text-gray-600 mt-1">
+            {pendingPaymentCount > 0
+              ? `+ ${pendingPaymentCount} aguardando pagamento`
+              : 'sessões confirmadas'}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total de Artigos</CardTitle>
+          <FileText className="h-4 w-4 text-gray-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalArticles}</div>
+          <p className="text-xs text-gray-600 mt-1">
+            {stats.publishedArticles} publicados, {stats.draftArticles} rascunhos
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total de Visualizações</CardTitle>
+          <Eye className="h-4 w-4 text-gray-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalViews}</div>
+          <p className="text-xs text-gray-600 mt-1">
+            Em {stats.publishedArticles} artigos
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function JoinMeetingButton({ appointment }) {
+  const url = appointment?.meeting_link
+  if (!url) return null
+  const provider = getMeetingProvider(url)
+  const isStartingSoon = !!appointment?.starting_soon
+  const label = provider?.id && provider.id !== 'generic'
+    ? `Entrar pelo ${provider.name}`
+    : 'Entrar na sala'
+  return (
+    <div className="mt-3">
+      <Button
+        size="sm"
+        onClick={() => window.open(url, '_blank', 'noopener')}
+        className={isStartingSoon
+          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}
+      >
+        <Video className="h-4 w-4 mr-2" />
+        {label}
+        {isStartingSoon && <span className="ml-2 text-xs opacity-90">· começando agora</span>}
+      </Button>
     </div>
   )
 }
@@ -495,9 +552,12 @@ function AppointmentRow({ appointment, showDate = true }) {
 }
 
 function AppointmentsSection({ todayAppointments, upcomingAppointments }) {
-  const previewUpcoming = upcomingAppointments.slice(0, 5)
-  const hasMore = upcomingAppointments.length > previewUpcoming.length
-  const isEmpty = todayAppointments.length === 0 && upcomingAppointments.length === 0
+  const totalCount = todayAppointments.length + upcomingAppointments.length
+  const isEmpty = totalCount === 0
+  // Próximo no tempo: prioriza o primeiro de hoje (já ordenado pelo backend),
+  // depois o primeiro de upcoming.
+  const nextAppointment = todayAppointments[0] || upcomingAppointments[0] || null
+  const nextIsToday = !!todayAppointments[0]
 
   return (
     <Card className="mb-8">
@@ -506,19 +566,17 @@ function AppointmentsSection({ todayAppointments, upcomingAppointments }) {
           <div>
             <CardTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5" />
-              Próximos Agendamentos
+              Próximo Agendamento
             </CardTitle>
             <CardDescription>
-              {todayAppointments.length > 0
-                ? `Você tem ${todayAppointments.length} ${todayAppointments.length === 1 ? 'sessão' : 'sessões'} hoje`
-                : 'Suas próximas sessões com pacientes'}
+              {nextIsToday ? 'Sua próxima sessão é hoje' : 'Sua próxima sessão agendada'}
             </CardDescription>
           </div>
-          {upcomingAppointments.length > 0 && (
+          {totalCount > 0 && (
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="sm">
-                  Ver todos ({upcomingAppointments.length + todayAppointments.length})
+                  Ver todos ({totalCount})
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -567,39 +625,15 @@ function AppointmentsSection({ todayAppointments, upcomingAppointments }) {
             Você não tem agendamentos no momento.
           </div>
         ) : (
-          <div className="space-y-4">
-            {todayAppointments.length > 0 && (
-              <div className="rounded-lg border-2 border-amber-200 bg-amber-50/40 p-4">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-3 flex items-center gap-1.5">
-                  <Sun className="h-3.5 w-3.5" />
-                  Hoje
-                </h4>
-                <div className="space-y-2">
-                  {todayAppointments.map(a => (
-                    <AppointmentRow key={a.id} appointment={a} showDate={false} />
-                  ))}
-                </div>
-              </div>
+          <div className={nextIsToday ? 'rounded-lg border-2 border-amber-200 bg-amber-50/40 p-4' : ''}>
+            {nextIsToday && (
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-3 flex items-center gap-1.5">
+                <Sun className="h-3.5 w-3.5" />
+                Hoje
+              </h4>
             )}
-            {previewUpcoming.length > 0 && (
-              <div>
-                {todayAppointments.length > 0 && (
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
-                    Próximos
-                  </h4>
-                )}
-                <div className="space-y-2">
-                  {previewUpcoming.map(a => (
-                    <AppointmentRow key={a.id} appointment={a} />
-                  ))}
-                </div>
-                {hasMore && (
-                  <p className="text-xs text-gray-400 text-center mt-3">
-                    + {upcomingAppointments.length - previewUpcoming.length} mais — clique em "Ver todos"
-                  </p>
-                )}
-              </div>
-            )}
+            <AppointmentRow appointment={nextAppointment} showDate={!nextIsToday} />
+            <JoinMeetingButton appointment={nextAppointment} />
           </div>
         )}
       </CardContent>

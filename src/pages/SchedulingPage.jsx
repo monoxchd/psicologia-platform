@@ -1,10 +1,17 @@
 import SchedulingSystem from '../components/SchedulingSystem.jsx'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
 export default function SchedulingPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { therapistId } = location.state || {}
+  const [searchParams] = useSearchParams()
+  // Prefer the query param so links from campaigns / refresh / share survive.
+  // Falls back to router state for callers that haven't been updated.
+  const queryTherapistId = searchParams.get('therapistId')
+  const stateTherapistId = location.state?.therapistId
+  const therapistId = queryTherapistId
+    ? parseInt(queryTherapistId, 10)
+    : stateTherapistId
 
   const handleScheduleComplete = (appointment) => {
     navigate('/confirmation', {

@@ -81,11 +81,9 @@ export default function TherapistCard({ therapist, index }) {
       position: index ?? 0,
       path: window.location.pathname,
     })
-    if (loggedIn) {
-      navigate('/scheduling', { state: { therapistId: therapist.id } })
-      return
-    }
-    navigate('/form')
+    navigate(`/scheduling?therapistId=${therapist.id}`, {
+      state: { therapistId: therapist.id },
+    })
   }
 
   const handleWhatsAppClick = () => {

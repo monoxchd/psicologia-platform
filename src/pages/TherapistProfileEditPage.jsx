@@ -11,6 +11,7 @@ import {
   Save,
   Loader2,
   Globe,
+  Video,
   Briefcase,
   Award,
   Camera,
@@ -22,6 +23,7 @@ import authService from '../services/authService'
 import apiService from '../services/api'
 import therapistService from '../services/therapistService'
 import { toast } from 'sonner'
+import { getMeetingProvider } from '../utils/meetingProvider'
 
 const TherapistProfileEditPage = () => {
   const navigate = useNavigate()
@@ -37,6 +39,7 @@ const TherapistProfileEditPage = () => {
     bio: '',
     crp_number: '',
     personal_site_url: '',
+    meeting_url: '',
     acolhimento_quote: ''
   })
   const [passwordData, setPasswordData] = useState({
@@ -70,6 +73,7 @@ const TherapistProfileEditPage = () => {
         bio: currentUser.bio || '',
         crp_number: currentUser.crp_number || '',
         personal_site_url: currentUser.personal_site_url || '',
+        meeting_url: currentUser.meeting_url || '',
         acolhimento_quote: currentUser.acolhimento_quote || ''
       })
     } catch (error) {
@@ -153,6 +157,7 @@ const TherapistProfileEditPage = () => {
           bio: formData.bio,
           crp_number: formData.crp_number,
           personal_site_url: formData.personal_site_url,
+          meeting_url: formData.meeting_url,
           acolhimento_quote: formData.acolhimento_quote
         }
       })
@@ -377,7 +382,7 @@ const TherapistProfileEditPage = () => {
                 Links Externos
               </CardTitle>
               <CardDescription>
-                Conecte seu site ou página profissional
+                Conecte seu site e sua sala de atendimento online
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -393,6 +398,32 @@ const TherapistProfileEditPage = () => {
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   Link para seu site ou página em outro projeto
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label htmlFor="meeting_url" className="flex items-center gap-2">
+                    <Video className="h-4 w-4" />
+                    Link da sala de reunião
+                  </Label>
+                  {formData.meeting_url && getMeetingProvider(formData.meeting_url) && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                      {getMeetingProvider(formData.meeting_url).name}
+                    </span>
+                  )}
+                </div>
+                <Input
+                  id="meeting_url"
+                  name="meeting_url"
+                  type="url"
+                  value={formData.meeting_url}
+                  onChange={handleChange}
+                  placeholder="https://meet.google.com/abc-defg-hij"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Google Meet, Microsoft Teams, Zoom — cole o link da sua sala fixa.
+                  O paciente acessa por aqui no horário da sessão.
                 </p>
               </div>
 

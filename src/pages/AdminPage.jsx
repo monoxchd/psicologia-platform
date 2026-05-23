@@ -1115,7 +1115,7 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
         bio: therapist.bio || '',
         crp_number: therapist.crp_number || '',
         personal_site_url: therapist.personal_site_url || '',
-        calendly_url: therapist.calendly_url || '',
+        meeting_url: therapist.meeting_url || '',
         acolhimento_price: therapist.acolhimento_price || '',
         acolhimento_quote: therapist.acolhimento_quote || '',
         commission_percentage: therapist.commission_percentage ?? '',
@@ -1133,7 +1133,7 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
         password_confirmation: '',
       } : {
         email: '', name: '', specialty: '', experience_years: '', bio: '',
-        crp_number: '', personal_site_url: '', calendly_url: '',
+        crp_number: '', personal_site_url: '', meeting_url: '',
         acolhimento_price: '', acolhimento_quote: '',
         commission_percentage: 20,
         position: 0,
@@ -1333,8 +1333,8 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
               <Input id="therapist-site" name="personal_site_url" type="url" value={form.personal_site_url || ''} onChange={handleChange} />
             </div>
             <div>
-              <Label htmlFor="therapist-calendly">Calendly URL</Label>
-              <Input id="therapist-calendly" name="calendly_url" type="url" value={form.calendly_url || ''} onChange={handleChange} />
+              <Label htmlFor="therapist-meeting-url">Link da sala de reunião</Label>
+              <Input id="therapist-meeting-url" name="meeting_url" type="url" placeholder="https://meet.google.com/..." value={form.meeting_url || ''} onChange={handleChange} />
             </div>
           </div>
 

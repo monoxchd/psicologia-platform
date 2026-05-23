@@ -1,7 +1,42 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from './ui/button'
 import { Loader2, Save, CheckCircle2, AlertCircle } from 'lucide-react'
 import availabilityService from '../services/availabilityService'
+
+const BR_TZ = 'America/Sao_Paulo'
+const BOOKED_STATUSES = new Set(['confirmed', 'pending_payment', 'pending_confirmation'])
+
+// Maps an ISO scheduled_at to the grid's { day_of_week, hour } in São Paulo
+// time. The grid renders weekday/hour cells; agendamentos têm timezone-aware
+// scheduled_at, então precisamos converter para Brasília antes de extrair.
+function slotKeyForAppointment(iso) {
+  if (!iso) return null
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: BR_TZ,
+      weekday: 'short',
+      hour: '2-digit',
+      hour12: false,
+    }).formatToParts(new Date(iso))
+    const weekdayMap = { Sun: '0', Mon: '1', Tue: '2', Wed: '3', Thu: '4', Fri: '5', Sat: '6' }
+    const weekdayPart = parts.find(p => p.type === 'weekday')?.value
+    const hourPart = parts.find(p => p.type === 'hour')?.value
+    const day = weekdayMap[weekdayPart]
+    if (day == null || hourPart == null) return null
+    const hour = `${hourPart === '24' ? '00' : hourPart}:00`
+    return { day, hour }
+  } catch {
+    return null
+  }
+}
+
+function formatClientLine(appt) {
+  const name = appt?.client?.name || 'Cliente'
+  const t = appt?.scheduled_at
+    ? new Date(appt.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: BR_TZ })
+    : ''
+  return t ? `${name} · ${t}` : name
+}
 
 const DAYS = [
   { key: '1', label: 'Seg', full: 'Segunda' },
@@ -25,7 +60,23 @@ const TIME_PERIODS = [
   { label: 'Noite', range: [18, 23], color: 'text-indigo-600' },
 ]
 
-export default function AvailabilityGrid() {
+export default function AvailabilityGrid({ appointments = [] }) {
+  // Derived map: { [dayKey]: { [hour]: Appointment[] } } — used to overlay
+  // booked-slot markers on top of the editable availability template.
+  const bookedSlots = useMemo(() => {
+    const map = {}
+    appointments
+      .filter(a => BOOKED_STATUSES.has(a.status))
+      .forEach(a => {
+        const slot = slotKeyForAppointment(a.scheduled_at)
+        if (!slot) return
+        if (!map[slot.day]) map[slot.day] = {}
+        if (!map[slot.day][slot.hour]) map[slot.day][slot.hour] = []
+        map[slot.day][slot.hour].push(a)
+      })
+    return map
+  }, [appointments])
+
   const [selected, setSelected] = useState({})
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -237,8 +288,14 @@ export default function AvailabilityGrid() {
                         </span>
                       )}
                     </td>
-                    {DAYS.map(({ key }) => {
+                    {DAYS.map(({ key, full }) => {
                       const isSelected = selected[key]?.[hour]
+                      const slotAppts = bookedSlots[key]?.[hour]
+                      const isBooked = !!slotAppts?.length
+                      const slotLabel = `${full} ${hour}`
+                      const tooltip = isBooked
+                        ? `${slotLabel}\n${slotAppts.map(formatClientLine).join('\n')}`
+                        : slotLabel
                       return (
                         <td key={`${key}-${hour}`} className="p-0">
                           <button
@@ -246,11 +303,13 @@ export default function AvailabilityGrid() {
                             onMouseDown={() => handleMouseDown(key, hour)}
                             onMouseEnter={() => handleMouseEnter(key, hour)}
                             className={`w-full h-5 rounded-sm transition-colors ${
-                              isSelected
+                              isBooked
+                                ? 'bg-amber-400 hover:bg-amber-500'
+                                : isSelected
                                 ? 'bg-indigo-500 hover:bg-indigo-600'
                                 : 'bg-gray-100 hover:bg-gray-200'
                             }`}
-                            title={`${DAYS.find(d => d.key === key)?.full} ${hour}`}
+                            title={tooltip}
                           />
                         </td>
                       )
@@ -263,10 +322,17 @@ export default function AvailabilityGrid() {
         </table>
       </div>
 
-      <div className="mt-4 flex items-center gap-4">
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span className="w-3 h-3 rounded-sm bg-indigo-500 inline-block" /> Disponível
-          <span className="w-3 h-3 rounded-sm bg-gray-100 inline-block ml-2" /> Indisponível
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+          <span className="inline-flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm bg-indigo-500 inline-block" /> Disponível
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm bg-amber-400 inline-block" /> Agendado
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm bg-gray-100 inline-block" /> Indisponível
+          </span>
         </div>
         <p className="text-[10px] text-gray-400 ml-auto">Arraste para selecionar múltiplos horários</p>
       </div>

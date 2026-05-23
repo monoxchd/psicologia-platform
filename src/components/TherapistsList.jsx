@@ -36,11 +36,9 @@ function TherapistsList() {
   }
 
   const handleScheduleClick = (therapist) => {
-    if (authService.isLoggedIn()) {
-      navigate('/scheduling', { state: { therapistId: therapist.id } })
-      return
-    }
-    navigate('/form')
+    navigate(`/scheduling?therapistId=${therapist.id}`, {
+      state: { therapistId: therapist.id },
+    })
   }
 
   const handleWhatsAppClick = (therapist) => {

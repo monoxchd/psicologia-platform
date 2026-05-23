@@ -56,6 +56,40 @@ class AuthService {
     }
   }
 
+  // Public guest checkout: creates a Client account inline at the paid-booking
+  // confirm step and stores the JWT just like register(). If the email already
+  // exists and the password matches, backend returns a token (transparent
+  // login); if it doesn't match, backend returns 409 and we surface the
+  // message so the UI can prompt the user to log in instead.
+  async guestCheckout({ name, email, phone, cpf, password }) {
+    try {
+      const response = await apiService.post('/auth/guest_checkout', {
+        name,
+        email,
+        phone,
+        cpf,
+        password
+      })
+
+      if (response.token) {
+        apiService.setAuthToken(response.token)
+        this.user = response.user
+        this.isAuthenticated = true
+        localStorage.setItem('user', JSON.stringify(response.user))
+        return { success: true, user: response.user }
+      }
+
+      return { success: false, error: 'Não foi possível concluir o cadastro. Tente novamente.' }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.errors?.[0] || error.message || 'Não foi possível concluir o cadastro. Tente novamente.',
+        errors: error.errors,
+        status: error.status
+      }
+    }
+  }
+
   async getCurrentUser() {
     try {
       const token = apiService.getAuthToken()

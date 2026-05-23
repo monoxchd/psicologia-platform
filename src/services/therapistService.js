@@ -102,7 +102,7 @@ class TherapistService {
       bio: therapist.bio,
       crpNumber: therapist.crp_number,
       personalSiteUrl: therapist.personal_site_url,
-      calendlyUrl: therapist.calendly_url,
+      meetingUrl: therapist.meeting_url,
       services: therapist.services || [],
       gender: therapist.gender,
       pronouns: therapist.pronouns,
