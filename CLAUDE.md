@@ -55,6 +55,8 @@ src/
 - `adminService.js` — admin CRUD (companies, therapists, clients, services, leads, themes) + `createTherapistAsaasAccount` (sub-account onboarding)
 - `paymentService.js` — `createPayment(appointmentId)`, `getStatus(appointmentId)` (polled by ConfirmationPage), `downloadReceipt(appointmentId)` (returns Blob)
 - `gamificationService.js` — localStorage-only reading streaks + badges (no backend)
+- `connectionService.js` — clinical connection handshake (`getMyCode`, `connectWithCode`, `rotateCode`, `getStatus`, `getPendingRequests`, `respondToRequest`, `requestConnection`, `revoke`)
+- `patientEntriesService.js` — therapist reads shared activity entries from connected patients
 - `analytics.js` — Plausible `track()` wrapper. Never import `window.plausible` directly — always use `track()`
 
 ## Auth Pattern
@@ -99,6 +101,7 @@ No route guards — pages check auth internally and redirect if needed. The exce
 - `/therapist/profile/edit` — Profile editor
 - `/therapist/questionarios/:slug/respostas` — Questionnaire responses list
 - `/therapist/respostas/:id` — Response detail
+- `/therapist/pacientes/:clientId/registros` — Shared activity entries from a connected patient (requires active CareRelationship)
 - `/blog-admin` — Article management
 - `/blog-admin/new`, `/blog-admin/:slug/edit` — Article editor
 
@@ -138,6 +141,19 @@ The paid B2C booking flow is anchored on three pages:
 - Status labels for `pending_payment` ("Aguardando pagamento") and `expired` are defined in `TherapistDashboardPage.jsx` and `AdminPage.jsx` (appointments tab).
 
 See `docs/epic-payment-flow-v2.md` for the design.
+
+## Clinical Connection (Mutual Handshake)
+
+Patient and therapist each have an 8-char "ID de Conexão Clínica" (case-insensitive `[A-Z0-9]`). Pairing flow:
+1. Both sides see their own code on their dashboard (`ConexaoClinicaCard` on `ClientDashboardPage`, `ConexaoClinicaTherapistCard` in the sidebar of `TherapistDashboardPage`).
+2. Both sides have an Input + Button to paste the other's code. First paste → `pending`, initiated_by caller. Second paste from the other party → `active`.
+3. Patient's `ActivityFormPage` shows the "Compartilhar com [terapeuta]" checkbox only when at least one active `CareRelationship` exists; default is `false` (entry-by-entry consent).
+4. Therapist reads shared entries at `/therapist/pacientes/:clientId/registros` (`PatientEntriesPage`). Backend writes `ClinicalAccessLog` on every read.
+
+### Conventions
+- Always render `Conexão Clínica` cards on dashboards — they handle their own loading via `connectionService.getStatus()` and fail soft when there's nothing to show.
+- Rotation cancels pending pairings but preserves active ones — AlertDialog warns the user before rotating.
+- Revocation does NOT alter the patient's `ActivityEntry.visibility`; the backend access gate just stops returning data. Old shared entries remain shared if a connection is later re-established with the same therapist (rare but possible).
 
 ## WhatsApp Fast-Lane
 

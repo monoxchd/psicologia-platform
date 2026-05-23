@@ -28,6 +28,7 @@ import CompanyAuthGate from './components/CompanyAuthGate.jsx'
 import EnigmaQuizPage from './pages/EnigmaQuizPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import TriagePage from './pages/TriagePage.jsx'
+import PatientEntriesPage from './pages/PatientEntriesPage.jsx'
 import RouteTracker from './components/RouteTracker.jsx'
 
 export const router = createBrowserRouter([
@@ -149,6 +150,10 @@ export const router = createBrowserRouter([
       {
         path: "/triagem",
         element: <TriagePage />
+      },
+      {
+        path: "/therapist/pacientes/:clientId/registros",
+        element: <PatientEntriesPage />
       }
     ]
   }

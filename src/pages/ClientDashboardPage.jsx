@@ -34,6 +34,7 @@ import { blogService } from '../services/blogService'
 import gamificationService from '../services/gamificationService'
 import horizontalLogo from '../assets/horizontal-logo.png'
 import ClientBottomNav from '../components/ClientBottomNav'
+import ConexaoClinicaCard from '../components/ConexaoClinicaCard'
 import { track } from '../services/analytics'
 
 const MOOD_EMOJIS = ['', '😞', '😕', '😐', '🙂', '😄']
@@ -533,6 +534,9 @@ export default function ClientDashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Conexão Clínica */}
+        <ConexaoClinicaCard />
 
         {/* Today's Activities */}
         <div>

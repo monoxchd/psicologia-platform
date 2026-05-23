@@ -25,6 +25,7 @@ import {
   Video
 } from 'lucide-react'
 import { getMeetingProvider } from '../utils/meetingProvider'
+import ConexaoClinicaTherapistCard from '../components/ConexaoClinicaTherapistCard'
 import AvailabilityGrid from '../components/AvailabilityGrid'
 import authService from '../services/authService'
 import appointmentService from '../services/appointmentService'
@@ -199,6 +200,9 @@ const TherapistDashboardPage = () => {
           todayAppointments={todayAppointments}
           upcomingAppointments={upcomingAppointments}
         />
+
+        {/* Conexão Clínica — full-width below Próximo Agendamento */}
+        <ConexaoClinicaTherapistCard />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}

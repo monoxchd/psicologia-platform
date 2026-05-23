@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, Brain, Lock, Share2
 } from 'lucide-react'
 import activityService from '../services/activityService'
+import connectionService from '../services/connectionService'
 import authService from '../services/authService'
 import ClientBottomNav from '../components/ClientBottomNav'
 
@@ -165,6 +166,7 @@ export default function ActivityFormPage() {
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [shareWithTherapist, setShareWithTherapist] = useState(false)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
+  const [activeTherapists, setActiveTherapists] = useState([])
 
   useEffect(() => {
     if (!authService.isLoggedIn()) {
@@ -174,15 +176,21 @@ export default function ActivityFormPage() {
 
     async function load() {
       try {
-        const [activityRes, entriesRes] = await Promise.allSettled([
+        const [activityRes, entriesRes, statusRes] = await Promise.allSettled([
           activityService.getActivity(slug),
           activityService.getEntries({
             activity_slug: slug,
             start_date: new Date().toISOString().split('T')[0],
             end_date: new Date().toISOString().split('T')[0],
             limit: 1
-          })
+          }),
+          connectionService.getStatus().catch(() => ({ relationships: [] }))
         ])
+
+        if (statusRes.status === 'fulfilled') {
+          const active = (statusRes.value?.relationships || []).filter(r => r.status === 'active')
+          setActiveTherapists(active.map(r => r.partner).filter(Boolean))
+        }
 
         const loadedActivity = activityRes.status === 'fulfilled' ? activityRes.value?.activity : null
         if (loadedActivity) {
@@ -493,7 +501,7 @@ export default function ActivityFormPage() {
             </CardContent>
           </Card>
 
-          {activity.activity_type === 'cognitive_record' && (
+          {activity.activity_type !== 'reading' && activeTherapists.length > 0 && (
             <label className="flex items-start gap-3 mb-6 px-1 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -506,11 +514,13 @@ export default function ActivityFormPage() {
                   {shareWithTherapist
                     ? <Share2 className="h-3.5 w-3.5 text-indigo-600" />
                     : <Lock className="h-3.5 w-3.5 text-gray-400" />}
-                  Compartilhar este registro com meu psicólogo
+                  {activeTherapists.length === 1
+                    ? `Compartilhar este registro com ${activeTherapists[0].name}`
+                    : 'Compartilhar este registro com meu(s) psicólogo(s)'}
                 </span>
                 <span className="block text-xs text-gray-400 mt-0.5">
                   {shareWithTherapist
-                    ? 'Seu psicólogo poderá ver este registro.'
+                    ? 'Será visível para a conexão clínica ativa.'
                     : 'Apenas você pode ver este registro.'}
                 </span>
               </span>
