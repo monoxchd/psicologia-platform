@@ -214,6 +214,19 @@ class AdminService {
   async createAppointment(data) {
     return api.post('/admin/appointments', { appointment: data })
   }
+
+  // Payouts (manual repasses owed to therapists who haven't connected Asaas)
+  async getPayouts() {
+    return api.get('/admin/payouts')
+  }
+
+  async getUpcomingPayouts() {
+    return api.get('/admin/payouts/upcoming')
+  }
+
+  async markPayoutPaid(paymentId, reference) {
+    return api.post(`/admin/payouts/${paymentId}/mark_paid`, { reference })
+  }
 }
 
 export default new AdminService()

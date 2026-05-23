@@ -113,6 +113,10 @@ export default function AdminPage() {
               <TagIcon className="h-4 w-4" />
               Temas
             </TabsTrigger>
+            <TabsTrigger value="payouts" className="gap-1.5">
+              <CreditCard className="h-4 w-4" />
+              Repasses
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies">
@@ -138,6 +142,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="themes">
             <ThemesTab />
+          </TabsContent>
+          <TabsContent value="payouts">
+            <PayoutsTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -1135,7 +1142,7 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
         email: '', name: '', specialty: '', experience_years: '', bio: '',
         crp_number: '', personal_site_url: '', meeting_url: '',
         acolhimento_price: '', acolhimento_quote: '',
-        commission_percentage: 20,
+        commission_percentage: 35,
         position: 0,
         gender: '', pronouns: '',
         serves_children: false, serves_teens: false, serves_adults: true,
@@ -1323,7 +1330,7 @@ function TherapistFormDialog({ open, onOpenChange, therapist, onSave }) {
             <p className="text-sm font-medium mb-2">Pagamento</p>
             <div>
               <Label htmlFor="therapist-commission">Comissão da plataforma (%)</Label>
-              <Input id="therapist-commission" name="commission_percentage" type="number" min="0" max="99.99" step="0.01" value={form.commission_percentage ?? ''} onChange={handleChange} placeholder="Padrão: 20" />
+              <Input id="therapist-commission" name="commission_percentage" type="number" min="0" max="99.99" step="0.01" value={form.commission_percentage ?? ''} onChange={handleChange} placeholder="Padrão: 35 (20–25 com Asaas conectado)" />
               <p className="text-xs text-gray-500 mt-1">Porcentagem que a TerapiaConecta retém de cada sessão paga (o restante vai para o terapeuta).</p>
             </div>
           </div>
@@ -3444,6 +3451,246 @@ function CreateAppointmentDialog({ open, onOpenChange, onCreated }) {
             </Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── Payouts Tab (manual repasses) ───────────────────────────
+
+function formatBRL(value) {
+  return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function formatPayoutDate(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', timeZone: BR_TZ,
+  })
+}
+
+function PayoutsTab() {
+  const [loading, setLoading] = useState(true)
+  const [groups, setGroups] = useState([])
+  const [grandTotal, setGrandTotal] = useState(0)
+  const [upcoming, setUpcoming] = useState([])
+  const [markTarget, setMarkTarget] = useState(null)
+
+  const load = async () => {
+    try {
+      setLoading(true)
+      const [main, soon] = await Promise.all([
+        adminService.getPayouts(),
+        adminService.getUpcomingPayouts(),
+      ])
+      setGroups(main?.payouts || [])
+      setGrandTotal(main?.grand_total || 0)
+      setUpcoming(soon?.items || [])
+    } catch (e) {
+      toast.error('Erro ao carregar repasses')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleMarkedPaid = (payment) => {
+    // Drop the just-paid payment from its group; remove the group if empty.
+    setGroups(prev => prev
+      .map(g => ({
+        ...g,
+        items: g.items.filter(i => i.payment_id !== payment.id),
+        total_owed: g.items
+          .filter(i => i.payment_id !== payment.id)
+          .reduce((sum, i) => sum + Number(i.therapist_amount), 0),
+      }))
+      .filter(g => g.items.length > 0)
+    )
+    setGrandTotal(prev => prev - Number(markTarget?.therapist_amount || 0))
+    setMarkTarget(null)
+    toast.success('Repasse marcado como pago')
+  }
+
+  if (loading) return <LoadingState />
+
+  return (
+    <>
+      <div className="mt-4 mb-4 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Repasses pendentes</h2>
+          <p className="text-sm text-gray-600 mt-0.5">
+            Pagamentos confirmados há mais de 48h cujo split não foi feito pela Asaas — você deve repassar via PIX.
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-gray-500 uppercase tracking-wide">Total a repassar</div>
+          <div className="text-2xl font-bold text-emerald-700">{formatBRL(grandTotal)}</div>
+        </div>
+      </div>
+
+      {groups.length === 0 ? (
+        <Card>
+          <CardContent>
+            <EmptyState message="Nenhum repasse pendente. Tudo em dia 🎉" />
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {groups.map(g => (
+            <Card key={g.therapist.id}>
+              <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    {g.therapist.name}
+                    {!g.therapist.asaas_ready && (
+                      <Badge className="bg-amber-100 text-amber-800 border border-amber-200 font-normal">
+                        Sem Asaas
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <p className="text-xs text-gray-500 mt-0.5">{g.therapist.email}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-500">A repassar</div>
+                  <div className="text-lg font-semibold text-emerald-700">{formatBRL(g.total_owed)}</div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Serviço</TableHead>
+                      <TableHead>Sessão</TableHead>
+                      <TableHead>Pago em</TableHead>
+                      <TableHead className="text-right">Valor a repassar</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {g.items.map(item => (
+                      <TableRow key={item.payment_id}>
+                        <TableCell className="font-medium">{item.client.name}</TableCell>
+                        <TableCell className="text-gray-600">{item.service || '—'}</TableCell>
+                        <TableCell className="text-gray-600">{formatPayoutDate(item.scheduled_at)}</TableCell>
+                        <TableCell className="text-gray-600">{formatPayoutDate(item.paid_at)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatBRL(item.therapist_amount)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setMarkTarget({ ...item, therapist: g.therapist })}
+                          >
+                            Marcar como pago
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {upcoming.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base">Em janela de espera (48h)</CardTitle>
+            <p className="text-xs text-gray-500 mt-1">
+              Pagamentos confirmados aguardando o fim da janela de reembolso antes de aparecerem para repasse.
+            </p>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Terapeuta</TableHead>
+                  <TableHead>Pago em</TableHead>
+                  <TableHead>Disponível em</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {upcoming.map(u => (
+                  <TableRow key={u.payment_id}>
+                    <TableCell>{u.therapist.name}</TableCell>
+                    <TableCell className="text-gray-600">{formatPayoutDate(u.paid_at)}</TableCell>
+                    <TableCell className="text-gray-600">{formatPayoutDate(u.payout_eligible_at)}</TableCell>
+                    <TableCell className="text-right font-medium">{formatBRL(u.therapist_amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <MarkPayoutPaidDialog
+        target={markTarget}
+        onClose={() => setMarkTarget(null)}
+        onSuccess={handleMarkedPaid}
+      />
+    </>
+  )
+}
+
+function MarkPayoutPaidDialog({ target, onClose, onSuccess }) {
+  const [reference, setReference] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const open = !!target
+
+  useEffect(() => {
+    if (open) setReference('')
+  }, [open])
+
+  const handleSubmit = async () => {
+    try {
+      setSubmitting(true)
+      const res = await adminService.markPayoutPaid(target.payment_id, reference.trim() || null)
+      onSuccess(res.payment)
+    } catch (e) {
+      toast.error(e?.errors?.[0] || e?.message || 'Erro ao marcar como pago')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Marcar repasse como pago</DialogTitle>
+          <DialogDescription>
+            {target ? `${target.therapist?.name} — ${formatBRL(target.therapist_amount)}` : ''}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="payout-reference">Referência (opcional)</Label>
+            <Input
+              id="payout-reference"
+              placeholder="PIX txid, ID do comprovante, etc."
+              value={reference}
+              onChange={e => setReference(e.target.value)}
+            />
+            <p className="text-xs text-gray-500">
+              Guarde a referência do PIX para conciliação contábil.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={submitting}>Cancelar</Button>
+          <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Confirmar pagamento
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

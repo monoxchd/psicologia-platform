@@ -29,6 +29,7 @@ import ConexaoClinicaTherapistCard from '../components/ConexaoClinicaTherapistCa
 import AvailabilityGrid from '../components/AvailabilityGrid'
 import authService from '../services/authService'
 import appointmentService from '../services/appointmentService'
+import paymentService from '../services/paymentService'
 import { blogService } from '../services/blogService'
 import horizontalLogo from '../assets/horizontal-logo.png'
 
@@ -77,6 +78,7 @@ const TherapistDashboardPage = () => {
   })
   const [todayAppointments, setTodayAppointments] = useState([])
   const [upcomingAppointments, setUpcomingAppointments] = useState([])
+  const [payoutsSummary, setPayoutsSummary] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -106,6 +108,11 @@ const TherapistDashboardPage = () => {
           setUpcomingAppointments(res?.upcoming || [])
         })
         .catch(err => console.error('Error loading appointments:', err))
+
+      // Pending manual payouts (only meaningful for non-Asaas therapists)
+      paymentService.getMyPayouts()
+        .then(setPayoutsSummary)
+        .catch(err => console.error('Error loading payouts summary:', err))
 
       // Get therapist's articles
       const token = localStorage.getItem('auth_token')
@@ -193,6 +200,7 @@ const TherapistDashboardPage = () => {
           stats={stats}
           todayAppointments={todayAppointments}
           upcomingAppointments={upcomingAppointments}
+          payoutsSummary={payoutsSummary}
         />
 
         {/* Appointments — Today highlighted + upcoming */}
@@ -417,7 +425,7 @@ const TherapistDashboardPage = () => {
   )
 }
 
-function DashboardStats({ stats, todayAppointments, upcomingAppointments }) {
+function DashboardStats({ stats, todayAppointments, upcomingAppointments, payoutsSummary }) {
   const allUpcoming = [...todayAppointments, ...upcomingAppointments]
   const upcomingCount = allUpcoming.length
   // Receita prevista: agendamentos pagos (cost > 0) ainda não cancelados.
@@ -427,6 +435,11 @@ function DashboardStats({ stats, todayAppointments, upcomingAppointments }) {
     .filter(a => a.status === 'confirmed' && parseFloat(a.cost) > 0)
     .reduce((sum, a) => sum + parseFloat(a.cost || 0), 0)
   const pendingPaymentCount = allUpcoming.filter(a => a.status === 'pending_payment').length
+  // Repasses manuais já devidos ao terapeuta (sessões pagas, fora da janela
+  // de 48h). Só aparece quando há algo a repassar — caso contrário a card
+  // segue mostrando o status atual de "sessões confirmadas".
+  const owedTotal = Number(payoutsSummary?.eligible_total || 0)
+  const asaasReady = payoutsSummary?.asaas_ready
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -459,6 +472,21 @@ function DashboardStats({ stats, todayAppointments, upcomingAppointments }) {
               ? `+ ${pendingPaymentCount} aguardando pagamento`
               : 'sessões confirmadas'}
           </p>
+          {owedTotal > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p className="text-xs text-gray-600">
+                <span className="font-semibold text-emerald-700">
+                  {owedTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>{' '}
+                em repasses pendentes
+              </p>
+              {!asaasReady && (
+                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                  Conecte sua conta Asaas para receber automaticamente e reduzir sua comissão.
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

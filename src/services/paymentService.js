@@ -25,6 +25,13 @@ const paymentService = {
     const blob = await api.requestBlob(this.receiptUrl(appointmentId))
     return blob
   },
+
+  // Therapist-side summary of platform-owed manual repasses. Used by the
+  // Receita Prevista card on the therapist dashboard to nudge non-Asaas
+  // therapists toward connecting their wallet.
+  async getMyPayouts() {
+    return api.get('/payments/therapist_payouts')
+  },
 }
 
 export default paymentService
