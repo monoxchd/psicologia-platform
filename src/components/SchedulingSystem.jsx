@@ -43,6 +43,7 @@ export default function SchedulingSystem({
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [guestPassword, setGuestPassword] = useState('')
+  const [guestPasswordConfirm, setGuestPasswordConfirm] = useState('')
   // Inline login modal — opens from the "Já tenho conta" link in the guest
   // block. Logging in here preserves the user's service/date/time selections
   // (which would be lost by navigating away to /login).
@@ -206,9 +207,17 @@ export default function SchedulingSystem({
       // Retry-only branch: appointment already created on a previous attempt,
       // just re-request payment to get a fresh invoiceUrl.
       if (pendingAppointmentId) {
-        const payment = await paymentService.createPayment(pendingAppointmentId)
-        window.location.href = payment.invoice_url
-        return
+        try {
+          const payment = await paymentService.createPayment(pendingAppointmentId)
+          window.location.href = payment.invoice_url
+          return
+        } catch (paymentError) {
+          const detail = paymentError.errors?.[0] || paymentError.message
+          setBookingError(
+            `Ainda não consegui iniciar o pagamento${detail ? ` (${detail})` : ''}. Seu horário segue reservado — tente novamente em instantes ou fale com o suporte pelo WhatsApp.`
+          )
+          return
+        }
       }
 
       let normalizedCpf = null
@@ -234,6 +243,11 @@ export default function SchedulingSystem({
         }
         if (guestPassword.length < 6) {
           setBookingError('A senha deve ter pelo menos 6 caracteres.')
+          setBooking(false)
+          return
+        }
+        if (guestPassword !== guestPasswordConfirm) {
+          setBookingError('As senhas não coincidem.')
           setBooking(false)
           return
         }
@@ -292,9 +306,21 @@ export default function SchedulingSystem({
       if (normalizedCpf) authService.updateCachedUser({ cpf: normalizedCpf })
 
       if (appt.status === 'pending_payment') {
-        const payment = await paymentService.createPayment(appt.id)
-        window.location.href = payment.invoice_url
-        return
+        try {
+          const payment = await paymentService.createPayment(appt.id)
+          window.location.href = payment.invoice_url
+          return
+        } catch (paymentError) {
+          // Appointment is already saved on the backend and the slot is held
+          // for 30 min by PaymentExpirationJob. Tell the user their reservation
+          // is safe and offer a retry — the "Tentar pagamento novamente" label
+          // is already wired via pendingAppointmentId above.
+          const detail = paymentError.errors?.[0] || paymentError.message
+          setBookingError(
+            `Seu horário foi reservado por 30 minutos, mas houve um problema ao iniciar o pagamento${detail ? ` (${detail})` : ''}. Tente novamente ou fale com o suporte pelo WhatsApp.`
+          )
+          return
+        }
       }
 
       // Free booking (B2B / zero-cost): hand back to the existing
@@ -647,6 +673,21 @@ export default function SchedulingSystem({
                       placeholder="Mínimo 6 caracteres"
                       className="bg-white"
                     />
+                  </div>
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label htmlFor="guest-password-confirm" className="text-amber-900">Confirme a senha</Label>
+                    <Input
+                      id="guest-password-confirm"
+                      type="password"
+                      autoComplete="new-password"
+                      value={guestPasswordConfirm}
+                      onChange={(e) => setGuestPasswordConfirm(e.target.value)}
+                      placeholder="Repita a senha"
+                      className="bg-white"
+                    />
+                    {guestPasswordConfirm.length > 0 && guestPassword !== guestPasswordConfirm && (
+                      <p className="text-xs text-red-700">As senhas não coincidem.</p>
+                    )}
                   </div>
                 </div>
               </div>
