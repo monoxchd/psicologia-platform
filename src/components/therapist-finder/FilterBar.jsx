@@ -24,6 +24,22 @@ const MODALITY_OPTIONS = [
 
 const RADIUS_OPTIONS = [3, 5, 10, 20]
 
+const DAY_OPTIONS = [
+  { value: 'mon', label: 'Seg' },
+  { value: 'tue', label: 'Ter' },
+  { value: 'wed', label: 'Qua' },
+  { value: 'thu', label: 'Qui' },
+  { value: 'fri', label: 'Sex' },
+  { value: 'sat', label: 'Sáb' },
+  { value: 'sun', label: 'Dom' },
+]
+
+const PERIOD_OPTIONS = [
+  { value: 'morning',   label: 'Manhã',  hint: '06h–12h' },
+  { value: 'afternoon', label: 'Tarde',  hint: '12h–18h' },
+  { value: 'evening',   label: 'Noite',  hint: '18h–22h' },
+]
+
 function Chip({ active, onClick, children, title }) {
   return (
     <button
@@ -63,9 +79,16 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
     const next = current.includes(id) ? current.filter(x => x !== id) : [...current, id]
     onChange({ ...filters, theme_ids: next })
   }
+  const toggleArrayValue = (key, value) => {
+    const current = filters[key] || []
+    const next = current.includes(value) ? current.filter(x => x !== value) : [...current, value]
+    onChange({ ...filters, [key]: next })
+  }
 
   const hasAnyFilter = Object.entries(filters).some(([k, v]) => {
-    if (k === 'theme_ids' || k === 'tag_ids') return Array.isArray(v) && v.length > 0
+    if (k === 'theme_ids' || k === 'tag_ids' || k === 'days' || k === 'periods') {
+      return Array.isArray(v) && v.length > 0
+    }
     if (k === 'radius_km') return false
     return v != null && v !== ''
   })
@@ -135,6 +158,37 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
               </div>
             </div>
           </FilterRow>
+        )}
+
+        <FilterRow label="Disponibilidade — dias">
+          {DAY_OPTIONS.map(opt => (
+            <Chip
+              key={opt.value}
+              active={(filters.days || []).includes(opt.value)}
+              onClick={() => toggleArrayValue('days', opt.value)}
+            >
+              {opt.label}
+            </Chip>
+          ))}
+        </FilterRow>
+
+        <FilterRow label="Disponibilidade — horários">
+          {PERIOD_OPTIONS.map(opt => (
+            <Chip
+              key={opt.value}
+              active={(filters.periods || []).includes(opt.value)}
+              onClick={() => toggleArrayValue('periods', opt.value)}
+              title={opt.hint}
+            >
+              {opt.label} <span className="text-xs opacity-70">· {opt.hint}</span>
+            </Chip>
+          ))}
+        </FilterRow>
+
+        {((filters.days || []).length > 0 || (filters.periods || []).length > 0) && (
+          <p className="text-xs text-gray-500 -mt-2">
+            Mostramos profissionais que costumam atender nesses períodos. A disponibilidade real aparece ao agendar.
+          </p>
         )}
 
         <FilterRow label="Gênero do profissional">

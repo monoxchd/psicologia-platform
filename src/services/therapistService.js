@@ -70,6 +70,8 @@ class TherapistService {
     if (filters.modality) params.modality = filters.modality;
     if (filters.theme_ids && filters.theme_ids.length) params.theme_ids = filters.theme_ids.join(',');
     if (filters.tag_ids && filters.tag_ids.length) params.tag_ids = filters.tag_ids.join(',');
+    if (filters.days && filters.days.length) params.days = filters.days.join(',');
+    if (filters.periods && filters.periods.length) params.periods = filters.periods.join(',');
     if (filters.cep) params.cep = filters.cep.replace(/\D/g, '');
     if (filters.radius_km) params.radius_km = filters.radius_km;
     if (filters.specialty) params.specialty = filters.specialty;
