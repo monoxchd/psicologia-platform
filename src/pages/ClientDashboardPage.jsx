@@ -8,7 +8,7 @@ import {
   LogOut, Calendar, Clock, Video, MapPin, ArrowRight,
   BookOpen, Lightbulb, BookMarked, CheckCircle2, Flame,
   Loader2, Sparkles, ChevronRight, Sun, X, MessageCircle,
-  Brain, LifeBuoy, Settings, Lock
+  Brain, LifeBuoy, Settings, Lock, CreditCard
 } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -28,6 +28,7 @@ import {
 } from 'recharts'
 import authService from '../services/authService'
 import appointmentService from '../services/appointmentService'
+import paymentService from '../services/paymentService'
 import { openWhatsApp, appendSourceTag } from '../utils/whatsapp'
 import activityService from '../services/activityService'
 import { blogService } from '../services/blogService'
@@ -159,6 +160,29 @@ export default function ClientDashboardPage() {
   }, [navigate])
 
   const [cancelling, setCancelling] = useState(false)
+  const [resumingPayment, setResumingPayment] = useState(false)
+
+  const handleResumePayment = async (appointmentId) => {
+    if (!appointmentId) return
+    setResumingPayment(true)
+    try {
+      const payment = await paymentService.createPayment(appointmentId)
+      window.location.href = payment.invoice_url
+    } catch (err) {
+      const description = err.errors?.[0] || err.message || 'Tente novamente em alguns minutos.'
+      toast.error('Não foi possível abrir o pagamento', {
+        description: `${description} Seu horário segue reservado.`,
+        action: {
+          label: 'Falar com suporte',
+          onClick: () => openWhatsApp({
+            message: appendSourceTag('Olá, tive um problema ao retomar o pagamento de uma sessão.')
+          })
+        },
+        duration: 10000,
+      })
+      setResumingPayment(false)
+    }
+  }
 
   const handleCancel = async () => {
     if (!nextAppointment?.id) return
@@ -393,10 +417,16 @@ export default function ClientDashboardPage() {
                               className={`text-[10px] shrink-0 ${
                                 appt.status === 'confirmed'
                                   ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                  : appt.status === 'pending_payment'
+                                  ? 'bg-amber-100 text-amber-900 border-amber-300'
                                   : 'bg-amber-100 text-amber-800 border-amber-200'
                               }`}
                             >
-                              {appt.status === 'confirmed' ? 'Confirmada' : 'Pendente'}
+                              {appt.status === 'confirmed'
+                                ? 'Confirmada'
+                                : appt.status === 'pending_payment'
+                                ? 'Aguardando pagamento'
+                                : 'Pendente'}
                             </Badge>
                           </div>
                         ))}
@@ -440,7 +470,37 @@ export default function ClientDashboardPage() {
                 )}
               </div>
 
+              {nextAppointment.status === 'pending_payment' && (
+                <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-xs text-amber-900">
+                    Sua sessão está reservada por 30 minutos enquanto aguardamos o pagamento.
+                    Conclua para confirmar a sessão.
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center gap-2">
+                {nextAppointment.status === 'pending_payment' && (
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg"
+                    onClick={() => handleResumePayment(nextAppointment.id)}
+                    disabled={resumingPayment}
+                  >
+                    {resumingPayment ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                        Abrindo pagamento...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-3.5 w-3.5 mr-1" />
+                        Continuar pagamento
+                      </>
+                    )}
+                  </Button>
+                )}
+
                 {nextAppointment.meeting_link && nextAppointment.starting_soon && (
                   <Button
                     size="sm"
