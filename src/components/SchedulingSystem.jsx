@@ -161,6 +161,22 @@ export default function SchedulingSystem({
     return digits.length === 11 ? digits : null
   }
 
+  const formatCpf = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 11)
+    if (digits.length <= 3) return digits
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+  }
+
+  const formatPhone = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 11)
+    if (digits.length === 0) return ''
+    if (digits.length <= 2) return `(${digits}`
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  }
+
   const validateEmail = (raw) => /\S+@\S+\.\S+/.test((raw || '').trim())
 
   const handleLoginSubmit = async (e) => {
@@ -598,8 +614,9 @@ export default function SchedulingSystem({
                       inputMode="tel"
                       autoComplete="tel"
                       value={guestPhone}
-                      onChange={(e) => setGuestPhone(e.target.value)}
+                      onChange={(e) => setGuestPhone(formatPhone(e.target.value))}
                       placeholder="(11) 98765-4321"
+                      maxLength={15}
                       className="bg-white"
                     />
                   </div>
@@ -612,8 +629,9 @@ export default function SchedulingSystem({
                         inputMode="numeric"
                         autoComplete="off"
                         value={cpfInput}
-                        onChange={(e) => setCpfInput(e.target.value)}
+                        onChange={(e) => setCpfInput(formatCpf(e.target.value))}
                         placeholder="000.000.000-00"
+                        maxLength={14}
                         className="bg-white"
                       />
                     </div>
@@ -644,8 +662,9 @@ export default function SchedulingSystem({
                   type="text"
                   inputMode="numeric"
                   value={cpfInput}
-                  onChange={(e) => setCpfInput(e.target.value)}
+                  onChange={(e) => setCpfInput(formatCpf(e.target.value))}
                   placeholder="000.000.000-00"
+                  maxLength={14}
                   className="bg-white"
                 />
                 <p className="text-xs text-amber-700">
