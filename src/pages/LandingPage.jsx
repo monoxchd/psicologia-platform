@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Heart, Clock, ShieldCheck, Users, ArrowRight, Filter, Calendar, MessageCircle, User, Menu, LayoutDashboard } from 'lucide-react'
+import { Heart, ShieldCheck, Users, ArrowRight, Filter, Calendar, MessageCircle, User, Menu, LayoutDashboard } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet.jsx'
@@ -256,10 +256,10 @@ export default function LandingPage() {
       <section className="py-20 bg-blue-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-white mb-6">
-            Pronto para Começar sua Jornada de Bem-estar?
+            Ainda em dúvida?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Junte-se a milhares de pessoas que já transformaram suas vidas com nossa plataforma flexível.
+            Fale com a gente. Te ajudamos a entender qual é o próximo passo, sem compromisso.
           </p>
           <Button
             size="lg"
@@ -267,8 +267,8 @@ export default function LandingPage() {
             className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg"
             onClick={() => navigate('/form')}
           >
-            <Clock className="mr-2 h-5 w-5" />
-            Agendar Sessão
+            <MessageCircle className="mr-2 h-5 w-5" />
+            Contate-nos
           </Button>
 
         </div>
