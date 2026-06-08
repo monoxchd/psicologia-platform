@@ -50,7 +50,6 @@ export default function TherapistFinder({
   const [error, setError] = useState(null)
   const [showAll, setShowAll] = useState(!initialDisplay)
   const [page, setPage] = useState(1)
-  const [pendingFirstRefinement, setPendingFirstRefinement] = useState(false)
   const debounceRef = useRef(null)
   const lastFilterKeyRef = useRef('')
   const fetchSeqRef = useRef(0)
@@ -60,7 +59,6 @@ export default function TherapistFinder({
 
   useEffect(() => {
     if (mode !== 'results') return
-    if (pendingFirstRefinement) return
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       const mySeq = ++fetchSeqRef.current
@@ -68,7 +66,7 @@ export default function TherapistFinder({
     }, 200)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey, mode, pendingFirstRefinement])
+  }, [filterKey, mode])
 
   // Reset pagination whenever filters change
   useEffect(() => {
@@ -130,25 +128,21 @@ export default function TherapistFinder({
   const handlePromptSelect = (prefilled, tileKey) => {
     track('Prompt Tile Click', { tile: tileKey, path: window.location.pathname })
     setFilters({ ...EMPTY_FILTERS, ...prefilled })
-    setPendingFirstRefinement(true)
     setMode('results')
   }
 
   const handleSeeAll = () => {
     track('Prompt Tile Click', { tile: 'see_all', path: window.location.pathname })
     setFilters(EMPTY_FILTERS)
-    setPendingFirstRefinement(false)
     setMode('results')
   }
 
   const handleFiltersChange = (newFilters) => {
-    if (pendingFirstRefinement) setPendingFirstRefinement(false)
     setFilters(newFilters)
   }
 
   const handleClear = () => {
     setFilters(EMPTY_FILTERS)
-    setPendingFirstRefinement(false)
     lastFilterKeyRef.current = ''
   }
 
@@ -191,7 +185,7 @@ export default function TherapistFinder({
         filters={filters}
         onChange={handleFiltersChange}
         onClear={handleClear}
-        totalCount={(loading || pendingFirstRefinement) ? null : therapists.length}
+        totalCount={loading ? null : therapists.length}
       />
 
       {error && (
@@ -200,9 +194,7 @@ export default function TherapistFinder({
         </div>
       )}
 
-      {pendingFirstRefinement ? (
-        <RefineGate />
-      ) : loading ? (
+      {loading ? (
         <div className="flex justify-center items-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
         </div>
@@ -252,17 +244,6 @@ export default function TherapistFinder({
           )}
         </>
       )}
-    </div>
-  )
-}
-
-function RefineGate() {
-  return (
-    <div className="text-center py-14 px-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50">
-      <p className="text-lg font-semibold text-gray-900 mb-1">Quase lá</p>
-      <p className="text-sm text-gray-500">
-        Escolha mais um filtro acima e a gente mostra os psicólogos que mais combinam com você.
-      </p>
     </div>
   )
 }

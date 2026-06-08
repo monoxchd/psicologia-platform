@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input.jsx'
 import { Button } from '@/components/ui/button.jsx'
-import { X, Video, MapPin, Filter as FilterIcon, Compass } from 'lucide-react'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover.jsx'
+import {
+  Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetClose,
+} from '@/components/ui/sheet.jsx'
+import {
+  X, Video, MapPin, Compass, Users, UserRound, CalendarDays, Sparkles, ChevronDown,
+} from 'lucide-react'
+import { useIsMobile } from '../../hooks/use-mobile'
 import therapistService from '../../services/therapistService'
 import { formatCep } from '../../utils/cep'
 
@@ -58,6 +65,73 @@ function Chip({ active, onClick, children, title }) {
   )
 }
 
+// One category trigger that opens only its own group of options.
+// Popover on desktop, bottom Sheet on mobile (bigger touch targets + sticky close).
+function FilterDropdown({ icon, label, title, description, summary, count, active, totalCount, contentClassName, children }) {
+  const isMobile = useIsMobile()
+  const Icon = icon
+
+  const trigger = (
+    <button
+      type="button"
+      className={
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-sm transition-colors " +
+        (active
+          ? "bg-blue-600 text-white border-blue-600"
+          : "bg-white text-gray-700 border-gray-300 hover:border-gray-500")
+      }
+    >
+      <Icon className="h-4 w-4" />
+      <span className="font-medium">{summary || label}</span>
+      {count != null && (
+        <span
+          className={
+            "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold " +
+            (active ? "bg-white/25 text-white" : "bg-gray-100 text-gray-600")
+          }
+        >
+          {count}
+        </span>
+      )}
+      <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+    </button>
+  )
+
+  if (isMobile) {
+    const ctaLabel = totalCount != null
+      ? `Ver ${totalCount} ${totalCount === 1 ? 'psicólogo' : 'psicólogos'}`
+      : 'Ver resultados'
+    return (
+      <Sheet>
+        <SheetTrigger asChild>{trigger}</SheetTrigger>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh]">
+          <SheetHeader>
+            <SheetTitle>{title || label}</SheetTitle>
+            {description && <SheetDescription>{description}</SheetDescription>}
+          </SheetHeader>
+          <div className="overflow-y-auto px-4">{children}</div>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button className="w-full bg-blue-600 hover:bg-blue-700">{ctaLabel}</Button>
+            </SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent align="start" className={contentClassName || 'w-80'}>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">{title || label}</p>
+        {children}
+        {description && <p className="mt-3 text-xs text-gray-500">{description}</p>}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 export default function FilterBar({ filters, onChange, onClear, totalCount }) {
   const [availableThemes, setAvailableThemes] = useState([])
 
@@ -93,146 +167,189 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
     return v != null && v !== ''
   })
 
+  const audienceLabel = AUDIENCE_OPTIONS.find(o => o.value === filters.audience)?.label
+  const modalityLabel = MODALITY_OPTIONS.find(o => o.value === filters.modality)?.label
+  const genderLabel = GENDER_OPTIONS.find(o => o.value === filters.gender)?.label
+  const availabilityCount = (filters.days || []).length + (filters.periods || []).length
+  const themeCount = (filters.theme_ids || []).length
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-700">
-          <FilterIcon className="h-4 w-4" />
-          <span className="font-semibold">Filtros</span>
-          {totalCount != null && (
-            <span className="text-gray-500">· {totalCount} {totalCount === 1 ? 'resultado' : 'resultados'}</span>
-          )}
-        </div>
-        {hasAnyFilter && (
-          <Button variant="ghost" size="sm" onClick={onClear} className="text-gray-500 hover:text-gray-700">
-            <X className="h-3 w-3 mr-1" />
-            Limpar filtros
-          </Button>
-        )}
-      </div>
-
-      <div className="space-y-4">
-        <FilterRow label="Atende">
-          {AUDIENCE_OPTIONS.map(opt => (
-            <Chip key={opt.value} active={filters.audience === opt.value} onClick={() => toggleField('audience', opt.value)}>
-              {opt.label}
-            </Chip>
-          ))}
-        </FilterRow>
-
-        <FilterRow label="Modalidade">
-          {MODALITY_OPTIONS.map(opt => {
-            const Icon = opt.icon
-            return (
-              <Chip key={opt.value} active={filters.modality === opt.value} onClick={() => toggleField('modality', opt.value)}>
-                <span className="inline-flex items-center gap-1">
-                  <Icon className="h-3.5 w-3.5" />
-                  {opt.label}
-                </span>
-              </Chip>
-            )
-          })}
-        </FilterRow>
-
-        {filters.modality === 'presencial' && (
-          <FilterRow label="Proximidade">
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                value={formatCep(filters.cep || '')}
-                onChange={e => setField('cep', formatCep(e.target.value))}
-                placeholder="00000-000"
-                className="w-32"
-                maxLength={9}
-                inputMode="numeric"
-              />
-              <div className="flex gap-1">
-                {RADIUS_OPTIONS.map(km => (
-                  <Chip
-                    key={km}
-                    active={(filters.radius_km || 5) === km}
-                    onClick={() => setField('radius_km', km)}
-                  >
-                    {km} km
-                  </Chip>
-                ))}
-              </div>
-            </div>
-          </FilterRow>
-        )}
-
-        <FilterRow label="Disponibilidade — dias">
-          {DAY_OPTIONS.map(opt => (
-            <Chip
-              key={opt.value}
-              active={(filters.days || []).includes(opt.value)}
-              onClick={() => toggleArrayValue('days', opt.value)}
-            >
-              {opt.label}
-            </Chip>
-          ))}
-        </FilterRow>
-
-        <FilterRow label="Disponibilidade — horários">
-          {PERIOD_OPTIONS.map(opt => (
-            <Chip
-              key={opt.value}
-              active={(filters.periods || []).includes(opt.value)}
-              onClick={() => toggleArrayValue('periods', opt.value)}
-              title={opt.hint}
-            >
-              {opt.label} <span className="text-xs opacity-70">· {opt.hint}</span>
-            </Chip>
-          ))}
-        </FilterRow>
-
-        {((filters.days || []).length > 0 || (filters.periods || []).length > 0) && (
-          <p className="text-xs text-gray-500 -mt-2">
-            Mostramos profissionais que costumam atender nesses períodos. A disponibilidade real aparece ao agendar.
-          </p>
-        )}
-
-        <FilterRow label="Gênero do profissional">
-          {GENDER_OPTIONS.map(opt => (
-            <Chip key={opt.value} active={filters.gender === opt.value} onClick={() => toggleField('gender', opt.value)}>
-              {opt.label}
-            </Chip>
-          ))}
-        </FilterRow>
-
-        {availableThemes.length > 0 && (
-          <FilterRow label="O que te trouxe aqui">
-            {availableThemes.map(theme => (
-              <Chip
-                key={theme.id}
-                active={(filters.theme_ids || []).includes(theme.id)}
-                onClick={() => toggleTheme(theme.id)}
-                title={theme.description || undefined}
-              >
-                {theme.name}
+    <div className="mb-6">
+      {/* Scrollable category triggers — each opens only its own group */}
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <FilterDropdown
+          icon={Users}
+          label="Atende"
+          title="Atende"
+          summary={audienceLabel || 'Atende'}
+          active={!!filters.audience}
+          totalCount={totalCount}
+        >
+          <div className="flex flex-wrap gap-2">
+            {AUDIENCE_OPTIONS.map(opt => (
+              <Chip key={opt.value} active={filters.audience === opt.value} onClick={() => toggleField('audience', opt.value)}>
+                {opt.label}
               </Chip>
             ))}
-          </FilterRow>
+          </div>
+        </FilterDropdown>
+
+        <FilterDropdown
+          icon={Video}
+          label="Modalidade"
+          title="Modalidade"
+          summary={modalityLabel || 'Modalidade'}
+          active={!!filters.modality}
+          totalCount={totalCount}
+        >
+          <div className="flex flex-wrap gap-2">
+            {MODALITY_OPTIONS.map(opt => {
+              const Icon = opt.icon
+              return (
+                <Chip key={opt.value} active={filters.modality === opt.value} onClick={() => toggleField('modality', opt.value)}>
+                  <span className="inline-flex items-center gap-1">
+                    <Icon className="h-3.5 w-3.5" />
+                    {opt.label}
+                  </span>
+                </Chip>
+              )
+            })}
+          </div>
+
+          {filters.modality === 'presencial' && (
+            <div className="mt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Proximidade</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  value={formatCep(filters.cep || '')}
+                  onChange={e => setField('cep', formatCep(e.target.value))}
+                  placeholder="00000-000"
+                  className="w-32"
+                  maxLength={9}
+                  inputMode="numeric"
+                />
+                <div className="flex gap-1">
+                  {RADIUS_OPTIONS.map(km => (
+                    <Chip
+                      key={km}
+                      active={(filters.radius_km || 5) === km}
+                      onClick={() => setField('radius_km', km)}
+                    >
+                      {km} km
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </FilterDropdown>
+
+        <FilterDropdown
+          icon={CalendarDays}
+          label="Disponibilidade"
+          title="Disponibilidade"
+          description="Mostramos profissionais que costumam atender nesses períodos. A disponibilidade real aparece ao agendar."
+          summary="Disponibilidade"
+          count={availabilityCount || null}
+          active={availabilityCount > 0}
+          totalCount={totalCount}
+        >
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Dias</p>
+          <div className="mb-4 flex flex-wrap gap-2">
+            {DAY_OPTIONS.map(opt => (
+              <Chip
+                key={opt.value}
+                active={(filters.days || []).includes(opt.value)}
+                onClick={() => toggleArrayValue('days', opt.value)}
+              >
+                {opt.label}
+              </Chip>
+            ))}
+          </div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Horários</p>
+          <div className="flex flex-wrap gap-2">
+            {PERIOD_OPTIONS.map(opt => (
+              <Chip
+                key={opt.value}
+                active={(filters.periods || []).includes(opt.value)}
+                onClick={() => toggleArrayValue('periods', opt.value)}
+                title={opt.hint}
+              >
+                {opt.label} <span className="text-xs opacity-70">· {opt.hint}</span>
+              </Chip>
+            ))}
+          </div>
+        </FilterDropdown>
+
+        <FilterDropdown
+          icon={UserRound}
+          label="Gênero"
+          title="Gênero do profissional"
+          summary={genderLabel || 'Gênero'}
+          active={!!filters.gender}
+          totalCount={totalCount}
+        >
+          <div className="flex flex-wrap gap-2">
+            {GENDER_OPTIONS.map(opt => (
+              <Chip key={opt.value} active={filters.gender === opt.value} onClick={() => toggleField('gender', opt.value)}>
+                {opt.label}
+              </Chip>
+            ))}
+          </div>
+        </FilterDropdown>
+
+        {availableThemes.length > 0 && (
+          <FilterDropdown
+            icon={Sparkles}
+            label="Temas"
+            title="O que te trouxe aqui"
+            summary="Temas"
+            count={themeCount || null}
+            active={themeCount > 0}
+            totalCount={totalCount}
+            contentClassName="w-80"
+          >
+            <div className="flex flex-wrap gap-2">
+              {availableThemes.map(theme => (
+                <Chip
+                  key={theme.id}
+                  active={(filters.theme_ids || []).includes(theme.id)}
+                  onClick={() => toggleTheme(theme.id)}
+                  title={theme.description || undefined}
+                >
+                  {theme.name}
+                </Chip>
+              ))}
+            </div>
+          </FilterDropdown>
         )}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-gray-100 text-center">
+      {/* Result count + clear */}
+      {(totalCount != null || hasAnyFilter) && (
+        <div className="mt-2 flex items-center justify-between px-1">
+          <span className="text-sm text-gray-500">
+            {totalCount != null && `${totalCount} ${totalCount === 1 ? 'resultado' : 'resultados'}`}
+          </span>
+          {hasAnyFilter && (
+            <Button variant="ghost" size="sm" onClick={onClear} className="h-auto p-0 text-gray-500 hover:text-gray-700 hover:bg-transparent">
+              <X className="mr-1 h-3 w-3" />
+              Limpar filtros
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Triage fallback */}
+      <div className="mt-3 text-center">
         <Link
           to="/triagem"
-          className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-emerald-700 underline underline-offset-4"
+          className="inline-flex items-center gap-1.5 text-xs text-gray-500 underline underline-offset-4 hover:text-emerald-700"
         >
           <Compass className="h-3.5 w-3.5" />
           Nenhum desses te descreve? Responda 3 perguntas →
         </Link>
       </div>
-    </div>
-  )
-}
-
-function FilterRow({ label, children }) {
-  return (
-    <div>
-      <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">{label}</p>
-      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   )
 }

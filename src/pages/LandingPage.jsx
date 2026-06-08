@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button.jsx'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Heart, ShieldCheck, Users, ArrowRight, Filter, Calendar, MessageCircle, User, Menu, LayoutDashboard } from 'lucide-react'
+import { Heart, ShieldCheck, Users, ArrowRight, MessageCircle, User, Menu, LayoutDashboard } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet.jsx'
@@ -49,7 +48,6 @@ export default function LandingPage() {
               />
             </div>
             <div className="hidden md:flex space-x-6 items-center">
-              <a href="#como-funciona" className="text-gray-600 hover:text-blue-600">Como Funciona</a>
               <a href="#terapeutas" className="text-gray-600 hover:text-blue-600">Terapeutas</a>
               <Link to="/blog" className="text-gray-600 hover:text-blue-600">Blog</Link>
               <Link to={accountLinkTo} className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600">
@@ -72,14 +70,6 @@ export default function LandingPage() {
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-1 px-4 mt-2">
-                  <SheetClose asChild>
-                    <a
-                      href="#como-funciona"
-                      className="py-3 px-2 text-gray-700 hover:text-blue-600 border-b border-gray-100"
-                    >
-                      Como Funciona
-                    </a>
-                  </SheetClose>
                   <SheetClose asChild>
                     <a
                       href="#terapeutas"
@@ -183,62 +173,6 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section id="como-funciona" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Como Funciona</h2>
-            <p className="text-xl text-gray-600">3 passos simples para encontrar cuidado psicológico</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="text-center p-6">
-              <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                  <Filter className="h-8 w-8 text-blue-600" />
-                </div>
-                <CardTitle>1. Filtre por demanda</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Diga o que você está buscando: tipo de atendimento, gênero do profissional,
-                  temas ou localização. A gente filtra pra você.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center p-6">
-              <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <Users className="h-8 w-8 text-green-600" />
-                </div>
-                <CardTitle>2. Escolha seu psicólogo</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Conheça os profissionais que combinam com você: perfis, especialidades
-                  e abordagem. Sem ficar confuso por dezenas de opções.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center p-6">
-              <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                  <Calendar className="h-8 w-8 text-purple-600" />
-                </div>
-                <CardTitle>3. Marque sua sessão</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Agende direto na plataforma ou fale com a gente no WhatsApp.
-                  Valorizamos a sua busca e o primeiro contato é humano, sempre!
-                </p>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </section>
