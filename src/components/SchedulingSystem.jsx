@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge.jsx'
 import { Input } from '@/components/ui/input.jsx'
 import { Label } from '@/components/ui/label.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx'
-import { Calendar, Clock, CheckCircle, ArrowLeft, Loader2, Brain } from 'lucide-react'
+import { Calendar, Clock, CheckCircle, ArrowLeft, Loader2, Brain, Lock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import apiService from '../services/api.js'
 import authService from '../services/authService.js'
@@ -117,12 +117,18 @@ export default function SchedulingSystem({
     )
   }
 
-  const availableServices = (therapist.services || []).filter(s => s.requires_login)
+  // Show every discoverable service. 'public' services are bookable by anyone;
+  // 'authenticated' ones are shown faded and gated behind login for guests;
+  // 'hidden' is already stripped server-side.
+  const availableServices = (therapist.services || []).filter(s => s.visibility !== 'hidden')
 
-  const fetchAvailability = async () => {
+  // service is passed explicitly because callers advance straight from a card
+  // click, before the selectedService state update has flushed.
+  const fetchAvailability = async (service) => {
+    const svc = service || selectedService
     setLoadingAvailability(true)
     try {
-      const data = await therapistService.getTherapistAvailability(therapist.id, { duration: selectedService.duration })
+      const data = await therapistService.getTherapistAvailability(therapist.id, { duration: svc.duration })
       setAvailability(data.availability || {})
     } catch (error) {
       console.error('Error fetching availability:', error)
@@ -144,18 +150,34 @@ export default function SchedulingSystem({
     return date.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
   }
 
-  const handleGoToDatetime = () => {
+  const handleGoToDatetime = (service) => {
+    const svc = service || selectedService
+    setSelectedService(svc)
     setSelectedDate('')
     setSelectedTime('')
-    fetchAvailability()
+    fetchAvailability(svc)
     setStep('datetime')
+  }
+
+  // Clicking a service card advances straight to date/time. Guests clicking an
+  // 'authenticated' (locked) service are routed to login instead.
+  const handleServiceCardClick = (service) => {
+    if (!isLoggedIn && service.visibility === 'authenticated') {
+      setLoginError(null)
+      setLoginModalOpen(true)
+      return
+    }
+    handleGoToDatetime(service)
   }
 
   const isPaidBooking = parseFloat(selectedService?.price) > 0
   // Logged-in clients with a CPF on file skip the CPF input; guests fill it
   // in the guest block below.
   const showCpfInput = isPaidBooking && isLoggedIn && needsCpf
-  const showGuestFields = !isLoggedIn
+  // Logged-out visitors are soft-locked at the service-selection step (services
+  // render faded), so the guest-checkout block below only applies to 'public'
+  // services, which require no login.
+  const showGuestFields = !isLoggedIn && selectedService?.visibility === 'public'
 
   const validateCpf = (raw) => {
     const digits = (raw || '').replace(/\D/g, '')
@@ -344,6 +366,57 @@ export default function SchedulingSystem({
     }
   }
 
+  // Shared across the service-selection and confirm steps so logged-out
+  // visitors can log in from either surface.
+  const loginDialog = (
+    <Dialog open={loginModalOpen} onOpenChange={setLoginModalOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Entrar na sua conta</DialogTitle>
+          <DialogDescription>
+            Você continua de onde parou — seu horário e serviço seguem selecionados.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleLoginSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="login-modal-email">Email</Label>
+            <Input
+              id="login-modal-email"
+              type="email"
+              autoComplete="email"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="login-modal-password">Senha</Label>
+            <Input
+              id="login-modal-password"
+              type="password"
+              autoComplete="current-password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+            />
+          </div>
+          {loginError && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <p className="text-red-800 text-sm">{loginError}</p>
+            </div>
+          )}
+          <Button type="submit" className="w-full" disabled={loginSubmitting}>
+            {loginSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Entrando...
+              </>
+            ) : 'Entrar'}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+
   if (step === 'service') {
     return (
       <Card className="max-w-2xl mx-auto">
@@ -381,47 +454,50 @@ export default function SchedulingSystem({
               </div>
             ) : (
               <div className="grid gap-4">
-                {availableServices.map((service) => (
-                  <Card
-                    key={service.id}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedService?.id === service.id ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                    onClick={() => setSelectedService(service)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h4 className="font-semibold">{service.name}</h4>
-                          {service.description && (
-                            <p className="text-sm text-gray-600">{service.description}</p>
-                          )}
-                          <p className="text-sm text-gray-500">{service.duration} minutos</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-blue-600">
-                            {formatPrice(service.price)}
+                {availableServices.map((service) => {
+                  const locked = !isLoggedIn && service.visibility === 'authenticated'
+                  return (
+                    <Card
+                      key={service.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleServiceCardClick(service)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleServiceCardClick(service) } }}
+                      className={`cursor-pointer transition-all hover:shadow-md hover:ring-2 hover:ring-blue-200 ${
+                        locked ? 'opacity-60' : ''
+                      }`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-center gap-3">
+                          <div>
+                            <h4 className="font-semibold">{service.name}</h4>
+                            {service.description && (
+                              <p className="text-sm text-gray-600">{service.description}</p>
+                            )}
+                            <p className="text-sm text-gray-500">{service.duration} minutos</p>
+                            {locked && (
+                              <p className="text-xs text-amber-700 mt-1 flex items-center gap-1">
+                                <Lock className="h-3 w-3" />
+                                Precisa estar logado para agendar
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right flex items-center gap-2">
+                            <div className="text-xl font-bold text-blue-600">
+                              {formatPrice(service.price)}
+                            </div>
+                            {locked && <Lock className="h-4 w-4 text-amber-600" />}
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             )}
           </div>
-
-          {availableServices.length > 0 && (
-            <Button
-              className="w-full"
-              size="lg"
-              disabled={!selectedService}
-              onClick={handleGoToDatetime}
-            >
-              Continuar para Agendamento
-            </Button>
-          )}
         </CardContent>
+        {loginDialog}
       </Card>
     )
   }
@@ -490,23 +566,15 @@ export default function SchedulingSystem({
                         variant={selectedTime === slot.time ? "default" : "outline"}
                         disabled={!slot.available}
                         className={!slot.available ? "border-red-200 bg-red-50 text-red-400 line-through opacity-70 cursor-not-allowed hover:bg-red-50" : ""}
-                        onClick={() => slot.available && setSelectedTime(slot.time)}
+                        onClick={() => { if (slot.available) { setSelectedTime(slot.time); setStep('confirm') } }}
                       >
                         {slot.time}
                       </Button>
                     ))}
                   </div>
+                  <p className="text-sm text-gray-500 mt-3">Escolha um horário para revisar o agendamento.</p>
                 </div>
               )}
-
-              <Button
-                className="w-full"
-                size="lg"
-                disabled={!selectedDate || !selectedTime}
-                onClick={() => setStep('confirm')}
-              >
-                Revisar Agendamento
-              </Button>
             </>
           )}
         </CardContent>
@@ -764,52 +832,7 @@ export default function SchedulingSystem({
           </div>
         </CardContent>
 
-        <Dialog open={loginModalOpen} onOpenChange={setLoginModalOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Entrar na sua conta</DialogTitle>
-              <DialogDescription>
-                Você continua de onde parou — seu horário e serviço seguem selecionados.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleLoginSubmit} className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="login-modal-email">Email</Label>
-                <Input
-                  id="login-modal-email"
-                  type="email"
-                  autoComplete="email"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="login-modal-password">Senha</Label>
-                <Input
-                  id="login-modal-password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                />
-              </div>
-              {loginError && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                  <p className="text-red-800 text-sm">{loginError}</p>
-                </div>
-              )}
-              <Button type="submit" className="w-full" disabled={loginSubmitting}>
-                {loginSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Entrando...
-                  </>
-                ) : 'Entrar'}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        {loginDialog}
       </Card>
     )
   }

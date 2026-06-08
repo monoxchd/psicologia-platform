@@ -2121,6 +2121,14 @@ function LeadDetailDialog({ lead, type, open, onClose, formatDate, formatPhone }
 
 // ─── Services Tab ───────────────────────────────────────────
 
+const VISIBILITY_OPTIONS = [
+  { value: 'public', label: 'Público — visível e agendável por qualquer um (guest/WhatsApp)' },
+  { value: 'authenticated', label: 'Requer login — visível, mas só agenda logado' },
+  { value: 'hidden', label: 'Oculto — não aparece na busca pública' },
+]
+const VISIBILITY_LABELS = { public: 'Público', authenticated: 'Requer login', hidden: 'Oculto' }
+const VISIBILITY_BADGE = { public: 'secondary', authenticated: 'default', hidden: 'outline' }
+
 function ServicesTab() {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -2228,7 +2236,7 @@ function ServicesTab() {
                   <TableHead>Slug</TableHead>
                   <TableHead className="text-center">Duração</TableHead>
                   <TableHead className="text-right">Preço Padrão</TableHead>
-                  <TableHead className="text-center">Login</TableHead>
+                  <TableHead className="text-center">Visibilidade</TableHead>
                   <TableHead className="text-center">Terapeutas</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -2247,8 +2255,8 @@ function ServicesTab() {
                     <TableCell className="text-center">{service.duration} min</TableCell>
                     <TableCell className="text-right">R$ {parseFloat(service.default_price).toFixed(2)}</TableCell>
                     <TableCell className="text-center">
-                      <Badge variant={service.requires_login ? 'default' : 'secondary'}>
-                        {service.requires_login ? 'Sim' : 'Não'}
+                      <Badge variant={VISIBILITY_BADGE[service.visibility] || 'default'}>
+                        {VISIBILITY_LABELS[service.visibility] || service.visibility}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">{service.therapists_count}</TableCell>
@@ -2315,11 +2323,11 @@ function ServiceFormDialog({ open, onOpenChange, service, onSave }) {
         description: service.description || '',
         default_price: service.default_price || '',
         duration: service.duration || '',
-        requires_login: service.requires_login !== undefined ? String(service.requires_login) : 'true',
+        visibility: service.visibility || 'authenticated',
         position: service.position || 0,
       } : {
         name: '', slug: '', description: '', default_price: '', duration: '',
-        requires_login: 'true', position: 0,
+        visibility: 'authenticated', position: 0,
       })
     }
   }, [open, service])
@@ -2339,7 +2347,7 @@ function ServiceFormDialog({ open, onOpenChange, service, onSave }) {
       ...form,
       default_price: parseFloat(form.default_price),
       duration: parseInt(form.duration),
-      requires_login: form.requires_login === 'true',
+      visibility: form.visibility || 'authenticated',
       position: parseInt(form.position) || 0,
     }
     if (!data.slug?.trim()) delete data.slug
@@ -2387,14 +2395,15 @@ function ServiceFormDialog({ open, onOpenChange, service, onSave }) {
             </div>
           </div>
           <div>
-            <Label htmlFor="service-requires-login">Requer Login</Label>
-            <Select value={form.requires_login || 'true'} onValueChange={val => setForm(prev => ({ ...prev, requires_login: val }))}>
+            <Label htmlFor="service-visibility">Visibilidade</Label>
+            <Select value={form.visibility || 'authenticated'} onValueChange={val => setForm(prev => ({ ...prev, visibility: val }))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="true">Sim — apenas clientes logados</SelectItem>
-                <SelectItem value="false">Não — público (WhatsApp)</SelectItem>
+                {VISIBILITY_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

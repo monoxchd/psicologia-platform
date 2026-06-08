@@ -36,18 +36,24 @@ class ApiService {
     try {
       const response = await fetch(url, config);
 
-      const data = await response.json();
+      // 204 No Content (e.g. DELETE -> head :no_content) and other empty
+      // bodies have nothing to parse. Calling response.json() on them throws
+      // "SyntaxError: unexpected end of data", which would surface a false
+      // error toast even though the request succeeded.
+      const isEmpty = response.status === 204
+        || response.headers.get('content-length') === '0';
+      const data = isEmpty ? null : await response.json();
 
       if (!response.ok) {
         // Prefer the backend's message (always Portuguese, user-facing) on
         // error.message so any caller that uses err.message still shows a
         // friendly string instead of "API Error: 401 Unauthorized".
-        const backendMessage = data.error
-          || (Array.isArray(data.errors) ? data.errors.filter(Boolean).join(', ') : null)
+        const backendMessage = data?.error
+          || (Array.isArray(data?.errors) ? data.errors.filter(Boolean).join(', ') : null)
           || 'Não foi possível concluir a operação. Tente novamente.';
         const error = new Error(backendMessage);
         error.status = response.status;
-        error.errors = data.errors || (data.error ? [data.error] : []);
+        error.errors = data?.errors || (data?.error ? [data.error] : []);
         throw error;
       }
 
