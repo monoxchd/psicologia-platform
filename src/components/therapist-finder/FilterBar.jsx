@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input.jsx'
 import { Button } from '@/components/ui/button.jsx'
@@ -7,7 +7,7 @@ import {
   Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetClose,
 } from '@/components/ui/sheet.jsx'
 import {
-  X, Video, MapPin, Compass, Users, UserRound, CalendarDays, Sparkles, ChevronDown,
+  X, Video, MapPin, Compass, Users, UserRound, CalendarDays, Sparkles, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import { useIsMobile } from '../../hooks/use-mobile'
 import therapistService from '../../services/therapistService'
@@ -134,6 +134,9 @@ function FilterDropdown({ icon, label, title, description, summary, count, activ
 
 export default function FilterBar({ filters, onChange, onClear, totalCount }) {
   const [availableThemes, setAvailableThemes] = useState([])
+  const scrollRef = useRef(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -142,6 +145,20 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
+
+  // Show edge fades only while there's more of the filter row to swipe to.
+  const updateScrollHints = () => {
+    const el = scrollRef.current
+    if (!el) return
+    setCanScrollLeft(el.scrollLeft > 4)
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
+  }
+
+  useEffect(() => {
+    updateScrollHints()
+    window.addEventListener('resize', updateScrollHints)
+    return () => window.removeEventListener('resize', updateScrollHints)
+  }, [availableThemes])
 
   const setField = (key, value) => onChange({ ...filters, [key]: value })
   const toggleField = (key, value) => {
@@ -176,7 +193,14 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
   return (
     <div className="mb-6">
       {/* Scrollable category triggers — each opens only its own group */}
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="relative -mx-1">
+        <div
+          ref={scrollRef}
+          onScroll={updateScrollHints}
+          role="group"
+          aria-label="Filtros — deslize para ver mais"
+          className="flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
         <FilterDropdown
           icon={Users}
           label="Atende"
@@ -244,6 +268,49 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
           )}
         </FilterDropdown>
 
+        {availableThemes.length > 0 && (
+          <FilterDropdown
+            icon={Sparkles}
+            label="Temas"
+            title="O que te trouxe aqui"
+            summary="Temas"
+            count={themeCount || null}
+            active={themeCount > 0}
+            totalCount={totalCount}
+            contentClassName="w-80"
+          >
+            <div className="flex flex-wrap gap-2">
+              {availableThemes.map(theme => (
+                <Chip
+                  key={theme.id}
+                  active={(filters.theme_ids || []).includes(theme.id)}
+                  onClick={() => toggleTheme(theme.id)}
+                  title={theme.description || undefined}
+                >
+                  {theme.name}
+                </Chip>
+              ))}
+            </div>
+          </FilterDropdown>
+        )}
+
+        <FilterDropdown
+          icon={UserRound}
+          label="Gênero"
+          title="Gênero do profissional"
+          summary={genderLabel || 'Gênero'}
+          active={!!filters.gender}
+          totalCount={totalCount}
+        >
+          <div className="flex flex-wrap gap-2">
+            {GENDER_OPTIONS.map(opt => (
+              <Chip key={opt.value} active={filters.gender === opt.value} onClick={() => toggleField('gender', opt.value)}>
+                {opt.label}
+              </Chip>
+            ))}
+          </div>
+        </FilterDropdown>
+
         <FilterDropdown
           icon={CalendarDays}
           label="Disponibilidade"
@@ -280,48 +347,15 @@ export default function FilterBar({ filters, onChange, onClear, totalCount }) {
             ))}
           </div>
         </FilterDropdown>
+        </div>
 
-        <FilterDropdown
-          icon={UserRound}
-          label="Gênero"
-          title="Gênero do profissional"
-          summary={genderLabel || 'Gênero'}
-          active={!!filters.gender}
-          totalCount={totalCount}
-        >
-          <div className="flex flex-wrap gap-2">
-            {GENDER_OPTIONS.map(opt => (
-              <Chip key={opt.value} active={filters.gender === opt.value} onClick={() => toggleField('gender', opt.value)}>
-                {opt.label}
-              </Chip>
-            ))}
+        {canScrollLeft && (
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent" aria-hidden="true" />
+        )}
+        {canScrollRight && (
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-white via-white/80 to-transparent" aria-hidden="true">
+            <ChevronRight className="h-4 w-4 text-gray-400" />
           </div>
-        </FilterDropdown>
-
-        {availableThemes.length > 0 && (
-          <FilterDropdown
-            icon={Sparkles}
-            label="Temas"
-            title="O que te trouxe aqui"
-            summary="Temas"
-            count={themeCount || null}
-            active={themeCount > 0}
-            totalCount={totalCount}
-            contentClassName="w-80"
-          >
-            <div className="flex flex-wrap gap-2">
-              {availableThemes.map(theme => (
-                <Chip
-                  key={theme.id}
-                  active={(filters.theme_ids || []).includes(theme.id)}
-                  onClick={() => toggleTheme(theme.id)}
-                  title={theme.description || undefined}
-                >
-                  {theme.name}
-                </Chip>
-              ))}
-            </div>
-          </FilterDropdown>
         )}
       </div>
 
