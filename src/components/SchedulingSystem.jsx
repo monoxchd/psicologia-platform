@@ -35,6 +35,9 @@ export default function SchedulingSystem({
   const [bookingError, setBookingError] = useState(null)
   const [availability, setAvailability] = useState({})
   const [loadingAvailability, setLoadingAvailability] = useState(false)
+  // Per-therapist services from the auth-aware endpoint — carries
+  // already_booked for single-use services when a client is logged in.
+  const [therapistServices, setTherapistServices] = useState(null)
   const [cpfInput, setCpfInput] = useState('')
   // Guest checkout fields — only used when the user reaches the confirm step
   // without an account. On submit we create the Client via
@@ -79,6 +82,17 @@ export default function SchedulingSystem({
     ? therapists.find(t => t.id === selectedTherapistId)
     : therapists[0]
 
+  // Reload services whenever the therapist or login state changes so that
+  // already_booked reflects the current client.
+  useEffect(() => {
+    if (!therapist?.id) return
+    let cancelled = false
+    therapistService.getTherapistServices(therapist.id)
+      .then(data => { if (!cancelled) setTherapistServices(data) })
+      .catch(() => { if (!cancelled) setTherapistServices(null) })
+    return () => { cancelled = true }
+  }, [therapist?.id, isLoggedIn])
+
   const availableDates = useMemo(() => {
     return Object.keys(availability)
       .filter(date => {
@@ -117,10 +131,11 @@ export default function SchedulingSystem({
     )
   }
 
-  // Show every discoverable service. 'public' services are bookable by anyone;
-  // 'authenticated' ones are shown faded and gated behind login for guests;
-  // 'hidden' is already stripped server-side.
-  const availableServices = (therapist.services || []).filter(s => s.visibility !== 'hidden')
+  // Prefer the auth-aware per-therapist services (with already_booked); fall
+  // back to the services embedded in the therapist payload until they load.
+  // 'public' services are bookable by anyone; 'authenticated' ones are shown
+  // faded and gated behind login for guests; 'hidden' is stripped server-side.
+  const availableServices = (therapistServices ?? therapist.services ?? []).filter(s => s.visibility !== 'hidden')
 
   // service is passed explicitly because callers advance straight from a card
   // click, before the selectedService state update has flushed.
@@ -159,9 +174,11 @@ export default function SchedulingSystem({
     setStep('datetime')
   }
 
-  // Clicking a service card advances straight to date/time. Guests clicking an
-  // 'authenticated' (locked) service are routed to login instead.
+  // Clicking a service card advances straight to date/time. Already-booked
+  // single-use services are inert; guests clicking an 'authenticated' (locked)
+  // service are routed to login instead.
   const handleServiceCardClick = (service) => {
+    if (service.already_booked) return
     if (!isLoggedIn && service.visibility === 'authenticated') {
       setLoginError(null)
       setLoginModalOpen(true)
@@ -455,16 +472,21 @@ export default function SchedulingSystem({
             ) : (
               <div className="grid gap-4">
                 {availableServices.map((service) => {
-                  const locked = !isLoggedIn && service.visibility === 'authenticated'
+                  const alreadyBooked = !!service.already_booked
+                  const loginLocked = !isLoggedIn && service.visibility === 'authenticated'
+                  const locked = alreadyBooked || loginLocked
                   return (
                     <Card
                       key={service.id}
                       role="button"
-                      tabIndex={0}
+                      tabIndex={alreadyBooked ? -1 : 0}
+                      aria-disabled={alreadyBooked}
                       onClick={() => handleServiceCardClick(service)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleServiceCardClick(service) } }}
-                      className={`cursor-pointer transition-all hover:shadow-md hover:ring-2 hover:ring-blue-200 ${
-                        locked ? 'opacity-60' : ''
+                      className={`transition-all ${
+                        alreadyBooked
+                          ? 'opacity-60 cursor-not-allowed'
+                          : `cursor-pointer hover:shadow-md hover:ring-2 hover:ring-blue-200 ${loginLocked ? 'opacity-60' : ''}`
                       }`}
                     >
                       <CardContent className="p-4">
@@ -475,7 +497,12 @@ export default function SchedulingSystem({
                               <p className="text-sm text-gray-600">{service.description}</p>
                             )}
                             <p className="text-sm text-gray-500">{service.duration} minutos</p>
-                            {locked && (
+                            {alreadyBooked ? (
+                              <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" />
+                                Você já realizou este serviço com este terapeuta
+                              </p>
+                            ) : loginLocked && (
                               <p className="text-xs text-amber-700 mt-1 flex items-center gap-1">
                                 <Lock className="h-3 w-3" />
                                 Precisa estar logado para agendar
@@ -486,7 +513,7 @@ export default function SchedulingSystem({
                             <div className="text-xl font-bold text-blue-600">
                               {formatPrice(service.price)}
                             </div>
-                            {locked && <Lock className="h-4 w-4 text-amber-600" />}
+                            {loginLocked && <Lock className="h-4 w-4 text-amber-600" />}
                           </div>
                         </div>
                       </CardContent>

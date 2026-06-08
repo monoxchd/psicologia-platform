@@ -2324,10 +2324,11 @@ function ServiceFormDialog({ open, onOpenChange, service, onSave }) {
         default_price: service.default_price || '',
         duration: service.duration || '',
         visibility: service.visibility || 'authenticated',
+        single_use_per_therapist: !!service.single_use_per_therapist,
         position: service.position || 0,
       } : {
         name: '', slug: '', description: '', default_price: '', duration: '',
-        visibility: 'authenticated', position: 0,
+        visibility: 'authenticated', single_use_per_therapist: false, position: 0,
       })
     }
   }, [open, service])
@@ -2348,6 +2349,7 @@ function ServiceFormDialog({ open, onOpenChange, service, onSave }) {
       default_price: parseFloat(form.default_price),
       duration: parseInt(form.duration),
       visibility: form.visibility || 'authenticated',
+      single_use_per_therapist: !!form.single_use_per_therapist,
       position: parseInt(form.position) || 0,
     }
     if (!data.slug?.trim()) delete data.slug
@@ -2407,6 +2409,21 @@ function ServiceFormDialog({ open, onOpenChange, service, onSave }) {
               </SelectContent>
             </Select>
           </div>
+          <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              name="single_use_per_therapist"
+              checked={!!form.single_use_per_therapist}
+              onChange={(e) => setForm(prev => ({ ...prev, single_use_per_therapist: e.target.checked }))}
+              className="mt-1"
+            />
+            <span>
+              <span className="font-medium">Sessão única por terapeuta</span>
+              <span className="block text-xs text-gray-500">
+                O cliente só pode agendar este serviço uma vez com cada terapeuta (ex.: acolhimento).
+              </span>
+            </span>
+          </label>
           <DialogFooter>
             <Button type="submit" disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
