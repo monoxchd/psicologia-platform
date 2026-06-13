@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -329,6 +329,9 @@ function QuestionRenderer({ question, control }) {
 
 export default function QuestionnaireFormPage() {
   const { slug, questionnaire_slug } = useParams()
+  const [searchParams] = useSearchParams()
+  // Fluxo QR Code: ?codigo=<hex> ativa retomada + salvamento incremental
+  const accessCode = searchParams.get('codigo')
   const [company, setCompany] = useState(null)
   const [questionnaire, setQuestionnaire] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -337,6 +340,9 @@ export default function QuestionnaireFormPage() {
   const [isAdvancing, setIsAdvancing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [codeState, setCodeState] = useState(accessCode ? 'loading' : 'none') // none|loading|active|completed|invalid
+  const [savedAnswers, setSavedAnswers] = useState(null)
+  const [lastSavedAt, setLastSavedAt] = useState(null)
 
   const sections = useMemo(() => {
     if (!questionnaire?.questions) return []
@@ -374,6 +380,20 @@ export default function QuestionnaireFormPage() {
         ])
         setCompany(companyData.company)
         setQuestionnaire(questionnaireData.questionnaire)
+
+        if (accessCode) {
+          try {
+            const resume = await questionnaireService.resumeByCode(questionnaire_slug, accessCode)
+            if (resume.status === 'completed') {
+              setCodeState('completed')
+            } else {
+              setSavedAnswers(resume.answers || {})
+              setCodeState('active')
+            }
+          } catch (_) {
+            setCodeState('invalid')
+          }
+        }
       } catch (err) {
         setError('Não foi possível carregar o questionário.')
       } finally {
@@ -381,14 +401,21 @@ export default function QuestionnaireFormPage() {
       }
     }
     fetchData()
-  }, [slug, questionnaire_slug])
+  }, [slug, questionnaire_slug, accessCode])
 
-  // Reset form when questionnaire loads
+  // Reset form when questionnaire loads; with an access code, merge the saved
+  // answers and jump to the first untouched section.
   useEffect(() => {
     if (questionnaire?.questions) {
-      form.reset(getDefaultValues(questionnaire.questions))
+      form.reset({ ...getDefaultValues(questionnaire.questions), ...(savedAnswers || {}) })
+      if (savedAnswers && Object.keys(savedAnswers).length > 0 && sections.length > 0) {
+        const firstUntouched = sections.findIndex(
+          (s) => s.questions.every((q) => savedAnswers[q.id] == null)
+        )
+        setCurrentSectionIndex(firstUntouched === -1 ? sections.length - 1 : firstUntouched)
+      }
     }
-  }, [questionnaire])
+  }, [questionnaire, savedAnswers, sections])
 
   const currentSection = sections[currentSectionIndex]
   const isFirstSection = currentSectionIndex === 0
@@ -414,6 +441,7 @@ export default function QuestionnaireFormPage() {
       if (isValid) {
         setCurrentSectionIndex((i) => i + 1)
         window.scrollTo({ top: 0, behavior: 'smooth' })
+        if (accessCode && codeState === 'active') persistProgress()
       }
     } finally {
       // Short window absorbs any trailing click from the same gesture.
@@ -426,13 +454,38 @@ export default function QuestionnaireFormPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Envia só o que foi respondido (itens são opcionais — required: false)
+  const answeredValues = () => {
+    const all = form.getValues()
+    return Object.fromEntries(Object.entries(all).filter(([, v]) =>
+      v !== undefined && v !== null && v !== '' &&
+      !(typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0)
+    ))
+  }
+
+  // Envia TODAS as respostas atuais a cada avanço (não só a seção): o merge no
+  // backend é idempotente, então um save que falhou offline é coberto pelo próximo.
+  const persistProgress = async () => {
+    try {
+      await questionnaireService.saveProgress(questionnaire_slug, accessCode, answeredValues())
+      setLastSavedAt(Date.now())
+    } catch (_) {
+      // Sem conexão: as respostas continuam no formulário; o próximo "Avançar"
+      // (ou o envio final) reenvia tudo.
+    }
+  }
+
   const handleSubmit = async (values) => {
     setIsSubmitting(true)
     try {
-      await questionnaireService.submitResponse(questionnaire_slug, values)
+      if (accessCode && codeState === 'active') {
+        await questionnaireService.finalizeByCode(questionnaire_slug, accessCode, values)
+      } else {
+        await questionnaireService.submitResponse(questionnaire_slug, values)
+      }
       setSubmitted(true)
     } catch (err) {
-      form.setError('root', { message: 'Erro ao enviar respostas. Tente novamente.' })
+      form.setError('root', { message: err.errors?.[0] || err.message || 'Erro ao enviar respostas. Tente novamente.' })
     } finally {
       setIsSubmitting(false)
     }
@@ -505,6 +558,34 @@ export default function QuestionnaireFormPage() {
     )
   }
 
+  if (codeState === 'invalid') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Código não reconhecido</h1>
+          <p className="text-gray-600">
+            Não encontramos este código de acesso. Confira se o endereço foi digitado
+            corretamente ou pegue uma nova folha com QR Code com o responsável pela aplicação.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (codeState === 'completed' && !submitted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Questionário já concluído</h1>
+          <p className="text-gray-600">
+            As respostas deste código já foram enviadas — obrigado pela participação!
+            Cada código pode ser usado uma única vez, para proteger o seu anonimato.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-gray-50 notranslate" translate="no" style={{ '--primary': accentColor, '--primary-foreground': '#ffffff' }}>
@@ -551,6 +632,13 @@ export default function QuestionnaireFormPage() {
               {currentSectionIndex + 1} de {sections.length}
             </span>
           </div>
+          {codeState === 'active' && (
+            <p className="text-xs text-gray-500 mt-2">
+              {lastSavedAt
+                ? '✓ Respostas salvas — você pode fechar e continuar depois com o mesmo QR Code.'
+                : 'Suas respostas são salvas automaticamente a cada etapa.'}
+            </p>
+          )}
         </div>
 
         {/* Section Card */}

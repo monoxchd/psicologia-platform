@@ -14,6 +14,21 @@ const questionnaireService = {
     return response.data
   },
 
+  // ── QR-code anonymous flow ──
+  async resumeByCode(questionnaireSlug, code) {
+    const response = await apiService.get(`/questionnaires/${questionnaireSlug}/resume/${code}`)
+    return response.data
+  },
+
+  async saveProgress(questionnaireSlug, code, answers) {
+    return apiService.patch(`/questionnaires/${questionnaireSlug}/progress/${code}`, { answers })
+  },
+
+  async finalizeByCode(questionnaireSlug, code, answers) {
+    const response = await apiService.post(`/questionnaires/${questionnaireSlug}/progress/${code}/finalize`, { answers })
+    return response.data
+  },
+
   async getResponses(questionnaireSlug) {
     const response = await apiService.get(`/questionnaires/${questionnaireSlug}/responses`)
     return response.data
