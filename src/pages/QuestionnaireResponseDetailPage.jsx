@@ -170,13 +170,13 @@ export default function QuestionnaireResponseDetailPage() {
   const flags = response.flags || {}
   const riskClassification = flags.risk_classification
 
-  // DASS-21 results
-  const dass21 = ['depression', 'anxiety', 'stress']
-    .filter(s => flags[`dass21_${s}_severity`])
-    .map(s => ({
-      subscale: s,
-      rawScore: flags[`dass21_${s}_raw`],
-      severity: flags[`dass21_${s}_severity`]
+  // SWING — interação trabalho-casa (média 0-3 por dimensão)
+  const swingDimensions = ['itf_neg', 'ift_neg', 'itf_pos', 'ift_pos']
+    .filter(d => flags[`swing_${d}_score`] != null)
+    .map(d => ({
+      dimension: d,
+      score: flags[`swing_${d}_score`],
+      n: flags[`swing_${d}_n`]
     }))
 
   // COPSOQ dimensions
@@ -189,19 +189,19 @@ export default function QuestionnaireResponseDetailPage() {
 
   // Generic domain risks (for non-clinical questionnaires)
   const domainRisks = Object.entries(flags)
-    .filter(([k]) => k.endsWith('_risk_level') && !k.startsWith('copsoq_') && !k.startsWith('dass21_'))
+    .filter(([k]) => k.endsWith('_risk_level') && !k.startsWith('copsoq_'))
     .map(([k, v]) => ({
       domain: k.replace('_risk_level', ''),
       level: v,
       score: flags[k.replace('_risk_level', '_risk_score')]
     }))
 
-  const hasClinical = dass21.length > 0 || copsoqDimensions.length > 0
+  const hasClinical = swingDimensions.length > 0 || copsoqDimensions.length > 0
 
   const flagCount = Object.keys(flags).filter(k =>
     (flags[k] === true) &&
     !k.endsWith('_risk_level') && !k.endsWith('_risk_score') && !k.endsWith('_risk') &&
-    k !== 'risk_classification' && !k.startsWith('dass21_') && !k.startsWith('copsoq_')
+    k !== 'risk_classification' && !k.startsWith('swing_') && !k.startsWith('copsoq_')
   ).length
 
   const domainLabels = {
@@ -215,43 +215,45 @@ export default function QuestionnaireResponseDetailPage() {
     contexto_operacional: 'Contexto Operacional'
   }
 
+  // Dimensões COPSOQ III (builder v3) + chaves legadas de questionários v2
   const copsoqLabels = {
     demandas_quantitativas: 'Demandas Quantitativas',
     ritmo_trabalho: 'Ritmo de Trabalho',
+    demandas_emocionais: 'Demandas Emocionais',
+    controle_autonomia: 'Influência e Autonomia',
+    possibilidades_desenvolvimento: 'Possibilidades de Desenvolvimento',
+    significado_trabalho: 'Significado do Trabalho',
+    previsibilidade: 'Previsibilidade',
+    recompensas: 'Reconhecimento e Recompensas',
+    clareza_papel: 'Clareza de Papel',
+    conflitos_papel: 'Conflitos de Papel',
+    lideranca: 'Qualidade da Liderança',
+    apoio_superior: 'Apoio do Superior',
+    apoio_colegas: 'Apoio dos Colegas',
+    relacoes_interpessoais: 'Comunidade no Trabalho',
+    confianca_vertical: 'Confiança Vertical',
+    justica_organizacional: 'Justiça Organizacional',
+    inseguranca_emprego: 'Insegurança no Emprego',
+    inseguranca_condicoes: 'Insegurança nas Condições de Trabalho',
+    conflito_trabalho_vida: 'Conflito Trabalho-Vida',
+    saude_geral: 'Saúde Autoavaliada',
+    // legado (v2)
     significado: 'Significado do Trabalho',
     comprometimento: 'Comprometimento',
-    previsibilidade: 'Previsibilidade',
-    recompensas: 'Recompensas',
-    conflitos_papel: 'Conflitos de Papel',
-    lideranca: 'Qualidade da Liderança'
+    comunicacao: 'Comunicação'
   }
 
-  const dass21Labels = {
-    depression: 'Depressão',
-    anxiety: 'Ansiedade',
-    stress: 'Estresse'
-  }
-
-  const severityLabels = {
-    normal: 'Normal',
-    leve: 'Leve',
-    moderado: 'Moderado',
-    severo: 'Severo',
-    extremamente_severo: 'Extremamente Severo'
+  const swingLabels = {
+    itf_neg: 'Trabalho → Casa (negativa)',
+    ift_neg: 'Casa → Trabalho (negativa)',
+    itf_pos: 'Trabalho → Casa (positiva)',
+    ift_pos: 'Casa → Trabalho (positiva)'
   }
 
   const levelColors = {
     baixo: 'bg-green-100 text-green-700',
     moderado: 'bg-amber-100 text-amber-700',
     alto: 'bg-red-100 text-red-700'
-  }
-
-  const severityColors = {
-    normal: 'bg-green-100 text-green-700',
-    leve: 'bg-blue-100 text-blue-700',
-    moderado: 'bg-amber-100 text-amber-700',
-    severo: 'bg-red-100 text-red-700',
-    extremamente_severo: 'bg-red-200 text-red-900'
   }
 
   const classificationLabels = {
@@ -307,18 +309,19 @@ export default function QuestionnaireResponseDetailPage() {
                 )}
               </div>
 
-              {/* DASS-21 Results */}
-              {dass21.length > 0 && (
+              {/* SWING Results */}
+              {swingDimensions.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3">DASS-21 — Triagem de Saúde Mental</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {dass21.map(({ subscale, rawScore, severity }) => (
-                      <div key={subscale} className="p-3 rounded-lg bg-gray-50 text-center">
-                        <p className="text-xs text-gray-500 mb-1">{dass21Labels[subscale]}</p>
-                        <p className="text-lg font-bold text-gray-900 mb-1">{rawScore}</p>
-                        <Badge className={`text-xs ${severityColors[severity] || 'bg-gray-100 text-gray-600'}`}>
-                          {severityLabels[severity] || severity}
-                        </Badge>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-1">SWING — Interface Trabalho-Casa</h4>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Escala 0-3 · leitura comparativa (sem nota de corte). Dimensões positivas são recursos, não riscos.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {swingDimensions.map(({ dimension, score, n }) => (
+                      <div key={dimension} className="p-3 rounded-lg bg-gray-50 text-center">
+                        <p className="text-xs text-gray-500 mb-1">{swingLabels[dimension]}</p>
+                        <p className="text-lg font-bold text-gray-900 mb-1">{Number(score).toFixed(2)}</p>
+                        {n != null && <p className="text-[10px] text-gray-400">{n} itens</p>}
                       </div>
                     ))}
                   </div>

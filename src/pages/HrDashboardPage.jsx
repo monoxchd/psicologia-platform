@@ -3,11 +3,6 @@ import { useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Loader2, ShieldCheck, Share2, Users, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react'
-import {
-  PieChart, Pie, Cell,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer
-} from 'recharts'
 import companyService from '@/services/companyService'
 import CompanyHeader from '@/components/CompanyHeader.jsx'
 
@@ -23,22 +18,16 @@ const LEVEL_LABEL = {
   alto: 'Alto',
   critico: 'Crítico'
 }
-const DASS_SEVERITY_ORDER = ['normal', 'leve', 'moderado', 'severo', 'extremamente_severo']
-const DASS_SEVERITY_LABEL = {
-  normal: 'Normal',
-  leve: 'Leve',
-  moderado: 'Moderado',
-  severo: 'Severo',
-  extremamente_severo: 'Ext. severo'
-}
-const DASS_SEVERITY_COLOR = {
-  normal: '#22c55e',
-  leve: '#a3e635',
-  moderado: '#f59e0b',
-  severo: '#f97316',
-  extremamente_severo: '#ef4444'
-}
-const DASS_TITLE = { depression: 'Depressão', anxiety: 'Ansiedade', stress: 'Estresse' }
+// SWING — interação trabalho-casa (Geurts et al., 2005; versão BR Carlotto & Câmara, 2014).
+// Mensuração complementar: não compõe os 13 riscos MTE. Escala 0-3, leitura comparativa.
+const SWING_DIMENSIONS = [
+  { key: 'itf_neg', label: 'Trabalho → Casa (negativa)', hint: 'O trabalho atrapalhando a vida em casa', kind: 'neg' },
+  { key: 'ift_neg', label: 'Casa → Trabalho (negativa)', hint: 'A vida pessoal atrapalhando o trabalho', kind: 'neg' },
+  { key: 'itf_pos', label: 'Trabalho → Casa (positiva)', hint: 'O trabalho enriquecendo a vida em casa', kind: 'pos' },
+  { key: 'ift_pos', label: 'Casa → Trabalho (positiva)', hint: 'A vida pessoal enriquecendo o trabalho', kind: 'pos' }
+]
+// Médias de referência — professores BR, n=506 (Carlotto & Câmara, 2014)
+const SWING_REFERENCE = { itf_neg: 1.21, ift_neg: 0.58, itf_pos: 1.26, ift_pos: 1.47 }
 
 export default function HrDashboardPage() {
   const { slug } = useParams()
@@ -68,7 +57,7 @@ export default function HrDashboardPage() {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-gray-600">{error}</p></div>
   }
 
-  const { company, questionnaire, coverage, risks, dass21, departments } = data
+  const { company, questionnaire, coverage, risks, swing, departments } = data
   const primaryColor = company?.primary_color || '#4f46e5'
   const total = coverage?.total_respondents ?? 0
   const belowThreshold = coverage?.below_threshold
@@ -116,7 +105,7 @@ export default function HrDashboardPage() {
         ) : (
           <>
             <RisksPanel risks={risks} expandedRisk={expandedRisk} setExpandedRisk={setExpandedRisk} primaryColor={primaryColor} />
-            <Dass21Panel dass21={dass21} primaryColor={primaryColor} />
+            <SwingPanel swing={swing} />
             <DepartmentHeatmap departments={departments} risks={risks} primaryColor={primaryColor} />
           </>
         )}
@@ -238,30 +227,31 @@ function RisksPanel({ risks, expandedRisk, setExpandedRisk, primaryColor }) {
   )
 }
 
-function Dass21Panel({ dass21 }) {
-  const anySeverePct = dass21?.any_severe_pct ?? 0
+function SwingPanel({ swing }) {
+  const itfNeg = swing?.itf_neg
+  const elevatedItfNeg = itfNeg?.mean != null && itfNeg.mean > SWING_REFERENCE.itf_neg
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Saúde Mental (DASS-21)</CardTitle>
+        <CardTitle className="text-lg">Interface Trabalho-Casa (SWING)</CardTitle>
         <CardDescription>
-          Indicadores de consequência — depressão, ansiedade e estresse. Instrumento clínico validado
-          (cutoffs da DASS-21 em faixas de gravidade).
+          Como o trabalho e a vida pessoal influenciam um ao outro, nas duas direções e qualidades.
+          Escala 0-3 — leitura comparativa (marca cinza = média de referência publicada), não há nota de corte absoluta.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {['depression', 'anxiety', 'stress'].map((subscale) => (
-            <Dass21Card key={subscale} subscale={subscale} data={dass21?.[subscale]} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {SWING_DIMENSIONS.map((dim) => (
+            <SwingCard key={dim.key} dim={dim} data={swing?.[dim.key]} />
           ))}
         </div>
-        {anySeverePct > 0 && (
+        {elevatedItfNeg && (
           <div className="mt-4 flex items-start gap-2 p-3 rounded-lg" style={{ backgroundColor: '#fef3c7' }}>
             <AlertTriangle className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
             <p className="text-xs text-amber-900">
-              <strong>{anySeverePct}%</strong> dos respondentes apresentam ao menos um indicador em nível severo ou extremamente severo.
-              Recomenda-se encaminhamento psicológico prioritário.
+              A interação negativa trabalho → casa está acima da referência publicada — na literatura, é o
+              fator psicossocial com maior efeito sobre presenteísmo. Sinal de atenção para o plano de ação.
             </p>
           </div>
         )}
@@ -270,48 +260,51 @@ function Dass21Panel({ dass21 }) {
   )
 }
 
-function Dass21Card({ subscale, data }) {
-  if (!data || data.total_with_data === 0) {
+function SwingCard({ dim, data }) {
+  const mean = data?.mean
+  if (mean == null) {
     return (
-      <div className="border rounded-lg p-4 text-center">
-        <p className="text-sm font-medium text-gray-700 mb-1">{DASS_TITLE[subscale]}</p>
-        <p className="text-xs text-gray-400">Sem dados</p>
+      <div className="border rounded-lg p-4">
+        <p className="text-sm font-medium text-gray-700">{dim.label}</p>
+        <p className="text-xs text-gray-400 mt-1">Sem dados</p>
       </div>
     )
   }
-  const chartData = DASS_SEVERITY_ORDER.map((sev) => ({
-    severity: DASS_SEVERITY_LABEL[sev],
-    value: data.distribution[sev] ?? 0,
-    color: DASS_SEVERITY_COLOR[sev]
-  })).filter((d) => d.value > 0)
+
+  const reference = SWING_REFERENCE[dim.key]
+  const isNeg = dim.kind === 'neg'
+  // Dimensões negativas: acima da referência = pior (âmbar). Positivas são recursos (azul).
+  const barColor = isNeg ? (mean > reference ? '#f59e0b' : '#22c55e') : '#3b82f6'
 
   return (
     <div className="border rounded-lg p-4">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-gray-700">{DASS_TITLE[subscale]}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-gray-700">{dim.label}</p>
         <span className="text-xs text-gray-400">{data.total_with_data} resp.</span>
       </div>
-      <div className="h-32">
-        <ResponsiveContainer>
-          <PieChart>
-            <Pie
-              data={chartData}
-              dataKey="value"
-              nameKey="severity"
-              cx="50%" cy="50%"
-              innerRadius="55%" outerRadius="85%"
-              paddingAngle={2}
-            >
-              {chartData.map((e, i) => <Cell key={i} fill={e.color} />)}
-            </Pie>
-            <Tooltip formatter={(v, n) => [`${v}%`, n]} />
-          </PieChart>
-        </ResponsiveContainer>
+      <p className="text-xs text-gray-400 mt-0.5">{dim.hint}</p>
+      <div className="flex items-center gap-3 mt-3">
+        <span className="text-2xl font-bold tabular-nums" style={{ color: barColor }}>
+          {mean.toFixed(2)}
+        </span>
+        <div className="relative flex-1 h-2 rounded-full bg-gray-100">
+          <div
+            className="absolute inset-y-0 left-0 rounded-full"
+            style={{ width: `${(mean / 3) * 100}%`, backgroundColor: barColor }}
+          />
+          <div
+            className="absolute -inset-y-1 w-0.5 bg-gray-400"
+            title={`Referência publicada: ${reference.toFixed(2)} (professores BR, Carlotto & Câmara 2014)`}
+            style={{ left: `${(reference / 3) * 100}%` }}
+          />
+        </div>
+        <span className="text-[10px] text-gray-400 w-8 text-right">0-3</span>
       </div>
-      <p className="text-xs text-center mt-2" style={{ color: data.severo_or_worse_pct > 0 ? '#b45309' : '#6b7280' }}>
-        {data.severo_or_worse_pct > 0
-          ? `${data.severo_or_worse_pct}% em nível severo+`
-          : 'Nenhum caso severo'}
+      <p className="text-xs text-gray-500 mt-2">
+        Referência: {reference.toFixed(2)}
+        {isNeg
+          ? (mean > reference ? ' · acima da referência' : ' · dentro/abaixo da referência')
+          : (mean >= reference ? ' · recurso presente' : ' · abaixo da referência')}
       </p>
     </div>
   )
