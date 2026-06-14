@@ -21,6 +21,33 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     tracesSampleRate: 0,            // turn on later if you want APM
     replaysSessionSampleRate: 0,    // session replay can capture sensitive UI; off
     replaysOnErrorSampleRate: 0,
+    // The anonymous questionnaire access code (?codigo= / /resume/<code> /
+    // /progress/<code>) is the only pseudonymous link between a respondent and
+    // their answers — it must never leave the device via error telemetry.
+    beforeSend(event) {
+      const url = event.request?.url
+      if (url) {
+        try {
+          const u = new URL(url)
+          if (u.searchParams.has('codigo')) {
+            u.searchParams.delete('codigo')
+            event.request.url = u.toString()
+          }
+        } catch {
+          // non-absolute URL — leave as-is
+        }
+      }
+      return event
+    },
+    beforeBreadcrumb(breadcrumb) {
+      // Scrub the code from XHR/fetch breadcrumbs (it sits in the API path).
+      const url = breadcrumb.data?.url
+      if (typeof url === 'string') {
+        breadcrumb.data.url = url
+          .replace(/\/(resume|progress)\/[a-f0-9]+/i, '/$1/[REDACTED]')
+      }
+      return breadcrumb
+    },
     ignoreErrors: [
       // Browser extension noise + harmless client-side rejections
       'ResizeObserver loop limit exceeded',

@@ -321,7 +321,7 @@ export default function QuestionnaireResponseDetailPage() {
                       <div key={dimension} className="p-3 rounded-lg bg-gray-50 text-center">
                         <p className="text-xs text-gray-500 mb-1">{swingLabels[dimension]}</p>
                         <p className="text-lg font-bold text-gray-900 mb-1">{Number(score).toFixed(2)}</p>
-                        <p className="text-[10px] text-gray-400">{n} itens</p>
+                        {n != null && <p className="text-[10px] text-gray-400">{n} itens</p>}
                       </div>
                     ))}
                   </div>

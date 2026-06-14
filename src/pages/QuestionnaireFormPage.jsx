@@ -423,7 +423,9 @@ export default function QuestionnaireFormPage() {
 
   // Check if current section has a consent question and if user declined
   const consentQuestion = currentSection?.questions?.find(q => q.config?.is_consent)
-  const consentValue = form.watch(consentQuestion?.id)
+  // Most sections have no consent question; watch(undefined) would subscribe to
+  // the WHOLE form and re-render on every keystroke across a 63-item form.
+  const consentValue = consentQuestion ? form.watch(consentQuestion.id) : undefined
   const consentDeclined = consentQuestion && consentValue && consentValue !== consentQuestion.options?.[0]
   const progressPercent = sections.length > 0
     ? Math.round(((currentSectionIndex + 1) / sections.length) * 100)
