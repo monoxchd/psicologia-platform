@@ -31,7 +31,12 @@ import authService from '../services/authService'
 import appointmentService from '../services/appointmentService'
 import paymentService from '../services/paymentService'
 import { blogService } from '../services/blogService'
+import adminService from '../services/adminService'
 import horizontalLogo from '../assets/horizontal-logo.png'
+
+// Company (B2B) questionnaire responses are admin-only — see the matching gate in
+// QuestionnairesController#responses. Keep this in sync with AdminPage's ADMIN_EMAIL.
+const ADMIN_EMAIL = 'dneves.junior@gmail.com'
 
 const APPOINTMENT_STATUS_LABEL = {
   pending_payment:      'Aguardando pagamento',
@@ -79,6 +84,7 @@ const TherapistDashboardPage = () => {
   const [todayAppointments, setTodayAppointments] = useState([])
   const [upcomingAppointments, setUpcomingAppointments] = useState([])
   const [payoutsSummary, setPayoutsSummary] = useState(null)
+  const [companyQuestionnaires, setCompanyQuestionnaires] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -100,6 +106,16 @@ const TherapistDashboardPage = () => {
         return
       }
       setUser(currentUser)
+
+      // Admin-only: list active company (B2B) questionnaires so their response
+      // lists are reachable without hardcoding a slug. Backend gates the data too.
+      if (currentUser.email === ADMIN_EMAIL) {
+        adminService.getQuestionnaires()
+          .then(qs => setCompanyQuestionnaires(
+            (qs || []).filter(q => q.active && q.company_id)
+          ))
+          .catch(err => console.error('Error loading company questionnaires:', err))
+      }
 
       // Fetch appointments (fire-and-forget — don't block dashboard if it fails)
       appointmentService.getTherapistAppointments()
@@ -394,12 +410,19 @@ const TherapistDashboardPage = () => {
                     Respostas Acolhimento
                   </Button>
                 </Link>
-                <Link to="/therapist/questionarios/questionario-psicossocial-trabalho-altura/respostas">
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <ClipboardList className="h-4 w-4 mr-2" />
-                    Respostas Trabalho em Altura
-                  </Button>
-                </Link>
+
+                {/* Company (B2B) questionnaires — admin-only, populated dynamically */}
+                {user?.email === ADMIN_EMAIL && companyQuestionnaires.map((q) => (
+                  <Link key={q.slug} to={`/therapist/questionarios/${q.slug}/respostas`}>
+                    <Button variant="outline" className="w-full justify-start" size="sm">
+                      <ClipboardList className="h-4 w-4 mr-2" />
+                      <span className="truncate">{q.title}</span>
+                      {q.response_count > 0 && (
+                        <Badge variant="secondary" className="ml-auto">{q.response_count}</Badge>
+                      )}
+                    </Button>
+                  </Link>
+                ))}
               </CardContent>
             </Card>
           </div>
