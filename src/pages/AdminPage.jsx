@@ -33,8 +33,7 @@ import adminService from '@/services/adminService.js'
 import therapistService from '@/services/therapistService.js'
 import { formatCep } from '@/utils/cep'
 import { buildWhatsAppUrlForPhone } from '@/utils/whatsapp'
-
-const ADMIN_EMAIL = 'dneves.junior@gmail.com'
+import { isAdmin } from '@/lib/admin'
 
 // ─── Main Page ───────────────────────────────────────────────
 
@@ -47,7 +46,7 @@ export default function AdminPage() {
     async function checkAuth() {
       try {
         const user = await authService.getCurrentUser()
-        if (!user || user.user_type !== 'therapist' || user.email !== ADMIN_EMAIL) {
+        if (!isAdmin(user)) {
           toast.error('Acesso restrito ao administrador')
           navigate('/login')
           return

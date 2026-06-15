@@ -32,11 +32,8 @@ import appointmentService from '../services/appointmentService'
 import paymentService from '../services/paymentService'
 import { blogService } from '../services/blogService'
 import adminService from '../services/adminService'
+import { isAdmin } from '../lib/admin'
 import horizontalLogo from '../assets/horizontal-logo.png'
-
-// Company (B2B) questionnaire responses are admin-only — see the matching gate in
-// QuestionnairesController#responses. Keep this in sync with AdminPage's ADMIN_EMAIL.
-const ADMIN_EMAIL = 'dneves.junior@gmail.com'
 
 const APPOINTMENT_STATUS_LABEL = {
   pending_payment:      'Aguardando pagamento',
@@ -109,7 +106,7 @@ const TherapistDashboardPage = () => {
 
       // Admin-only: list active company (B2B) questionnaires so their response
       // lists are reachable without hardcoding a slug. Backend gates the data too.
-      if (currentUser.email === ADMIN_EMAIL) {
+      if (isAdmin(currentUser)) {
         adminService.getQuestionnaires()
           .then(qs => setCompanyQuestionnaires(
             (qs || []).filter(q => q.active && q.company_id)
@@ -412,7 +409,7 @@ const TherapistDashboardPage = () => {
                 </Link>
 
                 {/* Company (B2B) questionnaires — admin-only, populated dynamically */}
-                {user?.email === ADMIN_EMAIL && companyQuestionnaires.map((q) => (
+                {isAdmin(user) && companyQuestionnaires.map((q) => (
                   <Link key={q.slug} to={`/therapist/questionarios/${q.slug}/respostas`}>
                     <Button variant="outline" className="w-full justify-start" size="sm">
                       <ClipboardList className="h-4 w-4 mr-2" />
