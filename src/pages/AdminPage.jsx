@@ -33,8 +33,7 @@ import adminService from '@/services/adminService.js'
 import therapistService from '@/services/therapistService.js'
 import { formatCep } from '@/utils/cep'
 import { buildWhatsAppUrlForPhone } from '@/utils/whatsapp'
-
-const ADMIN_EMAIL = 'dneves.junior@gmail.com'
+import { isAdmin } from '@/lib/admin'
 
 // ─── Main Page ───────────────────────────────────────────────
 
@@ -47,7 +46,7 @@ export default function AdminPage() {
     async function checkAuth() {
       try {
         const user = await authService.getCurrentUser()
-        if (!user || user.user_type !== 'therapist' || user.email !== ADMIN_EMAIL) {
+        if (!isAdmin(user)) {
           toast.error('Acesso restrito ao administrador')
           navigate('/login')
           return
@@ -1621,11 +1620,12 @@ function ClientFormDialog({ open, onOpenChange, client, companies, onSave }) {
         phone: client.phone || '',
         company_id: client.company_id ? String(client.company_id) : '',
         department: client.department || '',
+        hr_access: client.hr_access || false,
         password: '',
         password_confirmation: '',
       } : {
         email: '', name: '', first_name: '', last_name: '', phone: '',
-        company_id: '', department: '', password: '', password_confirmation: '',
+        company_id: '', department: '', hr_access: false, password: '', password_confirmation: '',
       })
     }
   }, [open, client])
@@ -1707,6 +1707,18 @@ function ClientFormDialog({ open, onOpenChange, client, companies, onSave }) {
               <Label htmlFor="client-department">Departamento</Label>
               <Input id="client-department" name="department" value={form.department || ''} onChange={handleChange} />
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="client-hr-access"
+              type="checkbox"
+              checked={!!form.hr_access}
+              onChange={e => setForm(prev => ({ ...prev, hr_access: e.target.checked }))}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="client-hr-access" className="font-normal">
+              Acesso ao painel de RH (dashboard agregado da empresa)
+            </Label>
           </div>
           <div className="border-t pt-4">
             <p className="text-sm font-medium mb-2">{client ? 'Alterar senha (opcional)' : 'Senha *'}</p>

@@ -417,6 +417,14 @@ export default function QuestionnaireFormPage() {
     }
   }, [questionnaire, savedAnswers, sections])
 
+  // Scroll to the top on every section change. This MUST run after the new
+  // section commits — calling window.scrollTo inline in handleNext fires against
+  // the old (long) section, so the smooth animation gets clamped by the re-render
+  // and the user lands mid-page, missing the first questions.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentSectionIndex])
+
   const currentSection = sections[currentSectionIndex]
   const isFirstSection = currentSectionIndex === 0
   const isLastSection = currentSectionIndex === sections.length - 1
@@ -442,7 +450,6 @@ export default function QuestionnaireFormPage() {
       const isValid = await form.trigger(fieldNames)
       if (isValid) {
         setCurrentSectionIndex((i) => i + 1)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
         if (accessCode && codeState === 'active') persistProgress()
       }
     } finally {
@@ -453,7 +460,6 @@ export default function QuestionnaireFormPage() {
 
   const handleBack = () => {
     setCurrentSectionIndex((i) => Math.max(0, i - 1))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // Envia só o que foi respondido (itens são opcionais — required: false)

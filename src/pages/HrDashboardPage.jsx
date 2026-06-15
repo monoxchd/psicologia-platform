@@ -310,6 +310,11 @@ function SwingCard({ dim, data }) {
   )
 }
 
+// Área labels carry their setores in parentheses for recognition at fill-in time
+// (see nr1_builder COMPANY_PRESETS). Strip that for clean dashboard/report display;
+// the grouping key (dept.name) is unchanged, only how we render it.
+const areaLabel = (name) => (name || '').split(' (')[0].trim()
+
 function DepartmentHeatmap({ departments, risks, primaryColor }) {
   if (!departments || departments.length === 0) {
     return (
@@ -358,7 +363,7 @@ function DepartmentHeatmap({ departments, risks, primaryColor }) {
             <tbody>
               {departments.map((dept) => (
                 <tr key={dept.name} className="border-b">
-                  <td className="py-2 pr-3 font-medium text-gray-800">{dept.name}</td>
+                  <td className="py-2 pr-3 font-medium text-gray-800" title={dept.name}>{areaLabel(dept.name)}</td>
                   <td className="py-2 px-1 text-center text-gray-500">{dept.respondents}</td>
                   {dept.risks.map((r) => {
                     const bg = r.status === 'gap' ? '#f3f4f6' : (LEVEL_COLOR[r.level] || '#f3f4f6')

@@ -3,24 +3,26 @@ import { toast } from 'sonner'
 import { useEffect } from 'react'
 import authService from '@/services/authService'
 
-export default function CompanyAuthGate({ children }) {
+export default function CompanyAuthGate({ children, requireHr = false }) {
   const { slug } = useParams()
   const location = useLocation()
 
   const isLoggedIn = authService.isLoggedIn()
   const user = isLoggedIn ? authService.getUser() : null
 
-  // Pre-update clients may have a cached user object without company_slug.
-  // Refresh from /auth/me so the next render has authoritative data.
-  const isClientMissingSlug =
-    user?.user_type === 'client' && user.company_slug === undefined
+  // Pre-update clients may have a cached user object without company_slug (or,
+  // for HR-gated areas, without hr_access). Refresh from /auth/me so the next
+  // render has authoritative data.
+  const isClientMissingData =
+    user?.user_type === 'client' &&
+    (user.company_slug === undefined || (requireHr && user.hr_access === undefined))
   useEffect(() => {
-    if (isClientMissingSlug) {
+    if (isClientMissingData) {
       authService.getCurrentUser().then((fresh) => {
         if (fresh) localStorage.setItem('user', JSON.stringify(fresh))
       })
     }
-  }, [isClientMissingSlug])
+  }, [isClientMissingData])
 
   // Only block on explicit mismatch: company_slug present and different, or
   // explicitly null (client with no company at all).
@@ -30,6 +32,16 @@ export default function CompanyAuthGate({ children }) {
     hasResolvedSlug && user.company_slug && user.company_slug !== slug
   const isClientWithNoCompany =
     hasResolvedSlug && !user.company_slug
+
+  // HR-gated area (e.g. /rh): a resolved client of THIS company who lacks
+  // hr_access is sent to the company landing — silently, no toast. Therapists
+  // (incl. admin) are not clients, so they pass straight through.
+  const isClientWithoutHrAccess =
+    requireHr &&
+    user?.user_type === 'client' &&
+    user.hr_access !== undefined &&
+    user.company_slug === slug &&
+    !user.hr_access
 
   useEffect(() => {
     if (isClientFromOtherCompany) {
@@ -50,6 +62,10 @@ export default function CompanyAuthGate({ children }) {
 
   if (isClientWithNoCompany) {
     return <Navigate to={`/empresa/${slug}/login`} replace />
+  }
+
+  if (isClientWithoutHrAccess) {
+    return <Navigate to={`/empresa/${slug}`} replace />
   }
 
   return children
