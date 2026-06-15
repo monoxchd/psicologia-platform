@@ -125,7 +125,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/empresa/:slug/rh",
-        element: <CompanyAuthGate><HrDashboardPage /></CompanyAuthGate>
+        element: <CompanyAuthGate requireHr><HrDashboardPage /></CompanyAuthGate>
       },
       {
         path: "/empresa/:slug/questionario/:questionnaire_slug",
