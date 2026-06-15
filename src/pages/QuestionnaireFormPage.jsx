@@ -518,6 +518,23 @@ export default function QuestionnaireFormPage() {
     )
   }
 
+  // Code-gated questionnaire opened without a ?codigo= (bare URL): submission is
+  // only possible through a distributed access code, so don't render the open form.
+  if (!accessCode && questionnaire?.requires_access_code) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Código de acesso necessário</h1>
+          <p className="text-gray-600">
+            Este questionário é respondido apenas pelo QR Code (ou link) entregue pelo
+            responsável pela aplicação. Escaneie o seu QR Code ou peça uma folha com o código
+            para participar.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   const primaryColor = company?.primary_color || '#4f46e5'
   const secondaryColor = company?.secondary_color || null
   // Use secondary for buttons/text when primary is too light (e.g. yellow)
