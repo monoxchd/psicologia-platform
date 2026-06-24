@@ -419,7 +419,7 @@ export default function QuestionnaireResponseDetailPage() {
         </Card>
 
         {/* Score + Flags Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-sm text-gray-500 mb-1">Score</p>
@@ -434,22 +434,6 @@ export default function QuestionnaireResponseDetailPage() {
               <p className={`text-2xl font-bold ${flagCount > 0 ? 'text-amber-500' : 'text-gray-400'}`}>
                 {flagCount > 0 && <AlertTriangle className="inline h-5 w-5 mr-1" />}
                 {flagCount}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-sm text-gray-500 mb-1">Respondido em</p>
-              <p className="text-lg font-semibold">
-                {response.completed_at
-                  ? new Date(response.completed_at).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
-                  : '—'}
               </p>
             </CardContent>
           </Card>

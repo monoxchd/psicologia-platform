@@ -135,7 +135,6 @@ export default function QuestionnaireResponsesPage() {
                     <TableHead>Departamento</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Classificação</TableHead>
-                    <TableHead>Data</TableHead>
                     <TableHead className="text-right">Score</TableHead>
                     <TableHead className="text-right">Alertas</TableHead>
                   </TableRow>
@@ -159,7 +158,7 @@ export default function QuestionnaireResponsesPage() {
                                 : 'bg-yellow-100 text-yellow-800'
                             }
                           >
-                            {response.status === 'completed' ? 'Completo' : 'Pendente'}
+                            {{ completed: 'Completo', in_progress: 'Em andamento' }[response.status] || 'Pendente'}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -182,11 +181,6 @@ export default function QuestionnaireResponsesPage() {
                           ) : (
                             <span className="text-gray-400">—</span>
                           )}
-                        </TableCell>
-                        <TableCell>
-                          {response.completed_at
-                            ? new Date(response.completed_at).toLocaleDateString('pt-BR')
-                            : new Date(response.created_at).toLocaleDateString('pt-BR')}
                         </TableCell>
                         <TableCell className="text-right">
                           {response.score != null ? Number(response.score).toFixed(1) : '—'}
